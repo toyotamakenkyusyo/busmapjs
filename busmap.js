@@ -208,7 +208,7 @@ function f_html(a_settings) {
 	let l_html = "";
 	//leaflet
 	if (a_settings["leaflet"] === true) {
-		l_html += "<div id=\"div_leaflet\" style=\"width: auto; height: 768px\"></div>";
+		l_html += "<div id=\"div_leaflet\" style=\"width: auto; height: 768px; background: #FFFFFF;\"></div>"; //背景色を白にしておく
 	}
 	//clickable
 	if (a_settings["clickable"] === true) {
@@ -2822,7 +2822,7 @@ function f_leaflet(a_data, a_settings) {
 	
 	//背景地図を半透明にする。
 	if (a_settings["background_map"] === true) {//透明にせず、半透明にする
-		document.getElementsByClassName("leaflet-pane leaflet-tile-pane")[0].setAttribute("style", "opacity: 0.5;");
+		document.getElementsByClassName("leaflet-pane leaflet-tile-pane")[0].setAttribute("style", "opacity: 0.25;");
 	} else {//透明にする
 		document.getElementsByClassName("leaflet-pane leaflet-tile-pane")[0].setAttribute("style", "opacity: 0;");
 	}
