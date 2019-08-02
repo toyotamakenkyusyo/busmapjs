@@ -2590,7 +2590,13 @@ function f_make_svg(a_data, a_settings) {
 			l_stroke_color = "#000000";
 			l_stroke_width = String(c_min_r / 2 * c_zoom_16);
 		}
-		
+		if (false) { //白縁の黒
+			l_type_0_color = "#000000";
+			l_type_1_color = "#808080";
+			l_location_color = "#6060060";
+			l_stroke_color = "#FFFFFF";
+			l_stroke_width = String(c_min_r / 2 * c_zoom_16);
+		}
 		
 		
 		let l_g_stop_type = "<g class=\"g_stop_type\">";
