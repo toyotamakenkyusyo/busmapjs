@@ -2598,8 +2598,16 @@ function f_make_svg(a_data, a_settings) {
 				if (a_settings["stop_name_overlap"] === false) {
 					const c_y = Math.floor(c_stop["y"]) - c_y_top;
 					const c_x = Math.floor(c_stop["x"]) - c_x_left;
+					/*
 					for (let i3 = c_y - 3; i3 <= c_y + 4; i3++) {
 						for (let i4 = c_x - 3; i4 <= c_x + 4; i4++) {
+							c_matrix["x_" + String(i4) + "_y_" + String(i3)] = true;
+						}
+					}
+					*/
+					const c_o = c_min_r * c_zoom_16 * 1.5;
+					for (let i3 = c_y - c_o + 1; i3 <= c_y + c_o; i3++) {
+						for (let i4 = c_x - c_o + 1; i4 <= c_x + c_o; i4++) {
 							c_matrix["x_" + String(i4) + "_y_" + String(i3)] = true;
 						}
 					}
@@ -2641,8 +2649,16 @@ function f_make_svg(a_data, a_settings) {
 				if (a_settings["stop_name_overlap"] === false) {
 					const c_x = Math.floor(a_data["stops"][i1]["shape_pt_x"]) - c_x_left;
 					const c_y = Math.floor(a_data["stops"][i1]["shape_pt_y"]) - c_y_top;
+					/*
 					for (let i3 = c_y - 3; i3 <= c_y + 4; i3++) {
 						for (let i4 = c_x - 3; i4 <= c_x + 4; i4++) {
+							c_matrix["x_" + String(i4) + "_y_" + String(i3)] = true;
+						}
+					}
+					*/
+					const c_o = c_min_r * c_zoom_16 * 1.5;
+					for (let i3 = c_y - c_o + 1; i3 <= c_y + c_o; i3++) {
+						for (let i4 = c_x - c_o + 1; i4 <= c_x + c_o; i4++) {
 							c_matrix["x_" + String(i4) + "_y_" + String(i3)] = true;
 						}
 					}
@@ -2666,7 +2682,7 @@ function f_make_svg(a_data, a_settings) {
 		for (let i1 = 0; i1 < a_data["stops"].length; i1++) {
 			if (a_data["stops"][i1]["location_type"] === "1") {
 				
-				const c_w = (a_data["stops"][i1]["stop_name"].length + 4) * c_font_size; //全角4文字分は時刻表示用
+				const c_w = (a_data["stops"][i1]["stop_name"].length + 4) * c_font_size * c_zoom_16; //全角4文字分は時刻表示用
 				const c_x = Math.floor(a_data["stops"][i1]["shape_pt_x"]) - c_x_left;
 				const c_y = Math.floor(a_data["stops"][i1]["shape_pt_y"]) - c_y_top;
 				let l_y_new = c_y;
@@ -2687,7 +2703,7 @@ function f_make_svg(a_data, a_settings) {
 						} else {
 							l_count += 1;
 						}
-						if (l_count === c_font_size) {
+						if (l_count === c_font_size * c_zoom_16) {
 							l_y_new = i2 - c_font_size + 1;
 							break;
 						}
@@ -2695,8 +2711,8 @@ function f_make_svg(a_data, a_settings) {
 					
 					//位置を記録する。
 					//dot matrix
-					for (let i3 = l_y_new; i3 <= l_y_new + c_font_size; i3++) {
-						for (let i4 = c_x; i4 <= c_x + c_w; i4++) {
+					for (let i3 = l_y_new; i3 <= l_y_new + c_font_size * c_zoom_16; i3++) {
+						for (let i4 = c_x; i4 <= c_x + c_w * c_zoom_16; i4++) {
 							c_matrix["x_" + String(i4) + "_y_" + String(i3)] = true;
 						}
 					}
