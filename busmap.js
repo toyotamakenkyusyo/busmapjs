@@ -2569,6 +2569,28 @@ function f_make_svg(a_data, a_settings) {
 			}
 		}
 		
+		//標柱点の色
+		let l_type_0_color = "#000000";
+		let l_type_1_color = "#FFFFFF";
+		let l_location_color = "#c0c0c0";
+		let l_stroke_color = "#000000";
+		//標柱記号の縁取りの太さ
+		let l_stroke_width = String(c_min_r / 2 * c_zoom_16);
+		if (false) { //灰色
+			l_type_0_color = "#808080";
+			l_type_1_color = "#000000";
+			l_location_color = "#6060060";
+			l_stroke_color = "#FFFFFF";
+			l_stroke_width = String(c_min_r / 2 * c_zoom_16 / 2);
+		}
+		if (false) { //白
+			l_type_0_color = "#FFFFFF";
+			l_type_1_color = "#c0c0c0";
+			l_location_color = "#000000";
+			l_stroke_color = "#000000";
+			l_stroke_width = String(c_min_r / 2 * c_zoom_16);
+		}
+		
 		
 		
 		let l_g_stop_type = "<g class=\"g_stop_type\">";
@@ -2584,7 +2606,7 @@ function f_make_svg(a_data, a_settings) {
 					if (a_settings["clickable"] === true) {
 						l_g_stop_type += " onclick=\"f_show_stops('" + c_stop["stop_id"] + "')\"";
 					}
-					l_g_stop_type += " cx=\"" + c_stop["x"] + "\" cy=\"" + c_stop["y"] + "\" r=\"" + String(c_min_r * c_zoom_16) + "\" style=\"fill: #000000; stroke: #000000; stroke-width: " + String(c_min_r / 2 * c_zoom_16) + "; opacity: 1;\" />";
+					l_g_stop_type += " cx=\"" + c_stop["x"] + "\" cy=\"" + c_stop["y"] + "\" r=\"" + String(c_min_r * c_zoom_16) + "\" style=\"fill: " + l_type_0_color + "; stroke: " + l_stroke_color + "; stroke-width: " + l_stroke_width + "; opacity: 1;\" />";
 				} else if (c_stop["type_1"] === true) {//停車なし
 					
 				} else {//その他
@@ -2592,7 +2614,7 @@ function f_make_svg(a_data, a_settings) {
 					if (a_settings["clickable"] === true) {
 						l_g_stop_type += " onclick=\"f_show_stops('" + c_stop["stop_id"] + "')\"";
 					}
-					l_g_stop_type += " cx=\"" + c_stop["x"] + "\" cy=\"" + c_stop["y"] + "\" r=\"" + String(c_min_r * c_zoom_16) + "\" style=\"fill: #FFFFFF; stroke: #000000; stroke-width: " + String(c_min_r / 2 * c_zoom_16) + "; opacity: 1;\" />";
+					l_g_stop_type += " cx=\"" + c_stop["x"] + "\" cy=\"" + c_stop["y"] + "\" r=\"" + String(c_min_r * c_zoom_16) + "\" style=\"fill: " + l_type_1_color + "; stroke: " + l_stroke_color + "; stroke-width: " + l_stroke_width + "; opacity: 1;\" />";
 				}
 				//dot matrix
 				if (a_settings["stop_name_overlap"] === false) {
@@ -2632,7 +2654,7 @@ function f_make_svg(a_data, a_settings) {
 		
 		
 		//標柱の位置を表示
-		let l_g_stop_location = "<g class=\"g_stop_location\" style=\"fill: #c0c0c0; stroke: #000000;\">";
+		let l_g_stop_location = "<g class=\"g_stop_location\" style=\"fill: " + l_location_color + "; stroke: " + l_stroke_color + ";\">";
 		for (let i1 = 0; i1 < a_data["stops"].length; i1++) {
 			if (a_data["stops"][i1]["location_type"] === "0") {
 				if (isNaN(a_data["stops"][i1]["shape_pt_x"]) || isNaN(a_data["stops"][i1]["shape_pt_y"])) {
@@ -2643,7 +2665,7 @@ function f_make_svg(a_data, a_settings) {
 				if (a_settings["clickable"] === true) {
 					l_g_stop_location += " onclick=\"f_show_stops('" + a_data["stops"][i1]["stop_id"] + "')\"";
 				}
-				l_g_stop_location += " cx=\"" + a_data["stops"][i1]["shape_pt_x"] + "\" cy=\"" + a_data["stops"][i1]["shape_pt_y"] + "\" r=\"" + String(c_min_r * c_zoom_16) + "\" style=\"stroke-width: " + String(c_min_r / 2 * c_zoom_16) + "; opacity: 1;\" />";
+				l_g_stop_location += " cx=\"" + a_data["stops"][i1]["shape_pt_x"] + "\" cy=\"" + a_data["stops"][i1]["shape_pt_y"] + "\" r=\"" + String(c_min_r * c_zoom_16) + "\" style=\"stroke-width: " + l_stroke_width + "; opacity: 1;\" />";
 				//位置を記録する。
 				//dot matrix
 				if (a_settings["stop_name_overlap"] === false) {
