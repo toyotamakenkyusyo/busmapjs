@@ -2432,7 +2432,7 @@ function f_make_svg(a_data, a_settings) {
 		
 		//経路の折れ線のレイヤー
 		//太さが変わるごとに別のpathにする。
-		let l_g_routes = "<g class=\"g_routes\" style=\"fill: none; stroke: red; stroke-width: 2px;\">";
+		let l_g_routes = "<g class=\"g_routes\" style=\"fill: none; stroke: red; stroke-width: 2px; stroke-linejoin: round;\">";
 		for (let i1 = 0; i1 < a_data["ur_routes"].length; i1++) {
 			//parent_routeの色を探す。
 			let l_route_color;
