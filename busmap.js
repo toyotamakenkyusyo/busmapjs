@@ -3200,16 +3200,19 @@ function f_trip_timetable(a_trip_id, a_stop_sequence, a_stop_id) {
 	}
 	const c_stop_times = l_data["trips"][l_trip_number]["stop_times"];
 	for (let i1 = 0; i1 < c_stop_times.length; i1++) {
-		if (c_stop_times[i1]["stop_sequence"] > a_stop_sequence) {
-			const c_arrival_time = c_stop_times[i1]["arrival_time"];
+		if (c_stop_times[i1]["stop_sequence"] >= a_stop_sequence) {
+			let l_time = c_stop_times[i1]["arrival_time"];
+			if (c_stop_times[i1]["stop_sequence"] === a_stop_sequence) {
+				l_time = c_stop_times[i1]["departure_time"];
+			}
 			const c_parent_station_stop_id = f_get_parent_station_stop_id(c_stop_times[i1]["stop_id"], l_data["stops"]);
 			const c_time_background = document.getElementsByClassName("stop_time_background_" + c_parent_station_stop_id);
 			for (let i2 = 0; i2 < c_time_background.length; i2++) {
-				c_time_background[i2].innerHTML += " <tspan style=\"stroke: #000000;\">" + c_arrival_time + "</tspan>";
+				c_time_background[i2].innerHTML += " <tspan style=\"stroke: #000000;\">" + l_time + "</tspan>";
 			}
 			const c_time = document.getElementsByClassName("stop_time_" + c_parent_station_stop_id);
 			for (let i2 = 0; i2 < c_time.length; i2++) {
-				c_time[i2].innerHTML += " <tspan style='stroke: none; fill: #FFFFFF'>" + c_arrival_time + "</tspan>";
+				c_time[i2].innerHTML += " <tspan style='stroke: none; fill: #FFFFFF'>" + l_time + "</tspan>";
 			}
 		}
 	}
