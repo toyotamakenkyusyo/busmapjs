@@ -2658,7 +2658,11 @@ function f_make_svg(a_data, a_settings) {
 		//停留所名表示
 		const c_font_size = 16;
 		const c_font_family = "'IPAexGothic'";
-		let l_g_stop_name = "<g class=\"g_stop_name\" style=\"font-family: " + c_font_family + "; font-size: " + String(c_font_size * c_zoom_16) + "px; line-height: 1; stroke: #FFFFFF; stroke-width: " + String(4 * c_zoom_16) + "px; stroke-opacity: 0.5;\">";
+		let l_stroke_opacity = "0.5"; //半透明
+		if (a_settings["stop_name_overlap"] === false) { //重なり回避
+			l_stroke_opacity = "1";
+		}
+		let l_g_stop_name = "<g class=\"g_stop_name\" style=\"font-family: " + c_font_family + "; font-size: " + String(c_font_size * c_zoom_16) + "px; line-height: 1; stroke: #FFFFFF; stroke-width: " + String(4 * c_zoom_16) + "px; stroke-opacity: " + l_stroke_opacity + ";\">";
 		for (let i1 = 0; i1 < a_data["stops"].length; i1++) {
 			if (a_data["stops"][i1]["location_type"] === "1") {
 				
