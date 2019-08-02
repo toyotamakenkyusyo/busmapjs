@@ -212,7 +212,7 @@ function f_html(a_settings) {
 	}
 	//clickable
 	if (a_settings["clickable"] === true) {
-		l_html += "<div><a id=\"output_svg\" href=\"#\" download=\"gtfsbusmap.svg\" onclick=\"f_output_svg()\">SVG保存</a></div>";
+		l_html += "<div><a id=\"output_svg\" href=\"#\" download=\"busmap.svg\" onclick=\"f_output_svg()\">SVG保存</a></div>";
 		l_html += "<div><span onclick=\"f_route_color()\">全路線を着色</span> <span onclick=\"f_tooltip()\">補足非表示</span></div>";
 	}
 	//設定変更項目の表示
@@ -3444,7 +3444,7 @@ function f_output_svg() {
 	const c_svg = document.getElementsByClassName("leaflet-pane leaflet-overlay-pane")[0].firstElementChild.outerHTML;
 	const c_blob = new Blob([c_svg], {"type": "image/svg+xml"});
 	if (window.navigator.msSaveBlob) { 
-		window.navigator.msSaveBlob(c_blob, "gtfsbusmap.svg"); 
+		window.navigator.msSaveBlob(c_blob, "busmap.svg"); 
 	} else {
 		document.getElementById("output_svg").href = window.URL.createObjectURL(c_blob);
 	}
