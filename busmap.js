@@ -170,6 +170,7 @@ function f_input_settings(a_settings) {
 		"stop_color_location": "#C0C0C0", //位置を示す停留所記号の色
 		"stop_stroke_color": "#000000", //停留所記号の縁の色
 		"stop_stroke_width": 1, //停留所記号の縁の太さ
+		"min_space_width": 2, //線の間隔の最小幅
 		"min_width": 3//,
 	};
 	//change trueの場合、設定を変更する
@@ -1705,6 +1706,7 @@ function f_topology(a_data, a_settings) {
 			continue;
 		}
 		for (let i2 = 0; i2 < c_parent_routes.length; i2++) {
+			/*
 			if (i2 === 0) {
 				c_parent_routes[i2]["offset_direction_1"] = c_min_width + c_parent_routes[i2]["width_direction_1"];
 				c_parent_routes[i2]["offset_direction_-1"] = c_min_width + c_parent_routes[i2]["width_direction_-1"];
@@ -1713,6 +1715,17 @@ function f_topology(a_data, a_settings) {
 				c_parent_routes[i2]["offset_direction_1"] = c_parent_routes[i2 - 1]["offset_direction_1"] + c_parent_routes[i2 - 1]["width_direction_1"] + c_parent_routes[i2]["width_direction_1"];
 				c_parent_routes[i2]["offset_direction_-1"] = c_parent_routes[i2 - 1]["offset_direction_-1"] + c_parent_routes[i2 - 1]["width_direction_-1"] + c_parent_routes[i2]["width_direction_-1"];
 				c_parent_routes[i2]["offset"] = c_parent_routes[i2 - 1]["offset"] + c_parent_routes[i2 - 1]["width"] + c_parent_routes[i2]["width"];
+			}
+			*/
+			const c_min_space_width = a_settings["min_space_width"];
+			if (i2 === 0) {
+				c_parent_routes[i2]["offset_direction_1"] = c_min_width / 2 + c_min_space_width + c_parent_routes[i2]["width_direction_1"] / 2;
+				c_parent_routes[i2]["offset_direction_-1"] = c_min_width / 2 + c_min_space_width + c_parent_routes[i2]["width_direction_-1"] / 2;
+				c_parent_routes[i2]["offset"] = c_min_width / 2 + c_min_space_width + c_parent_routes[i2]["width"] / 2;
+			} else {
+				c_parent_routes[i2]["offset_direction_1"] = c_parent_routes[i2 - 1]["offset_direction_1"] + c_parent_routes[i2 - 1]["width_direction_1"] / 2 + c_min_space_width + c_parent_routes[i2]["width_direction_1"] / 2;
+				c_parent_routes[i2]["offset_direction_-1"] = c_parent_routes[i2 - 1]["offset_direction_-1"] + c_parent_routes[i2 - 1]["width_direction_-1"] / 2 + c_min_space_width + c_parent_routes[i2]["width_direction_-1"] / 2;
+				c_parent_routes[i2]["offset"] = c_parent_routes[i2 - 1]["offset"] + c_parent_routes[i2 - 1]["width"] / 2 + c_min_space_width + c_parent_routes[i2]["width"] / 2;
 			}
 		}
 	}
@@ -2484,7 +2497,7 @@ function f_make_svg(a_data, a_settings) {
 		l_g_routes += "</g>";
 		
 		
-		const c_min_r = a_settings["min_width"]; //円の半径
+		const c_min_r = a_settings["min_width"] / 2 + a_settings["min_space_width"] / 2; //円の半径
 		//停留所にバスがとまるか表示
 		//不完全かもしれない。複数経路には対応しない。経路毎につくって重ねているだけ。
 		//stop→shape_pt_number→polylineと辿る。
