@@ -170,6 +170,7 @@ function f_input_settings(a_settings) {
 		"stop_color_location": "#C0C0C0", //位置を示す停留所記号の色
 		"stop_stroke_color": "#000000", //停留所記号の縁の色
 		"stop_stroke_width": 1, //停留所記号の縁の太さ
+		"show_stop_location": true, //停留所位置の記号を表示
 		"min_space_width": 2, //線の間隔の最小幅
 		"min_width": 3//,
 	};
@@ -2684,10 +2685,12 @@ function f_make_svg(a_data, a_settings) {
 		
 		
 		
-		
-		
+		let l_visibility = "visible";
+		if (a_settings["show_stop_location"] === false) {
+			l_visibility = "hidden";
+		}
 		//標柱の位置を表示
-		let l_g_stop_location = "<g class=\"g_stop_location\" style=\"fill: " + l_location_color + "; stroke: " + l_stroke_color + ";\">";
+		let l_g_stop_location = "<g class=\"g_stop_location\" style=\"fill: " + l_location_color + "; stroke: " + l_stroke_color + "; visibility: " + l_visibility + ";\">";
 		for (let i1 = 0; i1 < a_data["stops"].length; i1++) {
 			if (a_data["stops"][i1]["location_type"] === "0") {
 				if (isNaN(a_data["stops"][i1]["shape_pt_x"]) || isNaN(a_data["stops"][i1]["shape_pt_y"])) {
