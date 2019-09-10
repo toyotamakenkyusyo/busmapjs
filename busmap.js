@@ -163,6 +163,8 @@ function f_input_settings(a_settings) {
 		"zoom_level": 16,
 		"svg_zoom_level": 16,
 		"background_map": true,
+		"font_size": 16, //停留所名のフォントサイズ
+		"font_family": "'源ノ角ゴシック'", //停留所名のフォント、二重のクオーテーションマークに注意
 		"min_width": 3//,
 	};
 	//change trueの場合、設定を変更する
@@ -2700,8 +2702,8 @@ function f_make_svg(a_data, a_settings) {
 		
 		
 		//停留所名表示
-		const c_font_size = 16;
-		const c_font_family = "'IPAexGothic'";
+		const c_font_size = a_settings["font_size"];//16;
+		const c_font_family = a_settings["font_family"];//"'IPAexGothic'";
 		let l_stroke_opacity = "0.5"; //半透明
 		if (a_settings["stop_name_overlap"] === false) { //重なり回避
 			l_stroke_opacity = "1";
