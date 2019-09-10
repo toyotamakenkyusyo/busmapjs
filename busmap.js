@@ -2497,7 +2497,11 @@ function f_make_svg(a_data, a_settings) {
 		l_g_routes += "</g>";
 		
 		
-		const c_min_r = a_settings["min_width"] / 2 + a_settings["min_space_width"] / 2; //円の半径
+		let l_min_r = a_settings["min_width"] / 2 + a_settings["min_space_width"] / 2;
+		if (l_min_r > 4) {
+			l_min_r = a_settings["min_width"] / 2 +a_settings["stop_stroke_width"] / 2;
+		}
+		const c_min_r = l_min_r; //a_settings["min_width"] / 2 + a_settings["min_space_width"] / 2; //円の半径
 		//停留所にバスがとまるか表示
 		//不完全かもしれない。複数経路には対応しない。経路毎につくって重ねているだけ。
 		//stop→shape_pt_number→polylineと辿る。
