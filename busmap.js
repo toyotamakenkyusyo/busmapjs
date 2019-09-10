@@ -165,6 +165,11 @@ function f_input_settings(a_settings) {
 		"background_map": true,
 		"font_size": 16, //停留所名のフォントサイズ
 		"font_family": "'源ノ角ゴシック'", //停留所名のフォント、二重のクオーテーションマークに注意
+		"stop_color_standard": "#000000", //通常の停留所記号の色
+		"stop_color_nonstandard": "#FFFFFF", //起終点等の停留所記号の色
+		"stop_color_location": "#C0C0C0", //位置を示す停留所記号の色
+		"stop_stroke_color": "#000000", //停留所記号の縁の色
+		"stop_stroke_width": 1, //停留所記号の縁の太さ
 		"min_width": 3//,
 	};
 	//change trueの場合、設定を変更する
@@ -2572,12 +2577,15 @@ function f_make_svg(a_data, a_settings) {
 		}
 		
 		//標柱点の色
-		let l_type_0_color = "#000000";
-		let l_type_1_color = "#FFFFFF";
-		let l_location_color = "#c0c0c0";
-		let l_stroke_color = "#000000";
+		let l_type_0_color = a_settings["stop_color_standard"]; //通常の停留所記号の色#FFFFFF
+		let l_type_1_color = a_settings["stop_color_nonstandard"]; //起終点等の停留所記号の色#FFFF00
+		let l_location_color = a_settings["stop_color_location"]; //位置を示す停留所記号の色#c0c0c0
+		let l_stroke_color = a_settings["stop_stroke_color"]; //停留所記号の縁の色
 		//標柱記号の縁取りの太さ
-		let l_stroke_width = String(c_min_r / 2 * c_zoom_16);
+		let l_stroke_width = String(a_settings["stop_stroke_width"] * c_zoom_16); //停留所記号の縁の太さ1 * c_zoom_16 //String(c_min_r / 2 * c_zoom_16);
+		
+		
+		/*
 		if (false) { //灰色
 			l_type_0_color = "#808080";
 			l_type_1_color = "#000000";
@@ -2599,7 +2607,7 @@ function f_make_svg(a_data, a_settings) {
 			l_stroke_color = "#FFFFFF";
 			l_stroke_width = String(c_min_r / 2 * c_zoom_16);
 		}
-		
+		*/
 		
 		let l_g_stop_type = "<g class=\"g_stop_type\">";
 		for (let i1 = 0; i1 < a_data["parent_routes"].length; i1++) {
