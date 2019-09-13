@@ -15,6 +15,7 @@ let l_settings = {};//設定
 
 //基本となる関数
 async function f_busmap(a_settings) {
+	document.getElementById("div2").innerHTML += "t1";
 	//a_settingsは設定
 	const c_input = a_settings["data"];
 	//const c_response = [];//XHR
@@ -45,6 +46,7 @@ async function f_busmap(a_settings) {
 		}
 	}
 	//XHR
+	document.getElementById("div2").innerHTML += "t2";
 	const c_data = [{}];
 	//GTFSの場合、ZIPの解凍
 	console.log(c_input_settings);
@@ -72,6 +74,7 @@ async function f_busmap(a_settings) {
 			f_prepare_gtfs(c_data[i1]);
 		}
 	}
+	document.getElementById("div2").innerHTML += "t3";
 	//c_bmdに移す
 	f_make_bmd(c_data, c_bmd);
 	//f_prepare_common(a_data[0]);
