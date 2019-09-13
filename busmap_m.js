@@ -2912,6 +2912,7 @@ function f_leaflet(a_data, a_settings) {
 	if (a_settings["background_map"] === true) {//透明にせず、半透明にする
 		//document.getElementsByClassName("leaflet-pane leaflet-tile-pane")[0].style.opacity = "0.25";
 		//背景地図レイヤーに直接指定
+		document.getElementById("div2").innerHTML += "L32";
 	} else {//透明にする
 		document.getElementsByClassName("leaflet-pane leaflet-tile-pane")[0].style.opacity = "0";
 	}
@@ -2924,6 +2925,7 @@ function f_leaflet(a_data, a_settings) {
 	//作ったsvg地図を入力する。
 	console.time("S");
 	c_svg_g.innerHTML = f_make_svg(a_data, a_settings);
+	document.getElementById("div2").innerHTML += f_make_svg(a_data, a_settings);
 	console.timeEnd("S");
 	//svgをクリック可能にする。
 	c_svg.setAttribute("style", "pointer-events: auto;");
