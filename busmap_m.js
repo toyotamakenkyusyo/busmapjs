@@ -81,6 +81,7 @@ async function f_busmap(a_settings) {
 		//document.getElementById("ur_route_list").innerHTML = f_ur_route_list(c_bmd);
 	}
 	console.time("t_5");
+	document.getElementById("div2").innerHTML += "t5";
 	f_make_shape_points(c_bmd);
 	console.timeEnd("t_5");
 	console.time("t_6");
@@ -97,6 +98,7 @@ async function f_busmap(a_settings) {
 	f_make_shape_segments(c_bmd);
 	console.timeEnd("t_9");
 	console.time("t_10");
+	document.getElementById("div2").innerHTML += "t10";
 	f_cut_shape_segments(c_bmd, c_input_settings["zoom_level"]); //3s遅い。高速化困難。ここでshape_pointが増加、stopにnearest_shape_pt_idを追加、shape_pt_arrayに変更あり。
 	console.timeEnd("t_10");
 	console.time("t_11");
@@ -117,6 +119,7 @@ async function f_busmap(a_settings) {
 	}
 	
 	console.time("t_14");
+	document.getElementById("div2").innerHTML += "t14";
 	f_open(c_bmd, c_input_settings); //6s遅い！
 	console.timeEnd("t_14");
 	
