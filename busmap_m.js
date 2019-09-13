@@ -163,15 +163,6 @@ function f_input_settings(a_settings) {
 		"zoom_level": 16,
 		"svg_zoom_level": 16,
 		"background_map": true,
-		"font_size": 16, //停留所名のフォントサイズ
-		"font_family": "'源ノ角ゴシック'", //停留所名のフォント、二重のクオーテーションマークに注意
-		"stop_color_standard": "#000000", //通常の停留所記号の色
-		"stop_color_nonstandard": "#FFFFFF", //起終点等の停留所記号の色
-		"stop_color_location": "#C0C0C0", //位置を示す停留所記号の色
-		"stop_stroke_color": "#000000", //停留所記号の縁の色
-		"stop_stroke_width": 1, //停留所記号の縁の太さ
-		"show_stop_location": true, //停留所位置の記号を表示
-		"min_space_width": 2, //線の間隔の最小幅
 		"min_width": 3//,
 	};
 	//change trueの場合、設定を変更する
@@ -217,11 +208,11 @@ function f_html(a_settings) {
 	let l_html = "";
 	//leaflet
 	if (a_settings["leaflet"] === true) {
-		l_html += "<div id=\"div_leaflet\" style=\"width: auto; height: 768px; background: #FFFFFF;\"></div>"; //背景色を白にしておく
+		l_html += "<div id=\"div_leaflet\" style=\"width: auto; height: 768px\"></div>";
 	}
 	//clickable
 	if (a_settings["clickable"] === true) {
-		l_html += "<div><a id=\"output_svg\" href=\"#\" download=\"busmap.svg\" onclick=\"f_output_svg()\">SVG保存</a></div>";
+		l_html += "<div><a id=\"output_svg\" href=\"#\" download=\"gtfsbusmap.svg\" onclick=\"f_output_svg()\">SVG保存</a></div>";
 		l_html += "<div><span onclick=\"f_route_color()\">全路線を着色</span> <span onclick=\"f_tooltip()\">補足非表示</span></div>";
 	}
 	//設定変更項目の表示
@@ -260,7 +251,7 @@ function f_set_leaflet() {
 	//leaflet関係
 	map = L.map("div_leaflet"); //leafletの読み込み。
 	//背景地図（地理院地図）を表示する。
-	L.tileLayer("https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png", {attribution: "<a href=\"https://maps.gsi.go.jp/development/ichiran.html\">地理院タイル</a>", opacity: 0.25}).addTo(map);
+	L.tileLayer("https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png", {attribution: "<a href=\"https://maps.gsi.go.jp/development/ichiran.html\">地理院タイル</a>"}).addTo(map);
 	//svg地図を入れる。
 	L.svg().addTo(map);
 }
@@ -1707,7 +1698,6 @@ function f_topology(a_data, a_settings) {
 			continue;
 		}
 		for (let i2 = 0; i2 < c_parent_routes.length; i2++) {
-			/*
 			if (i2 === 0) {
 				c_parent_routes[i2]["offset_direction_1"] = c_min_width + c_parent_routes[i2]["width_direction_1"];
 				c_parent_routes[i2]["offset_direction_-1"] = c_min_width + c_parent_routes[i2]["width_direction_-1"];
@@ -1716,17 +1706,6 @@ function f_topology(a_data, a_settings) {
 				c_parent_routes[i2]["offset_direction_1"] = c_parent_routes[i2 - 1]["offset_direction_1"] + c_parent_routes[i2 - 1]["width_direction_1"] + c_parent_routes[i2]["width_direction_1"];
 				c_parent_routes[i2]["offset_direction_-1"] = c_parent_routes[i2 - 1]["offset_direction_-1"] + c_parent_routes[i2 - 1]["width_direction_-1"] + c_parent_routes[i2]["width_direction_-1"];
 				c_parent_routes[i2]["offset"] = c_parent_routes[i2 - 1]["offset"] + c_parent_routes[i2 - 1]["width"] + c_parent_routes[i2]["width"];
-			}
-			*/
-			const c_min_space_width = a_settings["min_space_width"];
-			if (i2 === 0) {
-				c_parent_routes[i2]["offset_direction_1"] = c_min_width / 2 + c_min_space_width + c_parent_routes[i2]["width_direction_1"] / 2;
-				c_parent_routes[i2]["offset_direction_-1"] = c_min_width / 2 + c_min_space_width + c_parent_routes[i2]["width_direction_-1"] / 2;
-				c_parent_routes[i2]["offset"] = c_min_width / 2 + c_min_space_width + c_parent_routes[i2]["width"] / 2;
-			} else {
-				c_parent_routes[i2]["offset_direction_1"] = c_parent_routes[i2 - 1]["offset_direction_1"] + c_parent_routes[i2 - 1]["width_direction_1"] / 2 + c_min_space_width + c_parent_routes[i2]["width_direction_1"] / 2;
-				c_parent_routes[i2]["offset_direction_-1"] = c_parent_routes[i2 - 1]["offset_direction_-1"] + c_parent_routes[i2 - 1]["width_direction_-1"] / 2 + c_min_space_width + c_parent_routes[i2]["width_direction_-1"] / 2;
-				c_parent_routes[i2]["offset"] = c_parent_routes[i2 - 1]["offset"] + c_parent_routes[i2 - 1]["width"] / 2 + c_min_space_width + c_parent_routes[i2]["width"] / 2;
 			}
 		}
 	}
@@ -2382,6 +2361,8 @@ function f_cross_point(a_x1, a_y1, a_x2, a_y2, a_x3, a_y3, a_x4, a_y4){
 
 
 
+
+
 function f_make_svg(a_data, a_settings) {
 	console.log(a_data);
 	//この段階では平行移動による位置の調整はしていない。
@@ -2792,6 +2773,7 @@ function f_make_svg(a_data, a_settings) {
 
 
 
+
 function f_leaflet(a_data, a_settings) {
 	const c_zoom_level = a_settings["zoom_level"];
 	//左右上下の端を調べる
@@ -2840,10 +2822,9 @@ function f_leaflet(a_data, a_settings) {
 	
 	//背景地図を半透明にする。
 	if (a_settings["background_map"] === true) {//透明にせず、半透明にする
-		//document.getElementsByClassName("leaflet-pane leaflet-tile-pane")[0].style.opacity = "0.25";
-		//背景地図レイヤーに直接指定
+		document.getElementsByClassName("leaflet-pane leaflet-tile-pane")[0].setAttribute("style", "opacity: 0.5;");
 	} else {//透明にする
-		document.getElementsByClassName("leaflet-pane leaflet-tile-pane")[0].style.opacity = "0";
+		document.getElementsByClassName("leaflet-pane leaflet-tile-pane")[0].setAttribute("style", "opacity: 0;");
 	}
 	
 	
@@ -3199,19 +3180,16 @@ function f_trip_timetable(a_trip_id, a_stop_sequence, a_stop_id) {
 	}
 	const c_stop_times = l_data["trips"][l_trip_number]["stop_times"];
 	for (let i1 = 0; i1 < c_stop_times.length; i1++) {
-		if (c_stop_times[i1]["stop_sequence"] >= a_stop_sequence) {
-			let l_time = c_stop_times[i1]["arrival_time"];
-			if (c_stop_times[i1]["stop_sequence"] === a_stop_sequence) {
-				l_time = c_stop_times[i1]["departure_time"];
-			}
+		if (c_stop_times[i1]["stop_sequence"] > a_stop_sequence) {
+			const c_arrival_time = c_stop_times[i1]["arrival_time"];
 			const c_parent_station_stop_id = f_get_parent_station_stop_id(c_stop_times[i1]["stop_id"], l_data["stops"]);
 			const c_time_background = document.getElementsByClassName("stop_time_background_" + c_parent_station_stop_id);
 			for (let i2 = 0; i2 < c_time_background.length; i2++) {
-				c_time_background[i2].innerHTML += " <tspan style=\"stroke: #000000;\">" + l_time + "</tspan>";
+				c_time_background[i2].innerHTML += " <tspan style=\"stroke: #000000;\">" + c_arrival_time + "</tspan>";
 			}
 			const c_time = document.getElementsByClassName("stop_time_" + c_parent_station_stop_id);
 			for (let i2 = 0; i2 < c_time.length; i2++) {
-				c_time[i2].innerHTML += " <tspan style='stroke: none; fill: #FFFFFF'>" + l_time + "</tspan>";
+				c_time[i2].innerHTML += " <tspan style='stroke: none; fill: #FFFFFF'>" + c_arrival_time + "</tspan>";
 			}
 		}
 	}
@@ -3421,7 +3399,7 @@ function f_output_svg() {
 	const c_svg = document.getElementsByClassName("leaflet-pane leaflet-overlay-pane")[0].firstElementChild.outerHTML;
 	const c_blob = new Blob([c_svg], {"type": "image/svg+xml"});
 	if (window.navigator.msSaveBlob) { 
-		window.navigator.msSaveBlob(c_blob, "busmap.svg"); 
+		window.navigator.msSaveBlob(c_blob, "gtfsbusmap.svg"); 
 	} else {
 		document.getElementById("output_svg").href = window.URL.createObjectURL(c_blob);
 	}
