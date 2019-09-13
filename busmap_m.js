@@ -2926,6 +2926,8 @@ function f_leaflet(a_data, a_settings) {
 	console.time("S");
 	c_svg_g.innerHTML = f_make_svg(a_data, a_settings);
 	document.getElementById("div2").innerHTML += f_make_svg(a_data, a_settings);
+	document.getElementById("div2").innerHTML += c_svg_g.innerHTML;
+	document.getElementById("div2").innerHTML += c_svg_g.outerHTML;
 	console.timeEnd("S");
 	//svgをクリック可能にする。
 	c_svg.setAttribute("style", "pointer-events: auto;");
