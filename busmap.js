@@ -260,7 +260,7 @@ function f_set_leaflet() {
 	//leaflet関係
 	map = L.map("div_leaflet"); //leafletの読み込み。
 	//背景地図（地理院地図）を表示する。
-	L.tileLayer("https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png", {attribution: "<a href=\"https://maps.gsi.go.jp/development/ichiran.html\">地理院タイル</a>"}).addTo(map);
+	L.tileLayer("https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png", {attribution: "<a href=\"https://maps.gsi.go.jp/development/ichiran.html\">地理院タイル</a>", opacity: 0.25}).addTo(map);
 	//svg地図を入れる。
 	L.svg().addTo(map);
 }
@@ -2900,9 +2900,10 @@ function f_leaflet(a_data, a_settings) {
 	
 	//背景地図を半透明にする。
 	if (a_settings["background_map"] === true) {//透明にせず、半透明にする
-		document.getElementsByClassName("leaflet-pane leaflet-tile-pane")[0].setAttribute("style", "opacity: 0.25;");
+		//document.getElementsByClassName("leaflet-pane leaflet-tile-pane")[0].style.opacity = "0.25";
+		//背景地図レイヤーに直接指定
 	} else {//透明にする
-		document.getElementsByClassName("leaflet-pane leaflet-tile-pane")[0].setAttribute("style", "opacity: 0;");
+		document.getElementsByClassName("leaflet-pane leaflet-tile-pane")[0].style.opacity = "0";
 	}
 	
 	
