@@ -11,7 +11,7 @@ let l_tooltip_x = 0;//ツールチップの位置
 let l_tooltip_y = 0;//ツールチップの位置
 let l_settings = {};//設定
 
-
+document.getElementById("div2").innerHTML += "t0";
 
 //基本となる関数
 async function f_busmap(a_settings) {
