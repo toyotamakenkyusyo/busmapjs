@@ -2382,8 +2382,6 @@ function f_cross_point(a_x1, a_y1, a_x2, a_y2, a_x3, a_y3, a_x4, a_y4){
 
 
 
-
-
 function f_make_svg(a_data, a_settings) {
 	console.log(a_data);
 	//この段階では平行移動による位置の調整はしていない。
@@ -2453,7 +2451,7 @@ function f_make_svg(a_data, a_settings) {
 		
 		//経路の折れ線のレイヤー
 		//太さが変わるごとに別のpathにする。
-		let l_g_routes = "<g class=\"g_routes\" style=\"fill: none; stroke: red; stroke-width: 2px; stroke-linejoin: round;\">";
+		let l_g_routes = "<g class=\"g_routes\" style=\"fill: none; stroke: red; stroke-width: 2px;\">";
 		for (let i1 = 0; i1 < a_data["ur_routes"].length; i1++) {
 			//parent_routeの色を探す。
 			let l_route_color;
@@ -2498,11 +2496,7 @@ function f_make_svg(a_data, a_settings) {
 		l_g_routes += "</g>";
 		
 		
-		let l_min_r = a_settings["min_width"] / 2 + a_settings["min_space_width"] / 2;
-		if (l_min_r > 4) {
-			l_min_r = a_settings["min_width"] / 2 +a_settings["stop_stroke_width"] / 2;
-		}
-		const c_min_r = l_min_r; //a_settings["min_width"] / 2 + a_settings["min_space_width"] / 2; //円の半径
+		const c_min_r = a_settings["min_width"]; //円の半径
 		//停留所にバスがとまるか表示
 		//不完全かもしれない。複数経路には対応しない。経路毎につくって重ねているだけ。
 		//stop→shape_pt_number→polylineと辿る。
@@ -2594,38 +2588,7 @@ function f_make_svg(a_data, a_settings) {
 			}
 		}
 		
-		//標柱点の色
-		let l_type_0_color = a_settings["stop_color_standard"]; //通常の停留所記号の色#FFFFFF
-		let l_type_1_color = a_settings["stop_color_nonstandard"]; //起終点等の停留所記号の色#FFFF00
-		let l_location_color = a_settings["stop_color_location"]; //位置を示す停留所記号の色#c0c0c0
-		let l_stroke_color = a_settings["stop_stroke_color"]; //停留所記号の縁の色
-		//標柱記号の縁取りの太さ
-		let l_stroke_width = String(a_settings["stop_stroke_width"] * c_zoom_16); //停留所記号の縁の太さ1 * c_zoom_16 //String(c_min_r / 2 * c_zoom_16);
 		
-		
-		/*
-		if (false) { //灰色
-			l_type_0_color = "#808080";
-			l_type_1_color = "#000000";
-			l_location_color = "#6060060";
-			l_stroke_color = "#FFFFFF";
-			l_stroke_width = String(c_min_r / 2 * c_zoom_16 / 2);
-		}
-		if (false) { //白
-			l_type_0_color = "#FFFFFF";
-			l_type_1_color = "#c0c0c0";
-			l_location_color = "#000000";
-			l_stroke_color = "#000000";
-			l_stroke_width = String(c_min_r / 2 * c_zoom_16);
-		}
-		if (false) { //白縁の黒
-			l_type_0_color = "#000000";
-			l_type_1_color = "#808080";
-			l_location_color = "#6060060";
-			l_stroke_color = "#FFFFFF";
-			l_stroke_width = String(c_min_r / 2 * c_zoom_16);
-		}
-		*/
 		
 		let l_g_stop_type = "<g class=\"g_stop_type\">";
 		for (let i1 = 0; i1 < a_data["parent_routes"].length; i1++) {
@@ -2640,7 +2603,7 @@ function f_make_svg(a_data, a_settings) {
 					if (a_settings["clickable"] === true) {
 						l_g_stop_type += " onclick=\"f_show_stops('" + c_stop["stop_id"] + "')\"";
 					}
-					l_g_stop_type += " cx=\"" + c_stop["x"] + "\" cy=\"" + c_stop["y"] + "\" r=\"" + String(c_min_r * c_zoom_16) + "\" style=\"fill: " + l_type_0_color + "; stroke: " + l_stroke_color + "; stroke-width: " + l_stroke_width + "; opacity: 1;\" />";
+					l_g_stop_type += " cx=\"" + c_stop["x"] + "\" cy=\"" + c_stop["y"] + "\" r=\"" + String(c_min_r * c_zoom_16) + "\" style=\"fill: #000000; stroke: #000000; stroke-width: " + String(c_min_r / 2 * c_zoom_16) + "; opacity: 1;\" />";
 				} else if (c_stop["type_1"] === true) {//停車なし
 					
 				} else {//その他
@@ -2648,22 +2611,14 @@ function f_make_svg(a_data, a_settings) {
 					if (a_settings["clickable"] === true) {
 						l_g_stop_type += " onclick=\"f_show_stops('" + c_stop["stop_id"] + "')\"";
 					}
-					l_g_stop_type += " cx=\"" + c_stop["x"] + "\" cy=\"" + c_stop["y"] + "\" r=\"" + String(c_min_r * c_zoom_16) + "\" style=\"fill: " + l_type_1_color + "; stroke: " + l_stroke_color + "; stroke-width: " + l_stroke_width + "; opacity: 1;\" />";
+					l_g_stop_type += " cx=\"" + c_stop["x"] + "\" cy=\"" + c_stop["y"] + "\" r=\"" + String(c_min_r * c_zoom_16) + "\" style=\"fill: #FFFFFF; stroke: #000000; stroke-width: " + String(c_min_r / 2 * c_zoom_16) + "; opacity: 1;\" />";
 				}
 				//dot matrix
 				if (a_settings["stop_name_overlap"] === false) {
 					const c_y = Math.floor(c_stop["y"]) - c_y_top;
 					const c_x = Math.floor(c_stop["x"]) - c_x_left;
-					/*
 					for (let i3 = c_y - 3; i3 <= c_y + 4; i3++) {
 						for (let i4 = c_x - 3; i4 <= c_x + 4; i4++) {
-							c_matrix["x_" + String(i4) + "_y_" + String(i3)] = true;
-						}
-					}
-					*/
-					const c_o = c_min_r * c_zoom_16 * 1.5;
-					for (let i3 = c_y - c_o + 1; i3 <= c_y + c_o; i3++) {
-						for (let i4 = c_x - c_o + 1; i4 <= c_x + c_o; i4++) {
 							c_matrix["x_" + String(i4) + "_y_" + String(i3)] = true;
 						}
 					}
@@ -2685,12 +2640,10 @@ function f_make_svg(a_data, a_settings) {
 		
 		
 		
-		let l_visibility = "visible";
-		if (a_settings["show_stop_location"] === false) {
-			l_visibility = "hidden";
-		}
+		
+		
 		//標柱の位置を表示
-		let l_g_stop_location = "<g class=\"g_stop_location\" style=\"fill: " + l_location_color + "; stroke: " + l_stroke_color + "; visibility: " + l_visibility + ";\">";
+		let l_g_stop_location = "<g class=\"g_stop_location\" style=\"fill: #c0c0c0; stroke: #000000;\">";
 		for (let i1 = 0; i1 < a_data["stops"].length; i1++) {
 			if (a_data["stops"][i1]["location_type"] === "0") {
 				if (isNaN(a_data["stops"][i1]["shape_pt_x"]) || isNaN(a_data["stops"][i1]["shape_pt_y"])) {
@@ -2701,22 +2654,14 @@ function f_make_svg(a_data, a_settings) {
 				if (a_settings["clickable"] === true) {
 					l_g_stop_location += " onclick=\"f_show_stops('" + a_data["stops"][i1]["stop_id"] + "')\"";
 				}
-				l_g_stop_location += " cx=\"" + a_data["stops"][i1]["shape_pt_x"] + "\" cy=\"" + a_data["stops"][i1]["shape_pt_y"] + "\" r=\"" + String(c_min_r * c_zoom_16) + "\" style=\"stroke-width: " + l_stroke_width + "; opacity: 1;\" />";
+				l_g_stop_location += " cx=\"" + a_data["stops"][i1]["shape_pt_x"] + "\" cy=\"" + a_data["stops"][i1]["shape_pt_y"] + "\" r=\"" + String(c_min_r * c_zoom_16) + "\" style=\"stroke-width: " + String(c_min_r / 2 * c_zoom_16) + "; opacity: 1;\" />";
 				//位置を記録する。
 				//dot matrix
 				if (a_settings["stop_name_overlap"] === false) {
 					const c_x = Math.floor(a_data["stops"][i1]["shape_pt_x"]) - c_x_left;
 					const c_y = Math.floor(a_data["stops"][i1]["shape_pt_y"]) - c_y_top;
-					/*
 					for (let i3 = c_y - 3; i3 <= c_y + 4; i3++) {
 						for (let i4 = c_x - 3; i4 <= c_x + 4; i4++) {
-							c_matrix["x_" + String(i4) + "_y_" + String(i3)] = true;
-						}
-					}
-					*/
-					const c_o = c_min_r * c_zoom_16 * 1.5;
-					for (let i3 = c_y - c_o + 1; i3 <= c_y + c_o; i3++) {
-						for (let i4 = c_x - c_o + 1; i4 <= c_x + c_o; i4++) {
 							c_matrix["x_" + String(i4) + "_y_" + String(i3)] = true;
 						}
 					}
@@ -2730,17 +2675,13 @@ function f_make_svg(a_data, a_settings) {
 		
 		
 		//停留所名表示
-		const c_font_size = a_settings["font_size"];//16;
-		const c_font_family = a_settings["font_family"];//"'IPAexGothic'";
-		let l_stroke_opacity = "0.5"; //半透明
-		if (a_settings["stop_name_overlap"] === false) { //重なり回避
-			l_stroke_opacity = "1";
-		}
-		let l_g_stop_name = "<g class=\"g_stop_name\" style=\"font-family: " + c_font_family + "; font-size: " + String(c_font_size * c_zoom_16) + "px; line-height: 1; stroke: #FFFFFF; stroke-width: " + String(4 * c_zoom_16) + "px; stroke-opacity: " + l_stroke_opacity + ";\">";
+		const c_font_size = 16;
+		const c_font_family = "'IPAexGothic'";
+		let l_g_stop_name = "<g class=\"g_stop_name\" style=\"font-family: " + c_font_family + "; font-size: " + String(c_font_size * c_zoom_16) + "px; line-height: 1; stroke: #FFFFFF; stroke-width: " + String(4 * c_zoom_16) + "px; stroke-opacity: 0.5;\">";
 		for (let i1 = 0; i1 < a_data["stops"].length; i1++) {
 			if (a_data["stops"][i1]["location_type"] === "1") {
 				
-				const c_w = (a_data["stops"][i1]["stop_name"].length + 4) * c_font_size * c_zoom_16; //全角4文字分は時刻表示用
+				const c_w = (a_data["stops"][i1]["stop_name"].length + 4) * c_font_size; //全角4文字分は時刻表示用
 				const c_x = Math.floor(a_data["stops"][i1]["shape_pt_x"]) - c_x_left;
 				const c_y = Math.floor(a_data["stops"][i1]["shape_pt_y"]) - c_y_top;
 				let l_y_new = c_y;
@@ -2761,7 +2702,7 @@ function f_make_svg(a_data, a_settings) {
 						} else {
 							l_count += 1;
 						}
-						if (l_count === c_font_size * c_zoom_16) {
+						if (l_count === c_font_size) {
 							l_y_new = i2 - c_font_size + 1;
 							break;
 						}
@@ -2769,8 +2710,8 @@ function f_make_svg(a_data, a_settings) {
 					
 					//位置を記録する。
 					//dot matrix
-					for (let i3 = l_y_new; i3 <= l_y_new + c_font_size * c_zoom_16; i3++) {
-						for (let i4 = c_x; i4 <= c_x + c_w * c_zoom_16; i4++) {
+					for (let i3 = l_y_new; i3 <= l_y_new + c_font_size; i3++) {
+						for (let i4 = c_x; i4 <= c_x + c_w; i4++) {
 							c_matrix["x_" + String(i4) + "_y_" + String(i3)] = true;
 						}
 					}
@@ -2844,7 +2785,6 @@ function f_make_svg(a_data, a_settings) {
 	}
 	
 }
-
 
 
 
