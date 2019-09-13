@@ -11,11 +11,10 @@ let l_tooltip_x = 0;//ツールチップの位置
 let l_tooltip_y = 0;//ツールチップの位置
 let l_settings = {};//設定
 
-document.getElementById("div2").innerHTML += "t0";
+
 
 //基本となる関数
 async function f_busmap(a_settings) {
-	document.getElementById("div2").innerHTML += "t1";
 	//a_settingsは設定
 	const c_input = a_settings["data"];
 	//const c_response = [];//XHR
@@ -46,7 +45,6 @@ async function f_busmap(a_settings) {
 		}
 	}
 	//XHR
-	document.getElementById("div2").innerHTML += "t2";
 	const c_data = [{}];
 	//GTFSの場合、ZIPの解凍
 	console.log(c_input_settings);
@@ -74,7 +72,6 @@ async function f_busmap(a_settings) {
 			f_prepare_gtfs(c_data[i1]);
 		}
 	}
-	document.getElementById("div2").innerHTML += "t3";
 	//c_bmdに移す
 	f_make_bmd(c_data, c_bmd);
 	//f_prepare_common(a_data[0]);
@@ -84,7 +81,6 @@ async function f_busmap(a_settings) {
 		//document.getElementById("ur_route_list").innerHTML = f_ur_route_list(c_bmd);
 	}
 	console.time("t_5");
-	document.getElementById("div2").innerHTML += "t5";
 	f_make_shape_points(c_bmd);
 	console.timeEnd("t_5");
 	console.time("t_6");
@@ -101,7 +97,6 @@ async function f_busmap(a_settings) {
 	f_make_shape_segments(c_bmd);
 	console.timeEnd("t_9");
 	console.time("t_10");
-	document.getElementById("div2").innerHTML += "t10";
 	f_cut_shape_segments(c_bmd, c_input_settings["zoom_level"]); //3s遅い。高速化困難。ここでshape_pointが増加、stopにnearest_shape_pt_idを追加、shape_pt_arrayに変更あり。
 	console.timeEnd("t_10");
 	console.time("t_11");
@@ -122,7 +117,6 @@ async function f_busmap(a_settings) {
 	}
 	
 	console.time("t_14");
-	document.getElementById("div2").innerHTML += "t14";
 	f_open(c_bmd, c_input_settings); //6s遅い！
 	console.timeEnd("t_14");
 	
@@ -770,24 +764,21 @@ function f_open(a_bmd, a_settings) {
 		}
 		*/
 	}
-	document.getElementById("div2").innerHTML += "T";
+
 	
 	console.time("T");
 	f_topology(a_bmd, a_settings);
 	console.timeEnd("T");
 	console.time("G");
-	document.getElementById("div2").innerHTML += "G";
 	f_geometry(a_bmd);
 	console.timeEnd("G");
 	console.time("A");
-	document.getElementById("div2").innerHTML += "A";
 	try { //tripが無いとエラーなので回避
 		f_stop_array(a_bmd);
 	} catch(e) {
 	}
 	console.timeEnd("A");
 	console.time("L");
-	document.getElementById("div2").innerHTML += "L";
 	if (a_settings["leaflet"] === true) {
 		f_leaflet(a_bmd, a_settings);//この中に作ったsvgを入力して描画。
 	} else {
@@ -2862,7 +2853,6 @@ function f_make_svg(a_data, a_settings) {
 
 
 function f_leaflet(a_data, a_settings) {
-	document.getElementById("div2").innerHTML += "L2";
 	const c_zoom_level = a_settings["zoom_level"];
 	//左右上下の端を調べる
 	let l_x_min = Number.MAX_SAFE_INTEGER;
@@ -2902,7 +2892,7 @@ function f_leaflet(a_data, a_settings) {
 	const c_top_left = [(180 / Math.PI) * (Math.asin(Math.tanh((-1) * (Math.PI / (2 ** (c_zoom_level + 7))) * c_top * 256 + Math.atanh(Math.sin(85.05112878 * Math.PI / 180))))), 180 * (c_left * 256 / (2 ** (c_zoom_level + 7)) - 1)];
 	
 	
-	document.getElementById("div2").innerHTML += "L3";
+	
 	
 	
 	//初期の表示位置をsvgの左上、ズームレベルc_zoom_levelに設定する。
@@ -2912,22 +2902,18 @@ function f_leaflet(a_data, a_settings) {
 	if (a_settings["background_map"] === true) {//透明にせず、半透明にする
 		//document.getElementsByClassName("leaflet-pane leaflet-tile-pane")[0].style.opacity = "0.25";
 		//背景地図レイヤーに直接指定
-		document.getElementById("div2").innerHTML += "L32";
 	} else {//透明にする
 		document.getElementsByClassName("leaflet-pane leaflet-tile-pane")[0].style.opacity = "0";
 	}
 	
 	
-	document.getElementById("div2").innerHTML += "L4";
+	
 	//svg地図を入れる。
 	const c_svg = document.getElementsByClassName("leaflet-pane leaflet-overlay-pane")[0].firstElementChild;
 	const c_svg_g = c_svg.firstElementChild;
 	//作ったsvg地図を入力する。
 	console.time("S");
 	c_svg_g.innerHTML = f_make_svg(a_data, a_settings);
-	document.getElementById("div2").innerHTML += f_make_svg(a_data, a_settings);
-	document.getElementById("div2").innerHTML += c_svg_g.innerHTML;
-	document.getElementById("div2").innerHTML += c_svg_g.outerHTML;
 	console.timeEnd("S");
 	//svgをクリック可能にする。
 	c_svg.setAttribute("style", "pointer-events: auto;");
@@ -2945,7 +2931,7 @@ function f_leaflet(a_data, a_settings) {
 		document.getElementById("t_position").setAttribute("y", c_p_y);
 	}
 	navigator.geolocation.watchPosition(f_success);
-	document.getElementById("div2").innerHTML += "L5";
+	
 	
 	//拡大縮小したときにsvg地図がずれないようにする。
 	map.on("zoom", f_zoom);
@@ -2987,7 +2973,7 @@ function f_leaflet(a_data, a_settings) {
 		l_tooltip_y = 2 ** (c_zoom_level + 7) / Math.PI * ((-1) * Math.atanh(Math.sin(c_lat * Math.PI / 180)) + Math.atanh(Math.sin(85.05112878 * Math.PI / 180)));
 	}
 	
-	document.getElementById("div2").innerHTML += "L6";
+	
 }
 
 
