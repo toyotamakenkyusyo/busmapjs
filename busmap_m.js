@@ -2862,6 +2862,7 @@ function f_make_svg(a_data, a_settings) {
 
 
 function f_leaflet(a_data, a_settings) {
+	document.getElementById("div2").innerHTML += "L2";
 	const c_zoom_level = a_settings["zoom_level"];
 	//左右上下の端を調べる
 	let l_x_min = Number.MAX_SAFE_INTEGER;
@@ -2901,7 +2902,7 @@ function f_leaflet(a_data, a_settings) {
 	const c_top_left = [(180 / Math.PI) * (Math.asin(Math.tanh((-1) * (Math.PI / (2 ** (c_zoom_level + 7))) * c_top * 256 + Math.atanh(Math.sin(85.05112878 * Math.PI / 180))))), 180 * (c_left * 256 / (2 ** (c_zoom_level + 7)) - 1)];
 	
 	
-	
+	document.getElementById("div2").innerHTML += "L3";
 	
 	
 	//初期の表示位置をsvgの左上、ズームレベルc_zoom_levelに設定する。
@@ -2916,7 +2917,7 @@ function f_leaflet(a_data, a_settings) {
 	}
 	
 	
-	
+	document.getElementById("div2").innerHTML += "L4";
 	//svg地図を入れる。
 	const c_svg = document.getElementsByClassName("leaflet-pane leaflet-overlay-pane")[0].firstElementChild;
 	const c_svg_g = c_svg.firstElementChild;
@@ -2940,7 +2941,7 @@ function f_leaflet(a_data, a_settings) {
 		document.getElementById("t_position").setAttribute("y", c_p_y);
 	}
 	navigator.geolocation.watchPosition(f_success);
-	
+	document.getElementById("div2").innerHTML += "L5";
 	
 	//拡大縮小したときにsvg地図がずれないようにする。
 	map.on("zoom", f_zoom);
@@ -2982,7 +2983,7 @@ function f_leaflet(a_data, a_settings) {
 		l_tooltip_y = 2 ** (c_zoom_level + 7) / Math.PI * ((-1) * Math.atanh(Math.sin(c_lat * Math.PI / 180)) + Math.atanh(Math.sin(85.05112878 * Math.PI / 180)));
 	}
 	
-	
+	document.getElementById("div2").innerHTML += "L6";
 }
 
 
