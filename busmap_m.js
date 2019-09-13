@@ -770,21 +770,24 @@ function f_open(a_bmd, a_settings) {
 		}
 		*/
 	}
-
+	document.getElementById("div2").innerHTML += "T";
 	
 	console.time("T");
 	f_topology(a_bmd, a_settings);
 	console.timeEnd("T");
 	console.time("G");
+	document.getElementById("div2").innerHTML += "G";
 	f_geometry(a_bmd);
 	console.timeEnd("G");
 	console.time("A");
+	document.getElementById("div2").innerHTML += "A";
 	try { //tripが無いとエラーなので回避
 		f_stop_array(a_bmd);
 	} catch(e) {
 	}
 	console.timeEnd("A");
 	console.time("L");
+	document.getElementById("div2").innerHTML += "L";
 	if (a_settings["leaflet"] === true) {
 		f_leaflet(a_bmd, a_settings);//この中に作ったsvgを入力して描画。
 	} else {
