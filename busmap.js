@@ -3,6 +3,8 @@
 //zip.min.js
 //rt関係
 
+//クリックできるところを青字下線
+document.getElementsByTagName("style")[0].innerHTML += " span[onclick] {color: blue; text-decoration: underline;}";
 
 
 //グローバル変数
