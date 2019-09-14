@@ -2891,7 +2891,9 @@ function f_leaflet(a_data, a_settings) {
 	const c_top = c_y_top / 256 + 2;
 	const c_top_left = [(180 / Math.PI) * (Math.asin(Math.tanh((-1) * (Math.PI / (2 ** (c_zoom_level + 7))) * c_top * 256 + Math.atanh(Math.sin(85.05112878 * Math.PI / 180))))), 180 * (c_left * 256 / (2 ** (c_zoom_level + 7)) - 1)];
 	
-	
+	const c_center_x = (c_x_left + c_x_width / 2) / 256 + (2 ** c_zoom_level) / 2 + 2;
+	const c_center_y = (c_y_top + c_y_height / 2) / 256 + 2;
+	const c_center = [(180 / Math.PI) * (Math.asin(Math.tanh((-1) * (Math.PI / (2 ** (c_zoom_level + 7))) * c_center_y * 256 + Math.atanh(Math.sin(85.05112878 * Math.PI / 180))))), 180 * (c_center_x * 256 / (2 ** (c_zoom_level + 7)) - 1)];
 	
 	
 	
@@ -2958,8 +2960,8 @@ function f_leaflet(a_data, a_settings) {
 			}
 		}
 	}
-	//初期の表示位置を調整。
-	map.setView(c_top_left, c_zoom_level);
+	//初期の表示位置を調整。（中心に）
+	map.setView(c_center, c_zoom_level);
 	f_zoom();
 	
 	
