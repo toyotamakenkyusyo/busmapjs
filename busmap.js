@@ -62,8 +62,17 @@ async function f_busmap(a_settings) {
 				c_data[0][c_file_names[i1]] =  f_csv_to_json(c_response[c_file_names[i1] + ".txt"]);
 			}
 		}
-	} else if (c_input_settings["data_type"] === "json") {
+	} else if (c_input_settings["data_type"] === "json" || c_input_settings["data_type"] === "geojson" || c_input_settings["data_type"] === "topojson") {
 		c_data[0] = JSON.parse((await f_xhr_get(c_input_settings["data"], "text")).responseText);
+		console.log(c_data[0]);
+		if (c_input_settings["data_type"] === "topojson") {
+			c_data[0] = f_topojson_to_geojson(c_data[0]);
+		}
+		console.log(c_data[0]);
+		if (c_input_settings["data_type"] === "geojson" || c_input_settings["data_type"] === "topojson") {
+			c_data[0] = f_from_geojson(c_data[0]["stops"]["features"], c_data[0]["ur_routes"]["features"]);
+		}
+		console.log(c_data[0]);
 	}
 	//準備
 	for (let i1 = 0; i1 < c_data.length; i1++) {
@@ -127,11 +136,128 @@ async function f_busmap(a_settings) {
 
 
 
+//データの変換
+function f_topojson_to_geojson(a_topojson) {
+	//arcsをcoordinatesに変換
+	for (let i1 in a_topojson["objects"]) {
+		//以下、GeometryCollectionのみ対象
+		if (a_topojson["objects"][i1]["type"] !== "GeometryCollection") {
+			continue;
+		}
+		for (let i2 = 0; i2 < a_topojson["objects"][i1]["geometries"].length; i2++) {
+			const c_geometry = a_topojson["objects"][i1]["geometries"][i2];
+			//以下、LineStringのみ対象
+			if (c_geometry["type"] !== "LineString") {
+				continue;
+			}
+			c_geometry["coordinates"] = [];
+			for (let i3 = 0; i3 < c_geometry["arcs"].length; i3++) {
+				const c_number = c_geometry["arcs"][i3];
+				if (c_number >= 0) {
+					const c_arc = a_topojson["arcs"][c_number];
+					for (let i4 = 0; i4 < c_arc.length; i4++) {
+						c_geometry["coordinates"].push(c_arc[i4]);
+					}
+				} else if (c_number < 0) {
+					const c_arc = a_topojson["arcs"][(c_number + 1) * (-1)];
+					for (let i4 = c_arc.length - 1; i4 >= 0; i4--) {
+						c_geometry["coordinates"].push(c_arc[i4]);
+					}
+				}
+			}
+		}
+	}
+	//GeometryCollectionをFeatureCollectionに変換
+	const c_geojsons = {};
+	for (let i1 in a_topojson["objects"]) {
+		//以下、GeometryCollectionのみ対象
+		if (a_topojson["objects"][i1]["type"] !== "GeometryCollection") {
+			continue;
+		}
+		c_geojsons[i1] = {"type": "FeatureCollection", "features": []};
+		for (let i2 = 0; i2 < a_topojson["objects"][i1]["geometries"].length; i2++) {
+			const c_geometry = a_topojson["objects"][i1]["geometries"][i2];
+			//以下、PointとLineStringのみ対象
+			if (c_geometry["type"] !== "Point" && c_geometry["type"] !== "LineString") {
+				continue;
+			}
+			c_geojsons[i1]["features"].push({"type": "Feature", "geometry": {"type": c_geometry["type"], "coordinates": c_geometry["coordinates"]}, "properties": c_geometry["properties"]});
+		}
+	}
+	return c_geojsons;
+}
 
 
+function f_from_geojson(a_geojson_stops, a_geojson_ur_routes) {
+	const c_stops = [];
+	for (let i1 = 0; i1 < a_geojson_stops.length; i1++) {
+		const c_geometry = a_geojson_stops[i1]["geometry"];
+		a_geojson_stops[i1]["properties"]["stop_lon"] = c_geometry["coordinates"][0];
+		a_geojson_stops[i1]["properties"]["stop_lat"] = c_geometry["coordinates"][1];
+		a_geojson_stops[i1]["properties"]["stop_name"] = a_geojson_stops[i1]["properties"]["stop_id"]; //互換性確保
+		c_stops.push(a_geojson_stops[i1]["properties"]);
+	}
+	const c_ur_routes = [];
+	for (let i1 = 0; i1 < a_geojson_ur_routes.length; i1++) {
+		const c_geometry = a_geojson_ur_routes[i1]["geometry"];
+		a_geojson_ur_routes[i1]["properties"]["shape_pt_array"] = [];
+		a_geojson_ur_routes[i1]["properties"]["service_array"] = ""; //互換性確保
+		a_geojson_ur_routes[i1]["properties"]["trip_number"] = 1; //互換性確保
+		for (let i2 = 0; i2 < c_geometry["coordinates"].length; i2++) {
+			a_geojson_ur_routes[i1]["properties"]["shape_pt_array"].push({"shape_pt_lon": c_geometry["coordinates"][i2][0], "shape_pt_lat": c_geometry["coordinates"][i2][1]});
+		}
+		c_ur_routes.push(a_geojson_ur_routes[i1]["properties"]);
+	}
+	return {"stops": c_stops, "ur_routes": c_ur_routes, "calendar": [], "routes": c_ur_routes};
+	//routesとcalendarは互換性確保
+}
 
 
+/*
 
+{
+	"type": "FeatureCollection",
+	"features": [
+		{
+			"type": "Feature",
+			"geometry": {"type": "Point", "coordinates": [102.0, 0.5]},
+			"properties": {"prop0": "value0"}
+		},
+		{
+			"type": "Feature",
+			"geometry": {"type": "LineString", "coordinates": [[102.0, 0.0], [103.0, 1.0], [104.0, 0.0], [105.0, 1.0]]},
+			"properties": {"prop0": "value0", "prop1": 0.0}
+		}
+	]
+}
+
+
+{
+	"type": "Topology",
+	"objects": {
+		"example": {
+			"type": "GeometryCollection",
+			"geometries": [
+				{
+					"type": "Point",
+					"properties": {"prop0": "value0"},
+					"coordinates": [102, 0.5]
+				},
+				{
+					"type": "LineString",
+					"properties": {"prop0": "value0", "prop1": 0},
+					"arcs": [0]
+				}
+			]
+		}
+	},
+	"arcs": [
+		[[102, 0], [103, 1], [104, 0], [105, 1]],
+		[[100, 0], [101, 0], [101, 1], [100, 1], [100, 0]]
+	]
+}
+
+*/
 
 
 
@@ -151,7 +277,7 @@ function f_input_settings(a_settings) {
 		"cors_url": "",//CORSの問題を回避するため、間にサーバーサイドのプログラムを挟む場合に前に加えるURL
 		"rt": false,//GTFS-RTの読込
 		"data": "data",//データのURL
-		"data_type": "gtfs",//データがGTFSかJSONか
+		"data_type": "gtfs",//データがgtfs, json, geojson, topojsonか
 		"div_id": "div",//挿入するdivのid
 		"global": true,//trueの場合、値をc_globalに渡し、変更可能にする
 		"change": true,
