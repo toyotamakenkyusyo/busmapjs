@@ -2677,6 +2677,35 @@ function f_make_svg(a_data, a_settings) {
 				a_data["ur_routes"][i1]["stop_array"][i2]["polyline_number_2"] = l_i4;
 				a_data["ur_routes"][i1]["stop_array"][i2]["x"] = a_data["ur_routes"][i1][c_polyline_key][l_i3]["polyline"][l_i4]["x"];
 				a_data["ur_routes"][i1]["stop_array"][i2]["y"] = a_data["ur_routes"][i1][c_polyline_key][l_i3]["polyline"][l_i4]["y"];
+				//shapeの向きを求める
+				let l_x;
+				let l_y;
+				if (l_i3 === 0 && l_i4 === 0) { //最初
+					l_x = a_data["ur_routes"][i1][c_polyline_key][l_i3]["polyline"][l_i4 + 1]["x"] - a_data["ur_routes"][i1][c_polyline_key][l_i3]["polyline"][l_i4]["x"];
+					l_y = a_data["ur_routes"][i1][c_polyline_key][l_i3]["polyline"][l_i4 + 1]["y"] - a_data["ur_routes"][i1][c_polyline_key][l_i3]["polyline"][l_i4]["y"];
+				} else if (l_i3 === a_data["ur_routes"][i1][c_polyline_key].length - 1 && l_i4 === a_data["ur_routes"][i1][c_polyline_key][l_i3]["polyline"].length - 1) { //最後
+					l_x = a_data["ur_routes"][i1][c_polyline_key][l_i3]["polyline"][l_i4]["x"] - a_data["ur_routes"][i1][c_polyline_key][l_i3]["polyline"][l_i4 - 1]["x"];
+					l_y = a_data["ur_routes"][i1][c_polyline_key][l_i3]["polyline"][l_i4]["y"] - a_data["ur_routes"][i1][c_polyline_key][l_i3]["polyline"][l_i4 - 1]["y"];
+				} else if (l_i4 === 0) { //前が違うpolyline
+					const c_i4_2 = a_data["ur_routes"][i1][c_polyline_key][l_i3 - 1]["polyline"].length - 1;
+					l_x = a_data["ur_routes"][i1][c_polyline_key][l_i3]["polyline"][l_i4 + 1]["x"] - a_data["ur_routes"][i1][c_polyline_key][l_i3 - 1]["polyline"][c_i4_2]["x"];
+					l_y = a_data["ur_routes"][i1][c_polyline_key][l_i3]["polyline"][l_i4 + 1]["y"] - a_data["ur_routes"][i1][c_polyline_key][l_i3 - 1]["polyline"][c_i4_2]["y"];
+				} else if (l_i4 === a_data["ur_routes"][i1][c_polyline_key][l_i3]["polyline"].length - 1) { //後ろが違うpolyline
+					l_x = a_data["ur_routes"][i1][c_polyline_key][l_i3 + 1]["polyline"][0]["x"] - a_data["ur_routes"][i1][c_polyline_key][l_i3]["polyline"][l_i4 - 1]["x"];
+					l_y = a_data["ur_routes"][i1][c_polyline_key][l_i3 + 1]["polyline"][0]["y"] - a_data["ur_routes"][i1][c_polyline_key][l_i3]["polyline"][l_i4 - 1]["y"];
+				} else {
+					l_x = a_data["ur_routes"][i1][c_polyline_key][l_i3]["polyline"][l_i4 + 1]["x"] - a_data["ur_routes"][i1][c_polyline_key][l_i3]["polyline"][l_i4 - 1]["x"];
+					l_y = a_data["ur_routes"][i1][c_polyline_key][l_i3]["polyline"][l_i4 + 1]["y"] - a_data["ur_routes"][i1][c_polyline_key][l_i3]["polyline"][l_i4 - 1]["y"];
+				}
+				//正規化
+				if (l_x === 0 && l_y === 0) {
+					l_x = 1;
+				} else {
+					l_x = l_x / (l_x ** 2 + l_y ** 2) ** 0.5;
+					l_y = l_y / (l_x ** 2 + l_y ** 2) ** 0.5;
+				}
+				a_data["ur_routes"][i1]["stop_array"][i2]["dx"] = l_x;
+				a_data["ur_routes"][i1]["stop_array"][i2]["dy"] = l_y;
 			}
 		}
 		
@@ -2716,6 +2745,8 @@ function f_make_svg(a_data, a_settings) {
 						"stop_id": c_stop["stop_id"]
 						, "x": c_stop["x"]
 						, "y": c_stop["y"]
+						, "dx": c_stop["dx"]
+						, "dy": c_stop["dy"]
 						, "type_0": l_type_0
 						, "type_1": l_type_1
 					});
@@ -2756,6 +2787,8 @@ function f_make_svg(a_data, a_settings) {
 		}
 		*/
 		
+		
+		
 		let l_g_stop_type = "<g class=\"g_stop_type\">";
 		for (let i1 = 0; i1 < a_data["parent_routes"].length; i1++) {
 			for (let i2 = 0; i2 < a_data["parent_routes"][i1]["stops"].length; i2++) {
@@ -2764,21 +2797,33 @@ function f_make_svg(a_data, a_settings) {
 					console.log("NaN");
 					continue;
 				}
+				let l_fill_color; //塗色、falseのとき非表示
 				if (c_stop["type_0"] === true) {//始発終着等なし
-					l_g_stop_type += "<circle";
-					if (a_settings["clickable"] === true) {
-						l_g_stop_type += " onclick=\"f_show_stops('" + c_stop["stop_id"] + "')\"";
-					}
-					l_g_stop_type += " cx=\"" + c_stop["x"] + "\" cy=\"" + c_stop["y"] + "\" r=\"" + String(c_min_r * c_zoom_16) + "\" style=\"fill: " + l_type_0_color + "; stroke: " + l_stroke_color + "; stroke-width: " + l_stroke_width + "; opacity: 1;\" />";
+					l_fill_color = l_type_0_color;
 				} else if (c_stop["type_1"] === true) {//停車なし
-					
+					l_fill_color = false;
 				} else {//その他
-					l_g_stop_type += "<circle";
-					if (a_settings["clickable"] === true) {
-						l_g_stop_type += " onclick=\"f_show_stops('" + c_stop["stop_id"] + "')\"";
-					}
-					l_g_stop_type += " cx=\"" + c_stop["x"] + "\" cy=\"" + c_stop["y"] + "\" r=\"" + String(c_min_r * c_zoom_16) + "\" style=\"fill: " + l_type_1_color + "; stroke: " + l_stroke_color + "; stroke-width: " + l_stroke_width + "; opacity: 1;\" />";
+					l_fill_color = l_type_1_color;
 				}
+				
+				if (l_fill_color !== false) { //表示
+					if (false) { //円
+						l_g_stop_type += "<circle";
+						if (a_settings["clickable"] === true) {
+							l_g_stop_type += " onclick=\"f_show_stops('" + c_stop["stop_id"] + "')\"";
+						}
+						l_g_stop_type += " cx=\"" + c_stop["x"] + "\" cy=\"" + c_stop["y"] + "\" r=\"" + String(c_min_r * c_zoom_16) + "\" style=\"fill: " + l_fill_color + "; stroke: " + l_stroke_color + "; stroke-width: " + l_stroke_width + "; opacity: 1;\" />";
+					} else { //三角
+						l_g_stop_type += "<path";
+						if (a_settings["clickable"] === true) {
+							l_g_stop_type += " onclick=\"f_show_stops('" + c_stop["stop_id"] + "')\"";
+						}
+						l_g_stop_type += " d=\"M1,0 L-1,-1 L-1,1 Z\" transform=\"translate(" + c_stop["x"] + "," + c_stop["y"] + ")scale(" + String(c_min_r * c_zoom_16 / 2 + 1) + ")matrix(" + c_stop["dx"] + "," + c_stop["dy"] + "," + (-1 * c_stop["dy"]) + "," + c_stop["dx"] + ",0,0)\" style=\"fill: " + l_fill_color + "; stroke: " + l_stroke_color + "; stroke-width: " + (l_stroke_width / (c_min_r * c_zoom_16 / 2 + 1)) + "; opacity: 1;\" />";
+					}
+				}
+				
+				
+				
 				//dot matrix
 				if (a_settings["stop_name_overlap"] === false) {
 					const c_y = Math.floor(c_stop["y"]) - c_y_top;
