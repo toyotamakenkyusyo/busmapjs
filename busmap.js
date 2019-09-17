@@ -2698,14 +2698,17 @@ function f_make_svg(a_data, a_settings) {
 					l_y = a_data["ur_routes"][i1][c_polyline_key][l_i3]["polyline"][l_i4 + 1]["y"] - a_data["ur_routes"][i1][c_polyline_key][l_i3]["polyline"][l_i4 - 1]["y"];
 				}
 				//正規化
+				let l_x_2;
+				let l_y_2;
 				if (l_x === 0 && l_y === 0) {
-					l_x = 1;
+					l_x_2 = 1;
+					l_y_2 = 0;
 				} else {
-					l_x = l_x / (l_x ** 2 + l_y ** 2) ** 0.5;
-					l_y = l_y / (l_x ** 2 + l_y ** 2) ** 0.5;
+					l_x_2 = l_x / ((l_x ** 2 + l_y ** 2) ** 0.5);
+					l_y_2 = l_y / ((l_x ** 2 + l_y ** 2) ** 0.5);
 				}
-				a_data["ur_routes"][i1]["stop_array"][i2]["dx"] = l_x;
-				a_data["ur_routes"][i1]["stop_array"][i2]["dy"] = l_y;
+				a_data["ur_routes"][i1]["stop_array"][i2]["dx"] = l_x_2;
+				a_data["ur_routes"][i1]["stop_array"][i2]["dy"] = l_y_2;
 			}
 		}
 		
