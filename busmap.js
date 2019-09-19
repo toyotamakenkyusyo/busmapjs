@@ -1497,50 +1497,132 @@ function f_make_new_shape_pt_array(a_data) {
 			continue;
 		}
 		
+		//最初、最後があるかどうか確認して追加削除を行う。
+		let l_new_shape_pt_array = []; //追加削除後
 		//stopに対応するshape_pointがshape_pt_arrayにあるか探す。
-		//1番目、2番目、1番後ろの前、1番後ろを探す。
-		const c_shape_pt_numbers = [a_data["stops"][c_stop_array[0]["stop_number"]]["shape_pt_number"], a_data["stops"][c_stop_array[1]["stop_number"]]["shape_pt_number"], a_data["stops"][c_stop_array[c_stop_array.length - 2]["stop_number"]]["shape_pt_number"], a_data["stops"][c_stop_array[c_stop_array.length - 1]["stop_number"]]["shape_pt_number"]];
-		const c_shape_pt_array_numbers = [null, null, null, null];
-		for (let i2 = 0; i2 < 4; i2++) {
-			for (let i3 = 0; i3 < c_shape_pt_array.length; i3++) {
-				if (c_shape_pt_array[i3]["shape_pt_number"] === c_shape_pt_numbers[i2]) {
-					c_shape_pt_array_numbers[i2] = i3;
+		const c_shape_pt_numbers = [];
+		for (let i2 = 0; i2 < c_stop_array.length; i2++) {
+			c_shape_pt_numbers.push({"shape_pt_number": a_data["stops"][c_stop_array[i2]["stop_number"]]["shape_pt_number"], "shape_pt_array_number": null});
+		}
+		let l_count_first = 0; //最初の標柱と同じshape pointに停まる回数
+		let l_count_last = 0; //最後の標柱と同じshape pointに停まる回数
+		for (let i2 = 0; i2 < c_shape_pt_numbers.length; i2++) {
+			if (c_shape_pt_numbers[0]["shape_pt_number"] === c_shape_pt_numbers[i2]["shape_pt_number"]) {
+				l_count_first += 1;
+			}
+			if (c_shape_pt_numbers[c_shape_pt_numbers.length - 1]["shape_pt_number"] === c_shape_pt_numbers[i2]["shape_pt_number"]) {
+				l_count_last += 1;
+			}
+		}
+		//とりあえず探してみる
+		let l_number;
+		l_number = 0;
+		let l_count = 0; //かけている数を数える
+		let l_last_number = null; //最後の標柱の番号
+		//前から探す、前半のshapesが冗長になるかもしれない
+		for (let i2 = 0; i2 < c_shape_pt_numbers.length; i2++) {
+			for (let i3 = l_number; i3 < c_shape_pt_array.length; i3++) {
+				if (c_shape_pt_numbers[i2]["shape_pt_number"] === c_shape_pt_array[i3]["shape_pt_number"]) {
+					c_shape_pt_numbers[i2]["shape_pt_array_number"] = i3;
+					l_number = i3;
+					if (i2 === c_shape_pt_numbers.length - 1) {
+						l_last_number = i3;
+					}
 					break;
+				}
+				if (i2 !== c_shape_pt_numbers.length - 1 &&i3 === c_shape_pt_array.length - 1) { //途中で最後まで到達
+					console.log("エラー1 " + String(i2) + "/" + String(c_shape_pt_numbers.length - 1) + " " + c_shape_pt_numbers[i2]["shape_pt_number"]);
+					l_count += 1;
 				}
 			}
 		}
-		
-		//最初、最後があるかどうか確認して追加を行う。
-		let l_start_shape_pt_array_number = c_shape_pt_array_numbers[0];
-		let l_end_shape_pt_array_number = c_shape_pt_array_numbers[3];
-		const c_new_shape_pt_array = [];
-		//最初の停留所が見つからないか、2つめよりも後ろに見つかるとき、
-		//2番目が見つからないときをどうするか？
-		//最初の停留所を追加しておく。
-		if ((c_shape_pt_array_numbers[0] === null) || (c_shape_pt_array_numbers[0] > c_shape_pt_array_numbers[1])) {
-			c_shape_pt_array_numbers[0] = 0;
-			c_new_shape_pt_array.push({"shape_pt_number": c_shape_pt_numbers[0]});
-		}
-		
-		
-		//途中の部分を追加する。
-		if ((c_shape_pt_array_numbers[3] === undefined) || (c_shape_pt_array_numbers[2] > c_shape_pt_array_numbers[3])) {
-			//最後の停留所が見つからないか、2つ目より前に見つかるとき、
-			c_shape_pt_array_numbers[3] = c_shape_pt_array.length - 1;
-			for (let i2 = c_shape_pt_array_numbers[0]; i2 <= c_shape_pt_array_numbers[3]; i2++) {
-				c_new_shape_pt_array.push({"shape_pt_number": c_shape_pt_array[i2]["shape_pt_number"]});
+		if ((c_shape_pt_numbers[0]["shape_pt_array_number"] === null) || (c_shape_pt_numbers[0]["shape_pt_array_number"] !== null && l_count >= 1)) {
+			//最初があり、途中が欠ける (c_shape_pt_numbers[0]["shape_pt_array_number"] !== null && l_count >= 1)
+			//最初がない (c_shape_pt_numbers[0]["shape_pt_array_number"] === null)
+			//2番目から探す
+			l_number = 0;
+			l_count = 0;
+			for (let i2 = 1; i2 < c_shape_pt_numbers.length; i2++) { //2番目から
+				for (let i3 = l_number; i3 < c_shape_pt_array.length; i3++) {
+					if (c_shape_pt_numbers[i2]["shape_pt_number"] === c_shape_pt_array[i3]["shape_pt_number"]) {
+						c_shape_pt_numbers[i2]["shape_pt_array_number"] = i3;
+						l_number = i3;
+						if (i2 === c_shape_pt_numbers.length - 1) {
+							l_last_number = i3;
+						}
+						break;
+					}
+					if (i2 !== c_shape_pt_numbers.length - 1 && i3 === c_shape_pt_array.length - 1) { //途中で最後まで到達
+						console.log("エラー2 " + String(i2) + "/" + String(c_shape_pt_numbers.length - 1) + " " + c_shape_pt_numbers[i2]["shape_pt_number"]);
+						l_count += 1;
+					}
+				}
 			}
-			//最後の1つを加える。
-			c_new_shape_pt_array.push({"shape_pt_number": c_shape_pt_numbers[3]});
-		} else {
-			for (let i2 = c_shape_pt_array_numbers[0]; i2 <= c_shape_pt_array_numbers[3]; i2++) {
-				c_new_shape_pt_array.push({"shape_pt_number": c_shape_pt_array[i2]["shape_pt_number"]});
+			if (l_count >= 1) { //エラーがあるとき
+				l_new_shape_pt_array = c_shape_pt_array; //とりあえず元のままにする
+			} else if (l_last_number === null) { //最後の標柱がみつからない
+				//最初を追加する
+				l_new_shape_pt_array.push({"shape_pt_number": c_shape_pt_numbers[0]["shape_pt_number"]});
+				//途中をすべて加える
+				for (let i2 = 0; i2 < c_shape_pt_array.length; i2++) {
+					l_new_shape_pt_array.push({"shape_pt_number": c_shape_pt_array[i2]["shape_pt_number"]});
+				}
+				//最後を加える
+				l_new_shape_pt_array.push({"shape_pt_number": c_shape_pt_numbers[c_shape_pt_numbers.length - 1]["shape_pt_number"]});
+			} else { //最後の標柱がみつかる
+				//途中から最後まで加える
+				for (let i2 = 0; i2 <= l_last_number; i2++) {
+					l_new_shape_pt_array.push({"shape_pt_number": c_shape_pt_array[i2]["shape_pt_number"]});
+				}
+			}
+		} else { //欠けがない、最初の標柱が見つかる場合
+			//最初から最後の1つ前までみつかっている
+			//前半が冗長の可能性があるので、後ろから探しなおす。
+			//最後の標柱の有無
+			l_first_number = null; //最初の標柱の番号
+			if (l_last_number === null) { //最後の標柱がみつからない
+				l_number = c_shape_pt_array.length - 1;
+				for (let i2 = c_shape_pt_numbers.length - 2; i2 >= 0; i2--) { //最後はとばす
+					for (let i3 = l_number; i3 >= 0; i3--) {
+						if (c_shape_pt_numbers[i2]["shape_pt_number"] === c_shape_pt_array[i3]["shape_pt_number"]) {
+							c_shape_pt_numbers[i2]["shape_pt_array_number"] = i3;
+							l_number = i3;
+							if (i2 === 0) {
+								l_first_number = i3;
+							}
+							break;
+						}
+					}
+				}
+				//最初から最後の1つ前まで加える
+				for (let i2 = l_first_number; i2 < c_shape_pt_array.length; i2++) {
+					l_new_shape_pt_array.push({"shape_pt_number": c_shape_pt_array[i2]["shape_pt_number"]});
+				}
+				//最後の標柱を加える
+				l_new_shape_pt_array.push({"shape_pt_number": c_shape_pt_numbers[c_shape_pt_numbers.length - 1]["shape_pt_number"]});
+			} else { //最後の標柱が見つかる
+				l_number = l_last_number;
+				for (let i2 = c_shape_pt_numbers.length - 1; i2 >= 0; i2--) {
+					for (let i3 = l_number; i3 >= 0; i3--) {
+						if (c_shape_pt_numbers[i2]["shape_pt_number"] === c_shape_pt_array[i3]["shape_pt_number"]) {
+							c_shape_pt_numbers[i2]["shape_pt_array_number"] = i3;
+							l_number = i3;
+							if (i2 === 0) {
+								l_first_number = i3;
+							}
+							break;
+						}
+					}
+				}
+				//最初から最後まで加える
+				for (let i2 = l_first_number; i2 <= l_last_number; i2++) {
+					l_new_shape_pt_array.push({"shape_pt_number": c_shape_pt_array[i2]["shape_pt_number"]});
+				}
 			}
 		}
-		if (c_new_shape_pt_array.length > 2) {
-			a_data["ur_routes"][i1]["shape_pt_array"] = c_new_shape_pt_array;
-		}
+		a_data["ur_routes"][i1]["shape_pt_array"] = l_new_shape_pt_array;
 		if (a_data["ur_routes"][i1]["shape_pt_array"].length <= 2) {
+			console.log("shapesが短すぎる？");
 			console.log(a_data["ur_routes"][i1]);
 		}
 	}
