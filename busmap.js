@@ -2073,6 +2073,9 @@ function f_geometry(a_data) {
 				l_polyline[i2 - 1]["t1"] = c_segment_pair["t1"](c_offset_1, c_offset_2);
 				l_polyline[i2]["t2"] = c_segment_pair["t2"](c_offset_1, c_offset_2);
 				l_polyline[i2]["xy"] = c_segment_pair["xy"](c_offset_1, c_offset_2);
+				if (c_segment_pair["xy2"] !== undefined) {
+					l_polyline[i2]["xy2"] = c_segment_pair["xy2"](c_offset_1, c_offset_2);
+				}
 			}
 			
 			
@@ -2108,6 +2111,7 @@ function f_geometry(a_data) {
 							, "t2": l_polyline[i2]["t2"]
 							, "t1": l_polyline[i2]["t1"]
 							, "xy": l_polyline[i2]["xy"]
+							, "xy2": l_polyline[i2]["xy2"]
 							, "stops_exist": l_polyline[i2]["stops_exist"] //標柱の存在
 							, "number": l_polyline[i2]["number"] //初期位置
 						});
@@ -2138,6 +2142,9 @@ function f_geometry(a_data) {
 					l_polyline[i2 - 1]["t1"] = c_segment_pair["t1"](c_offset_1, c_offset_2);
 					l_polyline[i2]["t2"] = c_segment_pair["t2"](c_offset_1, c_offset_2);
 					l_polyline[i2]["xy"] = c_segment_pair["xy"](c_offset_1, c_offset_2);
+					if (c_segment_pair["xy2"] !== undefined) {
+						l_polyline[i2]["xy2"] = c_segment_pair["xy2"](c_offset_1, c_offset_2);
+					}
 				}
 				
 				
@@ -2249,6 +2256,14 @@ function f_geometry(a_data) {
 						c_polyline_3[c_polyline_3.length - 1]["polyline"][c_polyline_3[c_polyline_3.length - 1]["polyline"].length - 1]["unified_shape_pt_numbers"] = l_polyline[i2]["unified_shape_pt_numbers"];
 					} else {
 						c_polyline_3[c_polyline_3.length - 1]["polyline"][c_polyline_3[c_polyline_3.length - 1]["polyline"].length - 1]["unified_shape_pt_numbers"] = [];
+					}
+					//曲線計算用
+					if (l_polyline[i2]["xy2"] !== undefined && l_polyline[i2]["xy2"] !== null) {
+						const c_polyline_3_last = c_polyline_3[c_polyline_3.length - 1]["polyline"][c_polyline_3[c_polyline_3.length - 1]["polyline"].length - 1];
+						c_polyline_3_last["sx"] = l_polyline[i2]["xy2"]["sx"] + l_polyline[i2]["shape_pt_x"];
+						c_polyline_3_last["sy"] = l_polyline[i2]["xy2"]["sy"] + l_polyline[i2]["shape_pt_y"];
+						c_polyline_3_last["ex"] = l_polyline[i2]["xy2"]["ex"] + l_polyline[i2]["shape_pt_x"];
+						c_polyline_3_last["ey"] = l_polyline[i2]["xy2"]["ey"] + l_polyline[i2]["shape_pt_y"];
 					}
 				}
 			}
@@ -2423,6 +2438,9 @@ function f_offset(a_1, a_2, a_3, a_4, a_bmd) {
 	const c_t11 = (-1) * c_xy2 * c_xy1 / c_r1;
 	const c_t12 = c_xy2 * c_r2;
 	const c_ft1 = function(a_z1, a_z2) {
+		if ((a_z1 * c_t11 + a_z2 * c_t12 + 1/* + l_dt1*/ > 1) && (a_z1 * c_t21 + a_z2 * c_t22/* + l_dt2*/ < 0)) { //曲線用、l_dt1とl_dt2は必要か？
+			return 1 + l_dt1;
+		}
 		return a_z1 * c_t11 + a_z2 * c_t12 + 1 + l_dt1;//1を加えて調整
 	}
 	
@@ -2430,6 +2448,9 @@ function f_offset(a_1, a_2, a_3, a_4, a_bmd) {
 	const c_t21 = (-1) * c_xy2 * c_r1;
 	const c_t22 = c_xy2 * c_xy1 / c_r2;
 	const c_ft2 = function(a_z1, a_z2) {
+		if ((a_z1 * c_t11 + a_z2 * c_t12 + 1/* + l_dt1*/ > 1) && (a_z1 * c_t21 + a_z2 * c_t22/* + l_dt2*/ < 0)) { //曲線用、l_dt1とl_dt2は必要か？
+			return l_dt2;
+		}
 		return a_z1 * c_t21 + a_z2 * c_t22 + l_dt2;
 	}
 	
@@ -2441,8 +2462,16 @@ function f_offset(a_1, a_2, a_3, a_4, a_bmd) {
 	const c_fxy = function (a_z1, a_z2) {
 		return [{"x": a_z1 * c_x1 + a_z2 * c_x2 + c_dx2, "y": a_z1 * c_y1 + a_z2 * c_y2 + c_dy2}]; //座標
 	}
-	
-	return {"t1":c_ft1, "t2": c_ft2, "xy": c_fxy};
+	//終点と起点をそのままオフセットした位置、曲線計算用
+	//sxとsyが前の線分の終点側、exとeyが次の線分の始点側
+	const c_fxy2 = function (a_z1, a_z2) {
+		if ((a_z1 * c_t11 + a_z2 * c_t12 + 1/* + l_dt1*/ > 1) && (a_z1 * c_t21 + a_z2 * c_t22/* + l_dt2*/ < 0)) { //l_dt1とl_dt2は必要か？
+			return {"sx": a_z1 * a_y1 / c_r1 + c_dx2,"sy": a_z1 * (-1) * a_x1 / c_r1 + c_dy2, "ex": a_z2 * a_y2 / c_r2 + c_dx2,"ey": a_z2 * (-1) * a_x2 / c_r2 + c_dy2};
+		} else {
+			return null;
+		}
+	}
+	return {"t1":c_ft1, "t2": c_ft2, "xy": c_fxy, "xy2": c_fxy2};
 }
 
 
@@ -2579,12 +2608,17 @@ function f_make_svg(a_data, a_settings) {
 						l_exist_2 = true;
 						continue; //まずい点は除く
 					}
-					if (l_exist === false) {
+					if (l_exist === false) { //最初
 						l_exist = true;
 						l_g_routes_i1 += "M " + c_point["x"] + "," + c_point["y"];
 						continue;
 					}
-					l_g_routes_i1 += " L " + c_point["x"] + "," + c_point["y"];
+					if (!(isNaN(c_point["sx"]) || isNaN(c_point["sy"]) || isNaN(c_point["ex"]) || isNaN(c_point["ey"]))) { //欠けがない、曲線
+						l_g_routes_i1 += "L " + c_point["sx"] + "," + c_point["sy"] + " Q " + c_point["x"] + "," + c_point["y"] + " "+ c_point["ex"] + "," + c_point["ey"];
+						console.log("曲線");
+					} else {
+						l_g_routes_i1 += "L " + c_point["x"] + "," + c_point["y"];
+					}
 				}
 				l_g_routes_i1 += "\" />\n";
 				if (l_exist === true) {
