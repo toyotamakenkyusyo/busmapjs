@@ -1355,8 +1355,8 @@ function f_cut_shape_segments(a_data, a_zoom_level) {
 		const c_px_tile = Math.floor(c_px * c_z_tile);
 		const c_py_tile = Math.floor(c_py * c_z_tile);
 		//最寄のshape segmentを探す。
-		for (let i2 = c_px_tile - 1; i2 < c_px_tile + 1; i2++) {
-			for (let i3 = c_py_tile - 1; i3 < c_py_tile + 1; i3++) {
+		for (let i2 = c_px_tile - 1; i2 <= c_px_tile + 1; i2++) {
+			for (let i3 = c_py_tile - 1; i3 <= c_py_tile + 1; i3++) {
 				const c_key = String(i2) + "_" + String(i3);
 				if (c_index[c_key] === undefined) {
 					continue;
@@ -2615,7 +2615,6 @@ function f_make_svg(a_data, a_settings) {
 					}
 					if (!(isNaN(c_point["sx"]) || isNaN(c_point["sy"]) || isNaN(c_point["ex"]) || isNaN(c_point["ey"]))) { //欠けがない、曲線
 						l_g_routes_i1 += "L " + c_point["sx"] + "," + c_point["sy"] + " Q " + c_point["x"] + "," + c_point["y"] + " "+ c_point["ex"] + "," + c_point["ey"];
-						console.log("曲線");
 					} else {
 						l_g_routes_i1 += "L " + c_point["x"] + "," + c_point["y"];
 					}
