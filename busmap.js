@@ -1992,9 +1992,7 @@ function f_geometry(a_data) {
 				, "width": c_child_shape_segment_array[0]["width"] * c_zoom_16
 				, "t2": 0
 				, "t1": undefined
-				//, "x": [c_offset_0 * c_zoom_16 * c_y_0 / c_r_0]//相対、配列、左手系
-				//, "y": [c_offset_0 * c_zoom_16 * (-1) * c_x_0 / c_r_0]//相対、配列、左手系
-				, "xy": [{"x": c_offset_0 * c_zoom_16 * c_y_0 / c_r_0, "y": c_offset_0 * c_zoom_16 * (-1) * c_x_0 / c_r_0}]
+				, "xy": [{"x": c_offset_0 * c_zoom_16 * c_y_0 / c_r_0, "y": c_offset_0 * c_zoom_16 * (-1) * c_x_0 / c_r_0}]//相対、配列、左手系
 				, "stops_exist": null //標柱の存在
 				, "number": 0 //初期位置
 			});
@@ -2010,9 +2008,7 @@ function f_geometry(a_data) {
 					, "width": c_child_shape_segment_array[i2]["width"] * c_zoom_16
 					, "t2": undefined
 					, "t1": undefined
-					//, "x": []//相対、配列
-					//, "y": []//相対、配列
-					, "xy": [{"x": null, "y": null}]
+					, "xy": [{"x": null, "y": null}]//相対、配列
 					, "stops_exist": c_shape_pt_array[i2]["stops_exist"] //標柱の存在
 					, "number": i2 //初期位置
 				});
@@ -2032,9 +2028,7 @@ function f_geometry(a_data) {
 				, "width": c_child_shape_segment_array[c_child_shape_segment_array.length - 1]["width"] * c_zoom_16
 				, "t2": undefined
 				, "t1": 1
-				//, "x": [c_offset_n * c_zoom_16 * c_y_n / c_r_n]//相対、配列、左手系
-				//, "y": [c_offset_n * c_zoom_16 * (-1) * c_x_n / c_r_n]//相対、配列、左手系
-				, "xy": [{"x": c_offset_n * c_zoom_16 * c_y_n / c_r_n, "y": c_offset_n * c_zoom_16 * (-1) * c_x_n / c_r_n}]
+				, "xy": [{"x": c_offset_n * c_zoom_16 * c_y_n / c_r_n, "y": c_offset_n * c_zoom_16 * (-1) * c_x_n / c_r_n}]//相対、配列、左手系
 				, "stops_exist": c_shape_pt_array[c_shape_pt_array.length - 1]["stops_exist"] //標柱の存在
 				, "number": c_shape_pt_array.length - 1 //初期位置
 			});
@@ -2051,9 +2045,7 @@ function f_geometry(a_data) {
 					, "width": l_polyline[i2]["width"]
 					, "t2": l_polyline[i2]["t2"]
 					, "t1": l_polyline[i2]["t1"]
-					//, "x": [l_polyline[i2]["x"][0]]//相対、配列、暫定処理長さ1
-					//, "y": [l_polyline[i2]["y"][0]]//相対、配列、暫定処理長さ1
-					, "xy": [{"x": l_polyline[i2]["xy"][0]["x"], "y": l_polyline[i2]["xy"][0]["y"]}]
+					, "xy": [{"x": l_polyline[i2]["xy"][0]["x"], "y": l_polyline[i2]["xy"][0]["y"]}]//相対、配列、暫定処理長さ1
 					, "stops_exist": l_polyline[i2]["stops_exist"] //標柱の存在
 					, "number": l_polyline[i2]["number"] //初期位置
 				});
@@ -2080,8 +2072,6 @@ function f_geometry(a_data) {
 				//オフセットを計算する。
 				l_polyline[i2 - 1]["t1"] = c_segment_pair["t1"](c_offset_1, c_offset_2);
 				l_polyline[i2]["t2"] = c_segment_pair["t2"](c_offset_1, c_offset_2);
-				//l_polyline[i2]["x"] = c_segment_pair["x"](c_offset_1, c_offset_2);
-				//l_polyline[i2]["y"] = c_segment_pair["y"](c_offset_1, c_offset_2);
 				l_polyline[i2]["xy"] = c_segment_pair["xy"](c_offset_1, c_offset_2);
 			}
 			
@@ -2117,8 +2107,6 @@ function f_geometry(a_data) {
 							, "width": l_polyline[i2]["width"]
 							, "t2": l_polyline[i2]["t2"]
 							, "t1": l_polyline[i2]["t1"]
-							//, "x": l_polyline[i2]["x"]
-							//, "y": l_polyline[i2]["y"]
 							, "xy": l_polyline[i2]["xy"]
 							, "stops_exist": l_polyline[i2]["stops_exist"] //標柱の存在
 							, "number": l_polyline[i2]["number"] //初期位置
@@ -2149,8 +2137,6 @@ function f_geometry(a_data) {
 					//オフセットを計算する。
 					l_polyline[i2 - 1]["t1"] = c_segment_pair["t1"](c_offset_1, c_offset_2);
 					l_polyline[i2]["t2"] = c_segment_pair["t2"](c_offset_1, c_offset_2);
-					//l_polyline[i2]["x"] = c_segment_pair["x"](c_offset_1, c_offset_2);
-					//l_polyline[i2]["y"] = c_segment_pair["y"](c_offset_1, c_offset_2);
 					l_polyline[i2]["xy"] = c_segment_pair["xy"](c_offset_1, c_offset_2);
 				}
 				
@@ -2253,20 +2239,6 @@ function f_geometry(a_data) {
 					});
 				}
 				//座標とshape_pt_numberを追加する。
-				/*
-				for (let i3 = 0; i3 < l_polyline[i2]["x"].length; i3++) {
-					c_polyline_3[c_polyline_3.length - 1]["polyline"].push({
-						"x": l_polyline[i2]["x"][i3] + l_polyline[i2]["shape_pt_x"]
-						, "y": l_polyline[i2]["y"][i3] + l_polyline[i2]["shape_pt_y"]
-					});
-					//中央の点にshape_pt_numberを入れる。
-					if (l_polyline[i2]["x"].length === 1 || (l_polyline[i2]["x"].length === 3 && i3 === 1)) {
-						c_polyline_3[c_polyline_3.length - 1]["polyline"][c_polyline_3[c_polyline_3.length - 1]["polyline"].length - 1]["unified_shape_pt_numbers"] = l_polyline[i2]["unified_shape_pt_numbers"];
-					} else {
-						c_polyline_3[c_polyline_3.length - 1]["polyline"][c_polyline_3[c_polyline_3.length - 1]["polyline"].length - 1]["unified_shape_pt_numbers"] = [];
-					}
-				}
-				*/
 				for (let i3 = 0; i3 < l_polyline[i2]["xy"].length; i3++) {
 					c_polyline_3[c_polyline_3.length - 1]["polyline"].push({
 						"x": l_polyline[i2]["xy"][i3]["x"] + l_polyline[i2]["shape_pt_x"]
@@ -2369,23 +2341,14 @@ function f_offset(a_1, a_2, a_3, a_4, a_bmd) {
 		}
 		const c_x1 = a_y1 / c_r1;
 		const c_x2 = a_y2 / c_r2;
-		const c_fx = function(a_z1, a_z2) {
-			//x座標3つ
-			return [a_z1 * c_x1, (a_z1 * c_x1 + a_z2 * c_x2) * 0.5, a_z2 * c_x2];
-		}
 		const c_y1 = (-1) * a_x1 / c_r1;
 		const c_y2 = (-1) * a_x2 / c_r2;
-		const c_fy = function(a_z1, a_z2) {
-			//y座標3つ
-			return [a_z1 * c_y1, (a_z1 * c_y1 + a_z2 * c_y2) * 0.5, a_z2 * c_y2];
-		}
 		//xyまとめて3つ
 		const c_fxy = function (a_z1, a_z2) {
-			//return [{"x": , "y": }, {"x": , "y": }, {"x": , "y": }];
 			return [{"x": a_z1 * c_x1, "y": a_z1 * c_y1}, {"x": (a_z1 * c_x1 + a_z2 * c_x2) * 0.5, "y": (a_z1 * c_y1 + a_z2 * c_y2) * 0.5}, {"x": a_z2 * c_x2, "y": a_z2 * c_y2}];
 		}
 		
-		return {"t1":c_ft1, "t2": c_ft2, "x": c_fx, "y": c_fy, "xy": c_fxy};
+		return {"t1":c_ft1, "t2": c_ft2, "xy": c_fxy};
 	}
 	
 	
@@ -2401,18 +2364,12 @@ function f_offset(a_1, a_2, a_3, a_4, a_bmd) {
 		}
 		const c_x1 = a_y1 / c_r1;
 		const c_x2 = a_y2 / c_r2;
-		const c_fx = function(a_z1, a_z2) {
-			return [(a_z1 * c_x1 + a_z2 * c_x2) * 0.5];
-		}
 		const c_y1 = (-1) * a_x1 / c_r1;
 		const c_y2 = (-1) * a_x2 / c_r2;
-		const c_fy = function(a_z1, a_z2) {
-			return [(a_z1 * c_y1 + a_z2 * c_y2) * 0.5];
-		}
 		const c_fxy = function (a_z1, a_z2) {
 			return [{"x": (a_z1 * c_x1 + a_z2 * c_x2) * 0.5, "y": (a_z1 * c_y1 + a_z2 * c_y2) * 0.5}];
 		}
-		return {"t1":c_ft1, "t2": c_ft2, "x": c_fx, "y": c_fy, "xy": c_fxy};
+		return {"t1":c_ft1, "t2": c_ft2, "xy": c_fxy};
 	}
 	
 	if (a_2 === a_3 && Math.abs(c_xy2_1) < 0.1) { //例外処置。
@@ -2427,22 +2384,8 @@ function f_offset(a_1, a_2, a_3, a_4, a_bmd) {
 		}
 		const c_x1 = a_y1 / c_r1;
 		const c_x2 = a_y2 / c_r2;
-		const c_fx = function(a_z1, a_z2) {
-			if (a_z1 === a_z2) {
-				return [(a_z1 * c_x1 + a_z2 * c_x2) * 0.5];
-			}
-			//x座標3つ
-			return [a_z1 * c_x1, (a_z1 * c_x1 + a_z2 * c_x2) * 0.5, a_z2 * c_x2];
-		}
 		const c_y1 = (-1) * a_x1 / c_r1;
 		const c_y2 = (-1) * a_x2 / c_r2;
-		const c_fy = function(a_z1, a_z2) {
-			if (a_z1 === a_z2) {
-				return [(a_z1 * c_y1 + a_z2 * c_y2) * 0.5];
-			}
-			//y座標3つ
-			return [a_z1 * c_y1, (a_z1 * c_y1 + a_z2 * c_y2) * 0.5, a_z2 * c_y2];
-		}
 		const c_fxy = function (a_z1, a_z2) {
 			if (a_z1 === a_z2) {
 				return [{"x": (a_z1 * c_x1 + a_z2 * c_x2) * 0.5, "y": (a_z1 * c_y1 + a_z2 * c_y2) * 0.5}];
@@ -2450,7 +2393,7 @@ function f_offset(a_1, a_2, a_3, a_4, a_bmd) {
 			//座標3つ
 			return [{"x": a_z1 * c_x1, "y": a_z1 * c_y1}, {"x": (a_z1 * c_x1 + a_z2 * c_x2) * 0.5, "y": (a_z1 * c_y1 + a_z2 * c_y2) * 0.5}, {"x": a_z2 * c_x2, "y": a_z2 * c_y2}];
 		}
-		return {"t1":c_ft1, "t2": c_ft2, "x": c_fx, "y": c_fy, "xy": c_fxy};
+		return {"t1":c_ft1, "t2": c_ft2, "xy": c_fxy};
 	}
 	
 	
@@ -2464,21 +2407,13 @@ function f_offset(a_1, a_2, a_3, a_4, a_bmd) {
 		}
 		const c_x1 = a_y1 / c_r1;
 		const c_x2 = a_y2 / c_r2;
-		const c_fx = function(a_z1, a_z2) {
-			//x座標3つ
-			return [a_z1 * c_x1 + c_dx2, (a_z1 * c_x1 + a_z2 * c_x2) * 0.5 + c_dx2, a_z2 * c_x2 + c_dx2];
-		}
 		const c_y1 = (-1) * a_x1 / c_r1;
 		const c_y2 = (-1) * a_x2 / c_r2;
-		const c_fy = function(a_z1, a_z2) {
-			//y座標3つ
-			return [a_z1 * c_y1 + c_dy2, (a_z1 * c_y1 + a_z2 * c_y2) * 0.5 + c_dy2, a_z2 * c_y2 + c_dy2];
-		}
 		const c_fxy = function (a_z1, a_z2) {
 			//座標3つ
 			return [{"x": a_z1 * c_x1 + c_dx2, "y": a_z1 * c_y1 + c_dy2}, {"x": (a_z1 * c_x1 + a_z2 * c_x2) * 0.5 + c_dx2, "y": (a_z1 * c_y1 + a_z2 * c_y2) * 0.5 + c_dy2}, {"x": a_z2 * c_x2 + c_dx2, "y": a_z2 * c_y2 + c_dy2}];
 		}
-		return {"t1":c_ft1, "t2": c_ft2, "x": c_fx, "y": c_fy, "xy": c_fxy};
+		return {"t1":c_ft1, "t2": c_ft2, "xy": c_fxy};
 	}
 	
 	const c_xy2 = 1 / c_xy2_0;
@@ -2501,19 +2436,13 @@ function f_offset(a_1, a_2, a_3, a_4, a_bmd) {
 	//交点の座標
 	const c_x1 = (-1) * c_r1 * a_x2 * c_xy2;
 	const c_x2 = c_r2 * a_x1 * c_xy2;
-	const c_fx = function(a_z1, a_z2) {
-		return [a_z1 * c_x1 + a_z2 * c_x2 + c_dx2]; //x座標
-	}
 	const c_y1 = (-1) * c_r1 * a_y2 * c_xy2;
 	const c_y2 = c_r2 * a_y1 * c_xy2;
-	const c_fy = function(a_z1, a_z2) {
-		return [a_z1 * c_y1 + a_z2 * c_y2 + c_dy2]; //y座標
-	}
 	const c_fxy = function (a_z1, a_z2) {
 		return [{"x": a_z1 * c_x1 + a_z2 * c_x2 + c_dx2, "y": a_z1 * c_y1 + a_z2 * c_y2 + c_dy2}]; //座標
 	}
 	
-	return {"t1":c_ft1, "t2": c_ft2, "x": c_fx, "y": c_fy, "xy": c_fxy};
+	return {"t1":c_ft1, "t2": c_ft2, "xy": c_fxy};
 }
 
 
