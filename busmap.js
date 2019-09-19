@@ -1276,6 +1276,12 @@ function f_delete_point(a_data) {
 		const c_shape_pt_array = a_data["ur_routes"][i1]["shape_pt_array"];
 		for (let i2 = 0; i2 < c_shape_pt_array.length; i2++) {
 			if (i2 === 0 || i2 === c_shape_pt_array.length - 1) {
+				//残す場合
+				c_new_shape_pt_array.push({
+					"shape_pt_number": c_shape_pt_array[i2]["shape_pt_number"]
+					, "shape_pt_x": c_shape_pt_array[i2]["shape_pt_x"]
+					, "shape_pt_y": c_shape_pt_array[i2]["shape_pt_y"]
+				});
 				continue;
 			}
 			let l_exist = false; //消す場合true
