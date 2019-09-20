@@ -193,8 +193,15 @@ function f_from_geojson(a_geojson_stops, a_geojson_ur_routes) {
 	for (let i1 = 0; i1 < a_geojson_stops.length; i1++) {
 		const c_geometry = a_geojson_stops[i1]["geometry"];
 		if (c_geometry["coordinates"][0] !== undefined && c_geometry["coordinates"][1] !== undefined) {
-			a_geojson_stops[i1]["properties"]["stop_lon"] = c_geometry["coordinates"][0];
-			a_geojson_stops[i1]["properties"]["stop_lat"] = c_geometry["coordinates"][1];
+			const c_coordinates = [];
+			c_coordinates[0] = c_geometry["coordinates"][0];
+			c_coordinates[1] = c_geometry["coordinates"][1];
+			if (c_coordinates[1] > 90 || c_coordinates[1] < -90) { //緯度経度が逆の場合、修正する
+				c_coordinates[0] = c_geometry["coordinates"][1];
+				c_coordinates[1] = c_geometry["coordinates"][0];
+			}
+			a_geojson_stops[i1]["properties"]["stop_lon"] = c_coordinates[0];
+			a_geojson_stops[i1]["properties"]["stop_lat"] = c_coordinates[1];
 		}
 		a_geojson_stops[i1]["properties"]["stop_name"] = a_geojson_stops[i1]["properties"]["stop_id"]; //互換性確保
 		c_stops.push(a_geojson_stops[i1]["properties"]);
@@ -206,7 +213,14 @@ function f_from_geojson(a_geojson_stops, a_geojson_ur_routes) {
 		a_geojson_ur_routes[i1]["properties"]["service_array"] = ""; //互換性確保
 		a_geojson_ur_routes[i1]["properties"]["trip_number"] = 1; //互換性確保
 		for (let i2 = 0; i2 < c_geometry["coordinates"].length; i2++) {
-			a_geojson_ur_routes[i1]["properties"]["shape_pt_array"].push({"shape_pt_lon": c_geometry["coordinates"][i2][0], "shape_pt_lat": c_geometry["coordinates"][i2][1]});
+			const c_coordinates = [];
+			c_coordinates[0] = c_geometry["coordinates"][i2][0];
+			c_coordinates[1] = c_geometry["coordinates"][i2][1];
+			if (c_coordinates[1] > 90 || c_coordinates[1] < -90) { //緯度経度が逆の場合、修正する
+				c_coordinates[0] = c_geometry["coordinates"][i2][1];
+				c_coordinates[1] = c_geometry["coordinates"][i2][0];
+			}
+			a_geojson_ur_routes[i1]["properties"]["shape_pt_array"].push({"shape_pt_lon": c_coordinates[0], "shape_pt_lat": c_coordinates[1]});
 		}
 		c_ur_routes.push(a_geojson_ur_routes[i1]["properties"]);
 	}
