@@ -192,8 +192,10 @@ function f_from_geojson(a_geojson_stops, a_geojson_ur_routes) {
 	const c_stops = [];
 	for (let i1 = 0; i1 < a_geojson_stops.length; i1++) {
 		const c_geometry = a_geojson_stops[i1]["geometry"];
-		a_geojson_stops[i1]["properties"]["stop_lon"] = c_geometry["coordinates"][0];
-		a_geojson_stops[i1]["properties"]["stop_lat"] = c_geometry["coordinates"][1];
+		if (c_geometry["coordinates"][0] !== undefined && c_geometry["coordinates"][1] !== undefined) {
+			a_geojson_stops[i1]["properties"]["stop_lon"] = c_geometry["coordinates"][0];
+			a_geojson_stops[i1]["properties"]["stop_lat"] = c_geometry["coordinates"][1];
+		}
 		a_geojson_stops[i1]["properties"]["stop_name"] = a_geojson_stops[i1]["properties"]["stop_id"]; //互換性確保
 		c_stops.push(a_geojson_stops[i1]["properties"]);
 	}
