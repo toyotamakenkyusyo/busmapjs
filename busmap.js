@@ -1537,6 +1537,7 @@ function f_make_new_shape_pt_array(a_data) {
 		l_number = 0;
 		let l_count = 0; //かけている数を数える
 		let l_last_number = null; //最後の標柱の番号
+		let l_first_number = null; //最初の標柱の番号
 		//前から探す、前半のshapesが冗長になるかもしれない
 		for (let i2 = 0; i2 < c_shape_pt_numbers.length; i2++) {
 			for (let i3 = l_number; i3 < c_shape_pt_array.length; i3++) {
