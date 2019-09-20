@@ -1490,11 +1490,13 @@ function f_make_new_shape_pt_array(a_data) {
 		}
 		a_data["ur_routes"][i1]["shape_pt_array"] = c_shape_pt_array;
 	}
-	
 	//shape_pt_arrayの始点、終点を処理する。
 	for (let i1 = 0; i1 < a_data["ur_routes"].length; i1++) {
 		const c_stop_array = a_data["ur_routes"][i1]["stop_array"];
 		const c_shape_pt_array = a_data["ur_routes"][i1]["shape_pt_array"];
+		if (c_shape_pt_array.length < 3) {
+			continue;
+		}
 		if (c_stop_array === "" || c_stop_array.length < 2 || c_stop_array === undefined || c_stop_array === null) { //c_stop_arrayがない場合
 			continue;
 		}
