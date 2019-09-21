@@ -221,7 +221,9 @@ function f_from_geojson(a_geojson_stops, a_geojson_ur_routes) {
 		const c_geometry = a_geojson_ur_routes[i1]["geometry"];
 		a_geojson_ur_routes[i1]["properties"]["shape_pt_array"] = [];
 		a_geojson_ur_routes[i1]["properties"]["service_array"] = ""; //互換性確保
-		a_geojson_ur_routes[i1]["properties"]["trip_number"] = 1; //互換性確保
+		if (a_geojson_ur_routes[i1]["properties"]["trip_number"] === undefined) {
+			a_geojson_ur_routes[i1]["properties"]["trip_number"] = 1; //互換性確保
+		}
 		for (let i2 = 0; i2 < c_geometry["coordinates"].length; i2++) {
 			const c_coordinates = [];
 			c_coordinates[0] = c_geometry["coordinates"][i2][0];
