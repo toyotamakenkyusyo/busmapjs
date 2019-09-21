@@ -328,7 +328,8 @@ function f_input_settings(a_settings) {
 		"stop_stroke_width": 1, //停留所記号の縁の太さ
 		"show_stop_location": true, //停留所位置の記号を表示
 		"min_space_width": 2, //線の間隔の最小幅
-		"min_width": 3//,
+		"min_width": 4, //線の最小幅
+		"max_width": 8//, //線の最大幅
 	};
 	//change trueの場合、設定を変更する
 	//leaflet trueの場合、使用
@@ -1882,16 +1883,17 @@ function f_topology(a_data, a_settings) {
 	}
 	//trip_numberをwidthに変換する関数。
 	const c_min_width = a_settings["min_width"]; //2pxか3pxくらい
+	const c_max_width = a_settings["max_width"];
 	function f_trip_number_to_width(a_trip_number) {
 		if (a_trip_number === 0) {
 			return 0;
 		}
-		let l_width = a_trip_number / 64 * c_min_width;
+		let l_width = a_trip_number / 32 * c_min_width;
 		if (l_width < c_min_width) { //下限
 			l_width = c_min_width;
 		}
-		if (l_width > c_min_width * 1.5) { //上限
-			l_width = c_min_width * 1.5;
+		if (l_width > c_max_width) { //上限
+			l_width = c_max_width;
 		}
 		return l_width;
 	}
