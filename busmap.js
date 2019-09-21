@@ -29,7 +29,7 @@ async function f_busmap(a_settings) {
 	document.getElementById(c_input_settings["div_id"]).innerHTML = f_html(c_input_settings);
 	//leafletの初期設定
 	if (c_input_settings["leaflet"] === true) {
-		f_set_leaflet();
+		f_set_leaflet(c_input_settings);
 	}
 	//GTFS-RTの読み込み
 	if (c_input_settings["rt"] !== false) {
@@ -319,6 +319,7 @@ function f_input_settings(a_settings) {
 		"zoom_level": 16,
 		"svg_zoom_level": 16,
 		"background_map": true,
+		"background_layers": [["https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png", {attribution: "<a href=\"https://maps.gsi.go.jp/development/ichiran.html\">地理院タイル</a>", opacity: 0.25}]],
 		"font_size": 16, //停留所名のフォントサイズ
 		"font_family": "'源ノ角ゴシック'", //停留所名のフォント、二重のクオーテーションマークに注意
 		"stop_color_standard": "#000000", //通常の停留所記号の色
@@ -414,11 +415,13 @@ function f_html(a_settings) {
 }
 
 
-function f_set_leaflet() {
+function f_set_leaflet(a_settings) {
 	//leaflet関係
 	map = L.map("div_leaflet"); //leafletの読み込み。
-	//背景地図（地理院地図）を表示する。
-	L.tileLayer("https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png", {attribution: "<a href=\"https://maps.gsi.go.jp/development/ichiran.html\">地理院タイル</a>", opacity: 0.25}).addTo(map);
+	//背景地図（地理院地図等）を表示する。
+	for (let i1 = 0; i1 < a_settings["background_layers"].length; i1++) {
+		L.tileLayer(a_settings["background_layers"][i1][0], a_settings["background_layers"][i1][1]).addTo(map);
+	}
 	//svg地図を入れる。
 	L.svg().addTo(map);
 }
