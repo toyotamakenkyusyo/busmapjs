@@ -213,7 +213,7 @@ function f_from_geojson(a_geojson_stops, a_geojson_ur_routes) {
 			a_geojson_stops[i1]["properties"]["stop_lon"] = c_coordinates[0];
 			a_geojson_stops[i1]["properties"]["stop_lat"] = c_coordinates[1];
 		}
-		a_geojson_stops[i1]["properties"]["stop_name"] = a_geojson_stops[i1]["properties"]["stop_id"]; //互換性確保
+		a_geojson_stops[i1]["properties"]["stop_name"] = a_geojson_stops[i1]["properties"]["stop_id"].split("_")[0]; //互換性確保
 		c_stops.push(a_geojson_stops[i1]["properties"]);
 	}
 	const c_ur_routes = [];
