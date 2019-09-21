@@ -97,6 +97,7 @@
 		"arcs": {
 			"type": "GeometryCollection",
 			"geometries": [
+				{"comment": "国土地理院ベクトルタイル道路中心線を使用"},
 				{"type": "LineString", "properties": {"comment": "渋谷区役所のハチ公バスが入るところ→渋谷区役所のハチ公バスの中ほど"}, "arcs": [0]},
 				{"type": "LineString", "properties": {"comment": "渋谷区役所のハチ公バスの中ほど→渋谷区役所のハチ公バスが出てくるところ"}, "arcs": [1]},
 				{"type": "LineString", "properties": {"comment": "渋谷区役所のハチ公バスが出てくるところ→岸記念体育館前"}, "arcs": [2]},
