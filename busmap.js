@@ -156,11 +156,21 @@ function f_topojson_to_geojson(a_topojson) {
 				if (c_number >= 0) {
 					const c_arc = a_topojson["arcs"][c_number];
 					for (let i4 = 0; i4 < c_arc.length; i4++) {
+						if (c_geometry["coordinates"].length > 0) {
+							if (i4 === 0 && c_arc[0][0] === c_geometry["coordinates"][c_geometry["coordinates"].length - 1][0] && c_arc[0][1] === c_geometry["coordinates"][c_geometry["coordinates"].length - 1][1]) {
+								continue;
+							}
+						}
 						c_geometry["coordinates"].push(c_arc[i4]);
 					}
 				} else if (c_number < 0) {
 					const c_arc = a_topojson["arcs"][(c_number + 1) * (-1)];
 					for (let i4 = c_arc.length - 1; i4 >= 0; i4--) {
+						if (c_geometry["coordinates"].length > 0) {
+							if (i4 === c_arc.length - 1 && c_arc[c_arc.length - 1][0] === c_geometry["coordinates"][c_geometry["coordinates"].length - 1][0] && c_arc[c_arc.length - 1][1] === c_geometry["coordinates"][c_geometry["coordinates"].length - 1][1]) {
+								continue;
+							}
+						}
 						c_geometry["coordinates"].push(c_arc[i4]);
 					}
 				}
