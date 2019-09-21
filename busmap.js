@@ -2808,15 +2808,25 @@ function f_make_svg(a_data, a_settings) {
 				let l_x;
 				let l_y;
 				if (l_i3 === 0 && l_i4 === 0) { //最初
-					l_x = a_data["ur_routes"][i1][c_polyline_key][l_i3]["polyline"][l_i4 + 1]["x"] - a_data["ur_routes"][i1][c_polyline_key][l_i3]["polyline"][l_i4]["x"];
-					l_y = a_data["ur_routes"][i1][c_polyline_key][l_i3]["polyline"][l_i4 + 1]["y"] - a_data["ur_routes"][i1][c_polyline_key][l_i3]["polyline"][l_i4]["y"];
+					if (a_data["ur_routes"][i1][c_polyline_key][l_i3]["polyline"].length < 2) {
+						l_x = 1;
+						l_y = 0;
+					} else {
+						l_x = a_data["ur_routes"][i1][c_polyline_key][l_i3]["polyline"][l_i4 + 1]["x"] - a_data["ur_routes"][i1][c_polyline_key][l_i3]["polyline"][l_i4]["x"];
+						l_y = a_data["ur_routes"][i1][c_polyline_key][l_i3]["polyline"][l_i4 + 1]["y"] - a_data["ur_routes"][i1][c_polyline_key][l_i3]["polyline"][l_i4]["y"];
+					}
 				} else if (l_i3 === a_data["ur_routes"][i1][c_polyline_key].length - 1 && l_i4 === a_data["ur_routes"][i1][c_polyline_key][l_i3]["polyline"].length - 1) { //最後
 					l_x = a_data["ur_routes"][i1][c_polyline_key][l_i3]["polyline"][l_i4]["x"] - a_data["ur_routes"][i1][c_polyline_key][l_i3]["polyline"][l_i4 - 1]["x"];
 					l_y = a_data["ur_routes"][i1][c_polyline_key][l_i3]["polyline"][l_i4]["y"] - a_data["ur_routes"][i1][c_polyline_key][l_i3]["polyline"][l_i4 - 1]["y"];
 				} else if (l_i4 === 0) { //前が違うpolyline
 					const c_i4_2 = a_data["ur_routes"][i1][c_polyline_key][l_i3 - 1]["polyline"].length - 1;
-					l_x = a_data["ur_routes"][i1][c_polyline_key][l_i3]["polyline"][l_i4 + 1]["x"] - a_data["ur_routes"][i1][c_polyline_key][l_i3 - 1]["polyline"][c_i4_2]["x"];
-					l_y = a_data["ur_routes"][i1][c_polyline_key][l_i3]["polyline"][l_i4 + 1]["y"] - a_data["ur_routes"][i1][c_polyline_key][l_i3 - 1]["polyline"][c_i4_2]["y"];
+					if (a_data["ur_routes"][i1][c_polyline_key][l_i3]["polyline"].length < 2) {
+						l_x = 1;
+						l_y = 0;
+					} else {
+						l_x = a_data["ur_routes"][i1][c_polyline_key][l_i3]["polyline"][l_i4 + 1]["x"] - a_data["ur_routes"][i1][c_polyline_key][l_i3 - 1]["polyline"][c_i4_2]["x"];
+						l_y = a_data["ur_routes"][i1][c_polyline_key][l_i3]["polyline"][l_i4 + 1]["y"] - a_data["ur_routes"][i1][c_polyline_key][l_i3 - 1]["polyline"][c_i4_2]["y"];
+					}
 				} else if (l_i4 === a_data["ur_routes"][i1][c_polyline_key][l_i3]["polyline"].length - 1) { //後ろが違うpolyline
 					l_x = a_data["ur_routes"][i1][c_polyline_key][l_i3 + 1]["polyline"][0]["x"] - a_data["ur_routes"][i1][c_polyline_key][l_i3]["polyline"][l_i4 - 1]["x"];
 					l_y = a_data["ur_routes"][i1][c_polyline_key][l_i3 + 1]["polyline"][0]["y"] - a_data["ur_routes"][i1][c_polyline_key][l_i3]["polyline"][l_i4 - 1]["y"];
