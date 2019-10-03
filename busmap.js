@@ -62,7 +62,7 @@ async function f_busmap(a_settings) {
 				c_data[0][c_file_names[i1]] =  f_csv_to_json(c_response[c_file_names[i1] + ".txt"]);
 			}
 		}
-	} else if (c_input_settings["data_type"] === "json" || c_input_settings["data_type"] === "geojson" || c_input_settings["data_type"] === "topojson") {
+	} else if (c_input_settings["data_type"] === "json" || c_input_settings["data_type"] === "geojson" || c_input_settings["data_type"] === "topojson" || c_input_settings["data_type"] === "api") {
 		c_data[0] = JSON.parse((await f_xhr_get(c_input_settings["data"], "text")).responseText);
 		console.log(c_data[0]);
 		if (c_input_settings["data_type"] === "topojson") {
@@ -72,6 +72,9 @@ async function f_busmap(a_settings) {
 		console.log(c_data[0]);
 		if (c_input_settings["data_type"] === "geojson") {
 			c_data[0] = f_geojson_to_json(c_data[0]);
+		}
+		if (c_input_settings["data_type"] === "api") {
+			c_data[0] = f_from_api(c_data[0]);
 		}
 		console.log(c_data[0]);
 	}
@@ -378,7 +381,36 @@ function f_geojson_to_json(a_geojson) {
 
 */
 
-
+function f_from_api(a_api) {
+	const c_stops = [];
+	const c_routes = [];
+	for (let i1 in a_api["station"]) {
+		c_stops.push({
+			"stop_id": a_api["station"][i1]["id"],
+			"stop_name": a_api["station"][i1]["name"],
+			"stop_lat": a_api["station"][i1]["lat"],
+			"stop_lon": a_api["station"][i1]["lon"]//,
+		});
+	}
+	for (let i1 in a_api["route"]) {
+		const c_stop_array = [];
+		for (let i2 = 0; i2 < a_api["route"][i1]["stationList"].length; i2++) {
+			c_stop_array.push({"stop_id": a_api["route"][i1]["stationList"][i2]});
+		}
+		c_routes.push({
+			"route_id": a_api["route"][i1]["id"],
+			"route_short_name": a_api["route"][i1]["name"],
+			"route_long_name": a_api["route"][i1]["name"],
+			"jp_parent_route_id": a_api["route"][i1]["name"],
+			"route_color": a_api["route"][i1]["color"].replace(/#/, ""),
+			"stop_array": c_stop_array,
+			"shape_pt_array": [],
+			"service_array": "",
+			"trip_number": 999//, //仮
+		});
+	}
+	return {"stops": c_stops, "routes": c_routes, "ur_routes": c_routes, "calendar": []}; //routesとur_routes、calendarは互換性確保
+}
 
 
 
@@ -483,7 +515,7 @@ function f_html(a_settings) {
 		l_setting_table += "<tr><td>表示する単位</td><td id=\"td_parent_route_id\">" + a_settings["parent_route_id"] + "</td><td><span onclick=\"f_change_setting('parent_route_id','ur_route_id')\">最小</span> <span onclick=\"f_change_setting('parent_route_id','route_id')\">route_id</span> <span onclick=\"f_change_setting('parent_route_id','jp_parent_route_id')\">jp_parent_route_id</span> <span onclick=\"f_change_setting('parent_route_id','route_short_name')\">route_short_name</span> <span onclick=\"f_change_setting('parent_route_id','route_long_name')\">route_long_name</span> <span onclick=\"f_change_setting('parent_route_id','route_desc')\">route_desc</span> <span onclick=\"f_change_setting('parent_route_id','jp_office_id')\">jp_office_id</span> <span onclick=\"f_change_setting('parent_route_id','agency_id')\">agency_id</span> <span onclick=\"f_change_setting('parent_route_id','')\">全て</span></td></tr>";
 		l_setting_table += "<tr><td>停留所名を表示</td><td id=\"td_stop_name\">" + a_settings["stop_name"] + "</td><td><span onclick=\"f_change_setting('stop_name',true)\">true</span> <span onclick=\"f_change_setting('stop_name',false)\">false</span></td></tr>";
 		l_setting_table += "<tr><td>停留所名の重なりを回避（非常に遅いので注意）</td><td id=\"td_stop_name_overlap\">" + a_settings["stop_name_overlap"] + "</td><td><span onclick=\"f_change_setting('stop_name_overlap',true)\">true</span> <span onclick=\"f_change_setting('stop_name_overlap',false)\">false</span></td></tr>";
-		l_setting_table += "<tr><td>表示ズームレベル</td><td id=\"td_svg_zoom_level\">" + a_settings["svg_zoom_level"] + "</td><td><span onclick=\"f_change_setting('svg_zoom_level','16')\">16</span> <span onclick=\"f_change_setting('svg_zoom_level','15')\">15</span> <span onclick=\"f_change_setting('svg_zoom_level','14')\">14</span> <span onclick=\"f_change_setting('svg_zoom_level','1614')\">可変</span></td></tr>";
+		l_setting_table += "<tr><td>表示ズームレベル</td><td id=\"td_svg_zoom_level\">" + a_settings["svg_zoom_level"] + "</td><td><span onclick=\"f_change_setting('svg_zoom_level',16)\">16</span> <span onclick=\"f_change_setting('svg_zoom_level',15)\">15</span> <span onclick=\"f_change_setting('svg_zoom_level',14)\">14</span> <span onclick=\"f_change_setting('svg_zoom_level',1614)\">可変</span></td></tr>";
 		l_setting_table += "<tr><td>背景地図を表示</td><td id=\"td_background_map\">" + a_settings["background_map"] + "</td><td><span onclick=\"f_change_setting('background_map',true)\">true</span> <span onclick=\"f_change_setting('background_map',false)\">false</span></td></tr>";
 		l_setting_table += "</tbody></table>";
 		l_setting_table += "<div id=\"ur_route_list\"></div>";
@@ -1435,6 +1467,9 @@ function f_cut_shape_segments(a_data, a_zoom_level) {
 	//点と線分の距離
 	//そのまま流用したため、未検証。
 	function f_distance(a_px, a_py, a_sx, a_sy, a_ex, a_ey) {
+		//if ((a_px === a_sx && a_py === a_sy) || (a_px === a_ex && a_py === a_ey)) { //始点か終点と一致
+			//return 0;
+		//}
 		const c_vx = a_ex - a_sx;
 		const c_vy = a_ey - a_sy;
 		const c_r2 = c_vx * c_vx + c_vy * c_vy;
@@ -2775,13 +2810,13 @@ function f_make_svg(a_data, a_settings) {
 	console.log("svgsvg" + a_settings["svg_zoom_level"]);
 
 	let l_make_g = "";
-	if (a_settings["svg_zoom_level"] === "1614") {
+	if (a_settings["svg_zoom_level"] === 1614) {
 		l_make_g = f_make_g(0) + f_make_g(1) + f_make_g(2);
-	} else if (a_settings["svg_zoom_level"] === "16") {
+	} else if (a_settings["svg_zoom_level"] === 16) {
 		l_make_g = f_make_g(0);
-	} else if (a_settings["svg_zoom_level"] === "15") {
+	} else if (a_settings["svg_zoom_level"] === 15) {
 		l_make_g = f_make_g(1);
-	} else if (a_settings["svg_zoom_level"] === "14") {
+	} else if (a_settings["svg_zoom_level"] === 14) {
 		l_make_g = f_make_g(2);
 	} else {
 		l_make_g = f_make_g(0);
@@ -3352,7 +3387,7 @@ function f_leaflet(a_data, a_settings) {
 	
 	function f_zoom_2() {
 		console.log(map.getZoom());
-		if (a_settings["svg_zoom_level"] === "1614") {
+		if (a_settings["svg_zoom_level"] === 1614) {
 			if (map.getZoom() >= 16) {
 				document.getElementById("g_zoom_16").setAttribute("visibility","visible");
 				document.getElementById("g_zoom_15").setAttribute("visibility","hidden");
