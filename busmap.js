@@ -428,7 +428,7 @@ function f_input_settings(a_settings) {
 		"cors_url": "",//CORSの問題を回避するため、間にサーバーサイドのプログラムを挟む場合に前に加えるURL
 		"rt": false,//GTFS-RTの読込
 		"data": "data",//データのURL
-		"data_type": "gtfs",//データがgtfs, json, geojson, topojsonか
+		"data_type": "gtfs",//データがgtfs, json, geojson, topojson, apiか
 		"div_id": "div",//挿入するdivのid
 		"global": true,//trueの場合、値をc_globalに渡し、変更可能にする
 		"change": true,
@@ -451,6 +451,7 @@ function f_input_settings(a_settings) {
 		"stop_stroke_color": "#000000", //停留所記号の縁の色
 		"stop_stroke_width": 1, //停留所記号の縁の太さ
 		"show_stop_location": true, //停留所位置の記号を表示
+		"stop_direction": true, //停留所記号を三角形にして向きを明示
 		"min_space_width": 2, //線の間隔の最小幅
 		"min_width": 4, //線の最小幅
 		"max_width": 8//, //線の最大幅
@@ -3076,7 +3077,7 @@ function f_make_svg(a_data, a_settings) {
 				}
 				
 				if (l_fill_color !== false) { //表示
-					if (false) { //円
+					if (a_settings["stop_direction"] === false) { //円
 						l_g_stop_type += "<circle";
 						if (a_settings["clickable"] === true) {
 							l_g_stop_type += " onclick=\"f_show_stops('" + c_stop["stop_id"] + "')\"";
