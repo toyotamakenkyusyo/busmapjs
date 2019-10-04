@@ -496,9 +496,9 @@ function f_input_settings(a_settings) {
 	//設定の互換性
 	if (a_settings["svg_zoom_ratio"] === undefined) {
 		if (c_settings_temp["svg_zoom_level"] === 1614) {
-			c_settings_temp["svg_zoom_ratio"] = "0_2";
+			c_settings_temp["svg_zoom_ratio"] = 2;
 		} else {
-			c_settings_temp["svg_zoom_ratio"] = c_settings_temp["zoom_level"] - c_settings_temp["svg_zoom_level"];
+			c_settings_temp["svg_zoom_ratio"] = 0;
 		}
 	}
 	return c_settings_temp;
@@ -526,7 +526,6 @@ function f_html(a_settings) {
 		l_setting_table += "<tr><td>表示する単位</td><td id=\"td_parent_route_id\">" + a_settings["parent_route_id"] + "</td><td><span onclick=\"f_change_setting('parent_route_id','ur_route_id')\">最小</span> <span onclick=\"f_change_setting('parent_route_id','route_id')\">route_id</span> <span onclick=\"f_change_setting('parent_route_id','jp_parent_route_id')\">jp_parent_route_id</span> <span onclick=\"f_change_setting('parent_route_id','route_short_name')\">route_short_name</span> <span onclick=\"f_change_setting('parent_route_id','route_long_name')\">route_long_name</span> <span onclick=\"f_change_setting('parent_route_id','route_desc')\">route_desc</span> <span onclick=\"f_change_setting('parent_route_id','jp_office_id')\">jp_office_id</span> <span onclick=\"f_change_setting('parent_route_id','agency_id')\">agency_id</span> <span onclick=\"f_change_setting('parent_route_id','')\">全て</span></td></tr>";
 		l_setting_table += "<tr><td>停留所名を表示</td><td id=\"td_stop_name\">" + a_settings["stop_name"] + "</td><td><span onclick=\"f_change_setting('stop_name',true)\">true</span> <span onclick=\"f_change_setting('stop_name',false)\">false</span></td></tr>";
 		l_setting_table += "<tr><td>停留所名の重なりを回避（非常に遅いので注意）</td><td id=\"td_stop_name_overlap\">" + a_settings["stop_name_overlap"] + "</td><td><span onclick=\"f_change_setting('stop_name_overlap',true)\">true</span> <span onclick=\"f_change_setting('stop_name_overlap',false)\">false</span></td></tr>";
-		l_setting_table += "<tr><td>表示縮小率</td><td id=\"td_svg_zoom_ratio\">" + a_settings["svg_zoom_ratio"] + "</td><td><span onclick=\"f_change_setting('svg_zoom_ratio',0)\">0</span> <span onclick=\"f_change_setting('svg_zoom_ratio',1)\">1</span> <span onclick=\"f_change_setting('svg_zoom_ratio',2)\">2</span> <span onclick=\"f_change_setting('svg_zoom_ratio','0_2')\">可変</span></td></tr>";
 		l_setting_table += "<tr><td>背景地図を表示</td><td id=\"td_background_map\">" + a_settings["background_map"] + "</td><td><span onclick=\"f_change_setting('background_map',true)\">true</span> <span onclick=\"f_change_setting('background_map',false)\">false</span></td></tr>";
 		l_setting_table += "</tbody></table>";
 		l_setting_table += "<div id=\"ur_route_list\"></div>";
@@ -1065,7 +1064,7 @@ function f_open(a_bmd, a_settings) {
 	f_topology(a_bmd, a_settings);
 	console.timeEnd("T");
 	console.time("G");
-	f_geometry(a_bmd);
+	f_geometry(a_bmd, a_settings);
 	console.timeEnd("G");
 	console.time("A");
 	try { //tripが無いとエラーなので回避
@@ -2192,7 +2191,7 @@ function f_topology(a_data, a_settings) {
 
 
 
-function f_geometry(a_data) {
+function f_geometry(a_data, a_settings) {
 	//座標の準備
 	for (let i1 = 0; i1 < a_data["ur_routes"].length; i1++) {
 		const c_child_shape_segment_array = a_data["ur_routes"][i1]["child_shape_segment_array"];
@@ -2229,9 +2228,9 @@ function f_geometry(a_data) {
 		const c_shape_pt_array = a_data["ur_routes"][i1]["shape_pt_array"];
 		const c_child_shape_segment_array = a_data["ur_routes"][i1]["child_shape_segment_array"];
 		a_data["ur_routes"][i1]["polyline"] = f_make_polyline(0);
-		a_data["ur_routes"][i1]["polyline_0"] = f_make_polyline(0);
-		a_data["ur_routes"][i1]["polyline_1"] = f_make_polyline(1);
-		a_data["ur_routes"][i1]["polyline_2"] = f_make_polyline(2);
+		for (let i2 = 0; i2 <= a_settings["svg_zoom_ratio"]; i2++) {
+			a_data["ur_routes"][i1]["polyline_" + String(i2)] = f_make_polyline(i2);
+		}
 		
 		//a_zoom_16が0のときそのまま、1のときz=15、2のときz=14
 		function f_make_polyline(a_zoom_16) {
@@ -2819,10 +2818,8 @@ function f_make_svg(a_data, a_settings) {
 	let l_t_position = "<text id=\"t_position\" x=\"0\" y=\"0\" style=\"font-size: 64px; line-height: 1; fill: #000000; opacity: 0.5;\">現在位置</text>";
 	
 	let l_make_g = "";
-	if (a_settings["svg_zoom_ratio"] === "0_2") {
-		l_make_g = f_make_g(0) + f_make_g(1) + f_make_g(2);
-	} else {
-		l_make_g = f_make_g(a_settings["svg_zoom_ratio"]);
+	for (let i1 = 0; i1 <= a_settings["svg_zoom_ratio"]; i1++) {
+		l_make_g += f_make_g(i1);
 	}
 	
 	const c_svg = l_make_g + l_t_tooltip + l_t_position;
@@ -3389,23 +3386,20 @@ function f_leaflet(a_data, a_settings) {
 	}
 	
 	function f_zoom_2() {
-		console.log(map.getZoom());
-		if (a_settings["svg_zoom_ratio"] === "0_2") {
-			if (map.getZoom() >= c_zoom_level) {
-				document.getElementById("g_zoom_0").setAttribute("visibility","visible");
-				document.getElementById("g_zoom_1").setAttribute("visibility","hidden");
-				document.getElementById("g_zoom_2").setAttribute("visibility","hidden");
-			} else if (map.getZoom() === c_zoom_level - 1) {
-				document.getElementById("g_zoom_0").setAttribute("visibility","hidden");
-				document.getElementById("g_zoom_1").setAttribute("visibility","visible");
-				document.getElementById("g_zoom_2").setAttribute("visibility","hidden");
-			} else if (map.getZoom() <= c_zoom_level - 2) {
-				document.getElementById("g_zoom_0").setAttribute("visibility","hidden");
-				document.getElementById("g_zoom_1").setAttribute("visibility","hidden");
-				document.getElementById("g_zoom_2").setAttribute("visibility","visible");
-			}
+		for (let i1 = 0; i1 <= a_settings["svg_zoom_ratio"]; i1++) {
+			document.getElementById("g_zoom_" + String(i1)).setAttribute("visibility","hidden");
+		}
+		const c_svg_zoom_ratio = c_zoom_level - map.getZoom();
+		if (c_svg_zoom_ratio <= 0) {
+			document.getElementById("g_zoom_0").setAttribute("visibility","visible");
+		} else if (c_svg_zoom_ratio <= a_settings["svg_zoom_ratio"]) {
+			document.getElementById("g_zoom_" + String(c_svg_zoom_ratio)).setAttribute("visibility","visible");
+		} else {
+			document.getElementById("g_zoom_" + String(a_settings["svg_zoom_ratio"])).setAttribute("visibility","visible");
 		}
 	}
+	
+	
 	//初期の表示位置を調整。（中心に）
 	map.setView(c_center, c_zoom_level);
 	f_zoom();
