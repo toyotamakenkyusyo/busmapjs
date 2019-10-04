@@ -454,7 +454,8 @@ function f_input_settings(a_settings) {
 		"stop_direction": true, //停留所記号を三角形にして向きを明示
 		"min_space_width": 2, //線の間隔の最小幅
 		"min_width": 4, //線の最小幅
-		"max_width": 8//, //線の最大幅
+		"max_width": 8, //線の最大幅
+		"round": true //, //角を丸める
 	};
 	//change trueの場合、設定を変更する
 	//leaflet trueの場合、使用
@@ -2864,7 +2865,7 @@ function f_make_svg(a_data, a_settings) {
 						l_g_routes_i1 += "M " + c_point["x"] + "," + c_point["y"];
 						continue;
 					}
-					if (!(isNaN(c_point["sx"]) || isNaN(c_point["sy"]) || isNaN(c_point["ex"]) || isNaN(c_point["ey"]))) { //欠けがない、曲線
+					if (a_settings["round"] === true && !(isNaN(c_point["sx"]) || isNaN(c_point["sy"]) || isNaN(c_point["ex"]) || isNaN(c_point["ey"]))) { //欠けがない、曲線
 						l_g_routes_i1 += "L " + c_point["sx"] + "," + c_point["sy"] + " Q " + c_point["x"] + "," + c_point["y"] + " "+ c_point["ex"] + "," + c_point["ey"];
 					} else {
 						l_g_routes_i1 += "L " + c_point["x"] + "," + c_point["y"];
