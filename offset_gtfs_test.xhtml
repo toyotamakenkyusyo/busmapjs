@@ -29,6 +29,8 @@
 //パスは/か./か../ではじめないといけない？
 //CORSでローカルだとうまくいかない
 
+document.getElementById("test").innerHTML += "開始";
+
 import {f_xhr_get} from "./js/f_xhr_get.js";
 import {f_zip_to_text} from "./js/f_zip_to_text.js";
 import {f_csv_to_json} from "./js/f_csv_to_json.js";
@@ -138,7 +140,7 @@ function f_leaflet(a_bmd) {
 			map.setView(c_coordinates, 12);
 		}
 	}
-	document.getElementById("test).innerHTML += c_stop;
+	document.getElementById("test").innerHTML += c_stop;
 }
 
 		//]]>
