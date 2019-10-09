@@ -1,3 +1,6 @@
+"use strict";
+let map;
+let Uin32Array;
 //これ以外に読み込みが必要なもの
 //leaflet
 //zip.min.js
@@ -1958,7 +1961,7 @@ function f_topology(a_data, a_settings) {
 	//f_trip_number(a_data);
 	//parent_routesをつくる。
 	const c_parent_route_id = a_settings["parent_route_id"];//このidで統合する。
-	c_parent_routes = [];
+	const c_parent_routes = [];
 	for (let i1 = 0; i1 < a_data["ur_routes"].length; i1++) {
 		//parent_route_idに設定したい識別子を追加する。
 		a_data["ur_routes"][i1]["parent_route_id"] = a_data["ur_routes"][i1][c_parent_route_id];
@@ -2049,7 +2052,7 @@ function f_topology(a_data, a_settings) {
 	
 	//リセット
 	for (let i1 = 0; i1 < a_data["shape_segments"].length; i1++) {
-		c_shape_segment = a_data["shape_segments"][i1]["parent_routes"] = [];
+		a_data["shape_segments"][i1]["parent_routes"] = [];
 	}
 	
 	//parent_shape_segmentで最大のwidthをまとめる
