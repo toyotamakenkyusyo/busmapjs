@@ -594,7 +594,7 @@ function f_xhr_get(a_url, a_type) {
 }
 
 //ZIPの解凍
-Uin32Array = Uint32Array;//これがないとzip.min.js（jsinflate.js）がエラーになる
+//Uin32Array = Uint32Array;//これがないとzip.min.js（jsinflate.js）がエラーになる
 async function f_zip_to_text(a_url) {//トップレベルawaitではasync不要？
 	const c_array = (await f_xhr_get(a_url, "arraybuffer")).response;
 	const c_byte = new Uint8Array(c_array);
