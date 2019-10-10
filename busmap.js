@@ -1,6 +1,4 @@
 "use strict";
-let map;
-let Uin32Array;
 //これ以外に読み込みが必要なもの
 //leaflet
 //zip.min.js
@@ -11,6 +9,7 @@ document.getElementsByTagName("style")[0].innerHTML += " span[onclick] {color: b
 
 
 //グローバル変数
+let l_map; //leaflet
 let l_data = {};//グローバルな情報を扱う。
 let l_tooltip_x = 0;//ツールチップの位置
 let l_tooltip_y = 0;//ツールチップの位置
@@ -553,13 +552,13 @@ function f_html(a_settings) {
 
 function f_set_leaflet(a_settings) {
 	//leaflet関係
-	map = L.map("div_leaflet"); //leafletの読み込み。
+	l_map = L.map("div_leaflet"); //leafletの読み込み。
 	//背景地図（地理院地図等）を表示する。
 	for (let i1 = 0; i1 < a_settings["background_layers"].length; i1++) {
-		L.tileLayer(a_settings["background_layers"][i1][0], a_settings["background_layers"][i1][1]).addTo(map);
+		L.tileLayer(a_settings["background_layers"][i1][0], a_settings["background_layers"][i1][1]).addTo(l_map);
 	}
 	//svg地図を入れる。
-	L.svg().addTo(map);
+	L.svg().addTo(l_map);
 }
 
 
@@ -3343,7 +3342,7 @@ function f_leaflet(a_data, a_settings) {
 	
 	//初期の表示位置をsvgの左上、ズームレベルc_zoom_levelに設定する。
 	//SVGの挿入位置と初期倍率に関係する？
-	map.setView(c_top_left, c_zoom_level);
+	l_map.setView(c_top_left, c_zoom_level);
 	
 	//背景地図を半透明にする。
 	if (a_settings["background_map"] === true) {//透明にせず、半透明にする
@@ -3381,9 +3380,9 @@ function f_leaflet(a_data, a_settings) {
 	
 	
 	//拡大縮小したときにsvg地図がずれないようにする。
-	map.on("zoom", f_zoom);
+	l_map.on("zoom", f_zoom);
 	function f_zoom() {
-		c_svg_g.setAttribute("transform", "translate(" + map.latLngToLayerPoint([85.05112878, 0]).x + ", " + map.latLngToLayerPoint([85.05112878, 0]).y + ") scale(" + (2 ** (map.getZoom() - c_zoom_level)) + ")");
+		c_svg_g.setAttribute("transform", "translate(" + l_map.latLngToLayerPoint([85.05112878, 0]).x + ", " + l_map.latLngToLayerPoint([85.05112878, 0]).y + ") scale(" + (2 ** (l_map.getZoom() - c_zoom_level)) + ")");
 		setTimeout(f_zoom_2, 0);
 	}
 	
@@ -3391,7 +3390,7 @@ function f_leaflet(a_data, a_settings) {
 		for (let i1 = 0; i1 <= a_settings["svg_zoom_ratio"]; i1++) {
 			document.getElementById("g_zoom_" + String(i1)).setAttribute("visibility","hidden");
 		}
-		const c_svg_zoom_ratio = c_zoom_level - map.getZoom();
+		const c_svg_zoom_ratio = c_zoom_level - l_map.getZoom();
 		if (c_svg_zoom_ratio <= 0) {
 			document.getElementById("g_zoom_0").setAttribute("visibility","visible");
 		} else if (c_svg_zoom_ratio <= a_settings["svg_zoom_ratio"]) {
@@ -3403,13 +3402,13 @@ function f_leaflet(a_data, a_settings) {
 	
 	
 	//初期の表示位置を調整。（中心に）
-	map.setView(c_center, c_zoom_level);
+	l_map.setView(c_center, c_zoom_level);
 	f_zoom();
 	
 	
 	
 	//クリックした点の緯度経度取得
-	map.on("click", f_click);
+	l_map.on("click", f_click);
 	function f_click(a1) {
 		const c_lng = a1.latlng.lng;//経度
 		const c_lat = a1.latlng.lat;//緯度
