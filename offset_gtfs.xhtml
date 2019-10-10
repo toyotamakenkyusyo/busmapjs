@@ -44,8 +44,8 @@ async function f_read_gtfs() {
 f_read_gtfs();
 
 function f_leaflet(a_bmd) {
-	let map = L.map("div_leaflet");
-	L.tileLayer("https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png", {"attribution": "<a href=\"https://maps.gsi.go.jp/development/ichiran.html\">地理院タイル</a>", "opacity": 0.25}).addTo(map);
+	let l_map = L.map("div_leaflet");
+	L.tileLayer("https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png", {"attribution": "<a href=\"https://maps.gsi.go.jp/development/ichiran.html\">地理院タイル</a>", "opacity": 0.25}).addTo(l_map);
 	
 	const c_index = {};
 	for (let i1 = 0; i1 < a_bmd["ur_stops"].length; i1++) {
@@ -119,17 +119,17 @@ function f_leaflet(a_bmd) {
 		
 		const c_offset = (c_segments[i1]["routes"].length - 1) / 2;
 		for (let i2 = 0; i2 < c_segments[i1]["routes"].length; i2++) {
-			L.polyline(c_coordinates, {"color": "#" + c_index[c_segments[i1]["routes"][i2]]["route_color"], "offset": 8 * (i2 - c_offset)}).addTo(map);
+			L.polyline(c_coordinates, {"color": "#" + c_index[c_segments[i1]["routes"][i2]]["route_color"], "offset": 8 * (i2 - c_offset)}).addTo(l_map);
 		}
 	}
 	
 	const c_stops = "parent_stations"; //"ur_stops"
 	for (let i1 = 0; i1 < a_bmd[c_stops].length; i1++) {
 		const c_coordinates = [a_bmd[c_stops][i1]["stop_lat"], a_bmd[c_stops][i1]["stop_lon"]];
-		L.circleMarker(c_coordinates, {"color": "#000000", "fillColor": "#c0c0c0", "fillOpacity": 1, "radius": 8, "weight": 4, "opacity": 1}).addTo(map);
-		L.marker(c_coordinates, {"icon": L.divIcon({"html": a_bmd[c_stops][i1]["stop_name"], className: "className", iconSize: [256, 16], iconAnchor: [-16, -16]})}).addTo(map);
+		L.circleMarker(c_coordinates, {"color": "#000000", "fillColor": "#c0c0c0", "fillOpacity": 1, "radius": 8, "weight": 4, "opacity": 1}).addTo(l_map);
+		L.marker(c_coordinates, {"icon": L.divIcon({"html": a_bmd[c_stops][i1]["stop_name"], className: "className", iconSize: [256, 16], iconAnchor: [-16, -16]})}).addTo(l_map);
 		if (i1 === 0) {
-			map.setView(c_coordinates, 12);
+			l_map.setView(c_coordinates, 12);
 		}
 	}
 }
