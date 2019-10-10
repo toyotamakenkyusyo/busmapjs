@@ -1,5 +1,5 @@
 //https://cdn.jsdelivr.net/npm/zlibjs@0.3.1/bin/unzip.min.jsが必要
-//a_xhr_getはxhr.jsのf_xhr_getを入れる
+//a_xhr_getはf_xhr_get.jsのf_xhr_getを入れる
 export async function f_zip_to_text(a_url, a_xhr_get) {
 	const c_array = (await a_xhr_get(a_url, "arraybuffer")).response;
 	const c_byte = new Uint8Array(c_array);

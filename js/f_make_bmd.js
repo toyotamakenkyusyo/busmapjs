@@ -1,6 +1,3 @@
-
-
-
 //元データの段階では、ur_stopsのみ、parent_stationのみ、両方の3択
 //基本はur_stopsのみでparent_stationsは平均をとって自動生成
 //過去のur_stopsがわからない場合はparent_stationsのみ
@@ -9,9 +6,6 @@
 
 //統合はstop_nameで行う（緯度経度から位置を確認すべきか？）
 //親も一応用意する
-
-
-
 
 export function f_make_bmd(a_data) {
 	const c_bmd = {"ur_stops": [], "parent_stations": [], "trips": [], "ur_routes": [], "calendar": []};
