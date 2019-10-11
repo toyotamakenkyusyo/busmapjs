@@ -31,7 +31,8 @@ import {f_make_bmd} from "./js/f_make_bmd.js";
 
 
 async function f_read_gtfs() {
-	const c_text = await f_zip_to_text("https://toyotamakenkyusyo.github.io/gtfs/3270001000564/next/GTFS-JP.zip", f_xhr_get, Zlib);
+	const c_arraybuffer = await f_xhr_get("https://toyotamakenkyusyo.github.io/gtfs/3270001000564/next/GTFS-JP.zip", "arraybuffer");
+	const c_text = await f_zip_to_text(c_arraybuffer, Zlib);
 	const c_data = {};
 	for (let i1 in c_text) {
 		c_data[i1.replace(".txt", "")] = f_csv_to_json(c_text[i1]);

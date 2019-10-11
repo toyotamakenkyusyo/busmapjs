@@ -4,13 +4,19 @@ export function f_xhr_get(a_url, a_type) {
 		c_xhr.responseType = a_type;
 		c_xhr.open("get", a_url);
 		function f_resolve() {
-			a_resolve(c_xhr);
+			console.log(c_xhr);
+			if (c_xhr.status === 200) {
+				a_resolve(c_xhr.response);
+			} else {
+				f_reject();
+			}
 		}
 		function f_reject() {
-			a_reject("error");
+			a_reject(new Error("XHR失敗"));
 		}
-		c_xhr.onload = f_resolve;
-		c_xhr.onerror = f_reject;
+		c_xhr.onloadend = f_resolve;
+		c_xhr.onabort = f_reject;
+		c_xhr.ontimeout = f_reject;
 		c_xhr.send(null);
 	}
 	return new Promise(f_promise);

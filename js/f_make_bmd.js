@@ -9,6 +9,8 @@
 
 export function f_make_bmd(a_data) {
 	const c_bmd = {"ur_stops": [], "parent_stations": [], "trips": [], "ur_routes": [], "calendar": []};
+	c_bmd["stops"] = a_data["stops"]; //仮
+	c_bmd["rt"] = null; //仮
 	//[1]calendar
 	for (let i2 = 0; i2 < a_data["calendar"].length; i2++) {
 		const c_service = a_data["calendar"][i2];
@@ -137,6 +139,8 @@ export function f_make_bmd(a_data) {
 		}
 		return c_bmd;
 	}
+	
+	
 	//[4]trips
 	for (let i2 = 0; i2 < a_data["trips"].length; i2++) {
 		const c_trip = {"stop_times": [], "shapes": []};
