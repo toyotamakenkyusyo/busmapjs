@@ -264,8 +264,8 @@ function f_geojson_to_json(a_geojson) {
 			c_stops.push(c_feature["properties"]);
 		}
 	}
-	if (a_geojson["routes"] === undefined) { //普通のgeojson
-		const c_routes = [];
+	if (a_geojson["ur_routes"] === undefined) { //普通のgeojson
+		const c_ur_routes = [];
 		for (let i1 = 0; i1 < a_geojson["features"].length; i1++) {
 			const c_feature = a_geojson["features"][i1];
 			if (c_feature["geometry"]["type"] === "LineString") { //系統
@@ -279,10 +279,10 @@ function f_geojson_to_json(a_geojson) {
 				}
 			}
 		}
-		return {"stops": c_stops, "routes": c_routes, "ur_routes": c_routes, "calendar": []}; //routesとur_routes、calendarは互換性確保
+		return {"stops": c_stops, "routes": c_ur_routes, "ur_routes": c_ur_routes, "calendar": []}; //routesとur_routes、calendarは互換性確保
 	} else { //道路と系統を分離したgeojson
-		for (let i1 = 0; i1 < a_geojson["routes"].length; i1++) {
-			const c_route = a_geojson["routes"][i1];
+		for (let i1 = 0; i1 < a_geojson["ur_routes"].length; i1++) {
+			const c_route = a_geojson["ur_routes"][i1];
 			c_route["service_array"] = ""; //互換性確保
 			if (c_route["trip_number"] === undefined) {
 				c_route["trip_number"] = 999; //互換性確保
@@ -318,7 +318,7 @@ function f_geojson_to_json(a_geojson) {
 				//console.log("arcがみつからない？" + c_route["arcs"][i2] + " " + c_route["arcs"][i2+1]);
 			}
 		}
-		return {"stops": c_stops, "routes": a_geojson["routes"], "ur_routes": a_geojson["routes"], "calendar": []}; //routesとur_routes、calendarは互換性確保
+		return {"stops": c_stops, "routes": a_geojson["ur_routes"], "ur_routes": a_geojson["ur_routes"], "calendar": []}; //routesとur_routes、calendarは互換性確保
 	}
 }
 
