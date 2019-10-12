@@ -19,21 +19,23 @@ let l_settings = {};//設定
 
 import {f_input_settings} from "./js/f_input_settings.js";
 import {f_html} from "./js/f_html.js";
+
+
+import {f_xhr_get} from "./js/f_xhr_get.js";
+import {f_zip_to_text} from "./js/f_zip_to_text.js";
+import {f_csv_to_json} from "./js/f_csv_to_json.js";
 import {f_binary_to_json} from "./js/f_binary_to_json.js";
 
 import {f_from_topojson} from "./js/f_from_topojson.js";
 import {f_from_geojson} from "./js/f_from_geojson.js";
 import {f_from_api} from "./js/f_from_api.js";
 
-
-import {f_xhr_get} from "./js/f_xhr_get.js";
-import {f_zip_to_text} from "./js/f_zip_to_text.js";
-import {f_csv_to_json} from "./js/f_csv_to_json.js";
 import {f_prepare_gtfs} from "./js/f_prepare_gtfs.js";
 import {f_prepare_json} from "./js/f_prepare_json.js";
-import {f_make_bmd} from "./js/f_make_bmd.js";
 
-
+import {f_make_ur_routes} from "./js/f_make_ur_routes.js";
+import {f_make_parent_stations} from "./js/f_make_parent_stations.js";
+import {f_stop_number} from "./js/f_stop_number.js";
 
 window.f_busmap = async function f_busmap(a_settings) {
 	console.time("make_bmd");
@@ -65,6 +67,12 @@ window.f_busmap = async function f_busmap(a_settings) {
 			l_data[i1.replace(".txt", "")] = f_csv_to_json(c_text[i1]);
 		}
 		f_prepare_gtfs(l_data);
+		f_make_ur_routes(l_data);
+		f_make_parent_stations(l_data);
+		f_stop_number(l_data);
+		
+		
+		
 	} else if (a_settings["data_type"] === "json" || a_settings["data_type"] === "geojson" || a_settings["data_type"] === "topojson" || a_settings["data_type"] === "api") {
 		l_data = await f_xhr_get(a_settings["data"], "json");
 		if (a_settings["data_type"] === "topojson") {
@@ -76,23 +84,26 @@ window.f_busmap = async function f_busmap(a_settings) {
 		}
 		//この時点では、stops、ur_routesのみ
 		
-		f_prepare_json(l_data);
+		//f_prepare_json(l_data);
+		//f_make_parent_stations(l_data);
+		//f_stop_number(l_data);
 	} else {
 		new Error("読み込みできないタイプ");
 	}
 	console.log(l_data["ur_routes"]);
-	const c_bmd = f_make_bmd(l_data);
+	const c_bmd = l_data;
 	console.log(c_bmd["ur_routes"]);
 	
 	//GTFS-RTの読み込み
-	if (a_settings["rt"] !== false) {
+	l_data["rt"] = null;
+	if (typeof a_settings["rt"] === "string") {
 		const c_grb = module.exports.transit_realtime;
 		const c_cors_url = a_settings["cors_url"]; //クロスオリジンを回避するphpをかませる
 		const c_rt_url = c_cors_url + a_settings["rt"];
-		c_bmd["rt"] = f_binary_to_json(await f_xhr_get(c_rt_url, "arraybuffer"), c_grb);
+		a_data["rt"] = f_binary_to_json(await f_xhr_get(c_rt_url, "arraybuffer"), c_grb);
 	}
 	console.timeEnd("make_bmd");
-	console.log(c_bmd);
+	console.log(l_data);
 	//f_leaflet(c_bmd);
 	
 	
