@@ -10,7 +10,7 @@ export function f_prepare_json(a_data) {
 		a_data["calendar"] = []; //仮、互換性
 	}
 	if (typeof a_data["trips"] !== "object") {
-		a_data["trips"] = []; //仮、互換性
+		a_data["trips"] = []; //仮、互換性（たぶん不要）
 	}
 	
 	for (let i1 = 0; i1 < a_data["stops"].length; i1++) {
@@ -35,10 +35,10 @@ export function f_prepare_json(a_data) {
 			new Error("route_idが不正");
 		}
 		if (typeof a_data["ur_routes"][i1]["route_color"] !== "string") { //色か否かも要判定？
-			a_data["ur_routes"][i1]["route_color"] = "FF0000"; //仮にFF0000とする。
+			a_data["ur_routes"][i1]["route_color"] = "FF0000"; //仮にFF0000とする。（たぶん不要）
 		}
 		if (typeof a_data["ur_routes"][i1]["shape_pt_array"] !== "object") { //配列か否かも要判定？
-			a_data["ur_routes"][i1]["shape_pt_array"] = []; //仮の処置
+			a_data["ur_routes"][i1]["shape_pt_array"] = []; //仮の処置（たぶん不要）
 		}
 		if (typeof a_data["ur_routes"][i1]["service_array"] !== "object") { //配列か否かも要判定？
 			a_data["ur_routes"][i1]["service_array"] = ""; //仮の処置
@@ -48,18 +48,6 @@ export function f_prepare_json(a_data) {
 		}
 	}
 	
-	
-	//stop_numberをつける。（互換性のため）
-	for (let i1 = 0; i1 < a_data["stops"].length; i1++) {
-		const c_stop_id = a_data["stops"][i1]["stop_id"];
-		for (let i2 = 0; i2 < a_data["ur_routes"].length; i2++) {
-			for (let i3 = 0; i3 < a_data["ur_routes"][i2]["stop_array"].length; i3++) {
-				if (a_data["ur_routes"][i2]["stop_array"][i3]["stop_id"] === c_stop_id) {
-					a_data["ur_routes"][i2]["stop_array"][i3]["stop_number"] = i1;
-				}
-			}
-		}
-	}
 	//trip_number関係（一部データとの互換性）
 	for (let i1 = 0; i1 < a_data["calendar"].length; i1++) {
 		a_data["calendar"][i1]["monday"] = String(a_data["calendar"][i1]["monday"]);
@@ -71,24 +59,5 @@ export function f_prepare_json(a_data) {
 		a_data["calendar"][i1]["sunday"] = String(a_data["calendar"][i1]["synday"]);//仮
 		a_data["calendar"][i1]["sunday"] = String(a_data["calendar"][i1]["sonday"]);//仮
 		a_data["calendar"][i1]["sunday"] = String(a_data["calendar"][i1]["sunday"]);
-	}
-	//shape補完
-	for (let i1 = 0; i1 < a_data["ur_routes"].length; i1++) {
-		if (a_data["ur_routes"][i1]["shape_pt_array"].length !== 0) {
-			continue;
-		}
-		const c_shapes = [];
-		for (let i2 = 0; i2 < a_data["ur_routes"][i1]["stop_array"].length; i2++) {
-			for (let i3 = 0; i3 < a_data["stops"].length; i3++) {
-				if (a_data["ur_routes"][i1]["stop_array"][i2]["stop_id"] === a_data["stops"][i3]["stop_id"]) {
-					c_shapes.push({
-						"shape_pt_lat": a_data["stops"][i3]["stop_lat"],
-						"shape_pt_lon": a_data["stops"][i3]["stop_lon"]
-					});
-					break;
-				}
-			}
-		}
-		a_data["ur_routes"][i1]["shape_pt_array"] = c_shapes;
 	}
 }

@@ -30,10 +30,16 @@ import {f_from_topojson} from "./js/f_from_topojson.js";
 import {f_from_geojson} from "./js/f_from_geojson.js";
 import {f_from_api} from "./js/f_from_api.js";
 
-import {f_prepare_gtfs} from "./js/f_prepare_gtfs.js";
 import {f_prepare_json} from "./js/f_prepare_json.js";
 
+import {f_set_stop_type} from "./js/f_set_stop_type.js";
+import {f_set_route_sort_order} from "./js/f_set_route_sort_order.js";
+import {f_number_gtfs} from "./js/f_number_gtfs.js";
 import {f_make_ur_routes} from "./js/f_make_ur_routes.js";
+
+import {f_set_color} from "./js/f_set_color.js";
+import {f_make_shape_pt_array} from "./js/f_make_shape_pt_array.js";
+
 import {f_make_parent_stations} from "./js/f_make_parent_stations.js";
 import {f_stop_number} from "./js/f_stop_number.js";
 
@@ -66,13 +72,15 @@ window.f_busmap = async function f_busmap(a_settings) {
 		for (let i1 in c_text) {
 			l_data[i1.replace(".txt", "")] = f_csv_to_json(c_text[i1]);
 		}
-		f_prepare_gtfs(l_data);
+		//GTFSの差異を統一（ur_routesを作るのに必要なroute_sort_order、pickup_type、drop_off_type）
+		//pickup_typeとdrop_off_typeを補う
+		f_set_stop_type(l_data);
+		//route_sort_orderを補う
+		f_set_route_sort_order(l_data);
+		//緯度、経度、順番の型を数に変換
+		f_number_gtfs(l_data);
+		//ur_routesを作る
 		f_make_ur_routes(l_data);
-		f_make_parent_stations(l_data);
-		f_stop_number(l_data);
-		
-		
-		
 	} else if (a_settings["data_type"] === "json" || a_settings["data_type"] === "geojson" || a_settings["data_type"] === "topojson" || a_settings["data_type"] === "api") {
 		l_data = await f_xhr_get(a_settings["data"], "json");
 		if (a_settings["data_type"] === "topojson") {
@@ -83,16 +91,23 @@ window.f_busmap = async function f_busmap(a_settings) {
 			l_data = f_from_api(l_data);
 		}
 		//この時点では、stops、ur_routesのみ
-		
-		//f_prepare_json(l_data);
-		//f_make_parent_stations(l_data);
-		//f_stop_number(l_data);
+		//stop_nameを補う
+		//a_data["calendar"] = []; //仮、互換性
+		//a_data["ur_routes"][i1]["service_array"] = ""; //仮の処置
+		//a_data["ur_routes"][i1]["trip_number"] = 999; //仮に999とする。
+		f_prepare_json(l_data);
 	} else {
 		new Error("読み込みできないタイプ");
 	}
-	console.log(l_data["ur_routes"]);
-	const c_bmd = l_data;
-	console.log(c_bmd["ur_routes"]);
+	
+	
+	//route_color、route_text_colorを補う
+	f_set_color(l_data);
+	//shape_pt_arrayを補う
+	f_make_shape_pt_array(l_data);
+	//location_typeを補う（未作成）
+	f_make_parent_stations(l_data);
+	f_stop_number(l_data);
 	
 	//GTFS-RTの読み込み
 	l_data["rt"] = null;
@@ -104,6 +119,7 @@ window.f_busmap = async function f_busmap(a_settings) {
 	}
 	console.timeEnd("make_bmd");
 	console.log(l_data);
+	const c_bmd = l_data;
 	//f_leaflet(c_bmd);
 	
 	
@@ -261,25 +277,6 @@ function f_open(a_bmd, a_settings) {
 
 
 
-//緯度、経度、順番の文字列を数値に変換する。
-function f_number_gtfs(a_data) {
-	for (let i1 = 0; i1 < a_data["stops"].length; i1++) {
-		a_data["stops"][i1]["stop_lat"] = Number(a_data["stops"][i1]["stop_lat"]);
-		a_data["stops"][i1]["stop_lon"] = Number(a_data["stops"][i1]["stop_lon"]);
-	}
-	for (let i1 = 0; i1 < a_data["stop_times"].length; i1++) {
-		a_data["stop_times"][i1]["stop_sequence"] = Number(a_data["stop_times"][i1]["stop_sequence"]);
-	}
-	for (let i1 = 0; i1 < a_data["shapes"].length; i1++) {
-		a_data["shapes"][i1]["shape_pt_lat"] = Number(a_data["shapes"][i1]["shape_pt_lat"]);
-		a_data["shapes"][i1]["shape_pt_lon"] = Number(a_data["shapes"][i1]["shape_pt_lon"]);
-		a_data["shapes"][i1]["shape_pt_sequence"] = Number(a_data["shapes"][i1]["shape_pt_sequence"]);
-	}
-}
-
-
-
-
 //colorが未設定のところを補充する。
 function f_color_gtfs(a_data) {
 	for (let i1 = 0; i1 < a_data["routes"].length; i1++) {
@@ -303,32 +300,6 @@ function f_color_gtfs(a_data) {
 		}
 	}
 }
-
-//stop_times.txtのpickup_type, drop_off_typeを埋める。
-function f_set_stop_type(a_data) {
-	for (let i1 = 0; i1 < a_data["stop_times"].length; i1++) {
-		const c_stop = a_data["stop_times"][i1];
-		if ((c_stop["drop_off_type"] === "") || (c_stop["drop_off_type"] === null) || (c_stop["drop_off_type"] === undefined)) {
-			if (i1 === 0) { //最初
-				c_stop["drop_off_type"] = "1";
-			} else if (a_data["stop_times"][i1]["trip_id"] !== a_data["stop_times"][i1 - 1]["trip_id"]) { //前とtripが異なる
-				c_stop["drop_off_type"] = "1";
-			} else { //前とtripが同じ
-				c_stop["drop_off_type"] = "0";
-			}
-		}
-		if ((c_stop["pickup_type"] === "") || (c_stop["pickup_type"] === null) || (c_stop["pickup_type"] === undefined)) {
-			if (i1 === a_data["stop_times"].length - 1) { //最後
-				c_stop["pickup_type"] = "1";
-			} else if (a_data["stop_times"][i1]["trip_id"] !== a_data["stop_times"][i1 + 1]["trip_id"]) { //後ろとtripが異なる
-				c_stop["pickup_type"] = "1";
-			} else { //後ろとtripが同じ
-				c_stop["pickup_type"] = "0";
-			}
-		}
-	}
-}
-
 
 
 function f_make_shape(a_data) {
