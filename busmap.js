@@ -114,7 +114,7 @@ async function f_busmap(a_settings) {
 	f_make_shape_segments(c_bmd);
 	console.timeEnd("t_9");
 	console.time("t_10");
-	f_cut_shape_segments(c_bmd, c_input_settings["zoom_level"]); //3s遅い。高速化困難。ここでshape_pointが増加、stopにnearest_shape_pt_idを追加、shape_pt_arrayに変更あり。
+	f_cut_shape_segments(c_bmd, c_input_settings); //3s遅い。高速化困難。ここでshape_pointが増加、stopにnearest_shape_pt_idを追加、shape_pt_arrayに変更あり。
 	console.timeEnd("t_10");
 	console.time("t_11");
 	f_make_new_shape_pt_array(c_bmd);
@@ -443,6 +443,7 @@ function f_input_settings(a_settings) {
 		"stop_name_overlap":true,
 		"zoom_level": 16,
 		"svg_zoom_level": 16, //互換性のため残す
+		"cut_zoom_level": 16, //f_cut_shape_segments用
 		"svg_zoom_ratio": 0, //SVG表示縮小率=zoom_level - svg_zoom_level
 		"background_map": true,
 		"background_layers": [["https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png", {attribution: "<a href=\"https://maps.gsi.go.jp/development/ichiran.html\">地理院タイル</a>", opacity: 0.25}]],
@@ -1473,7 +1474,7 @@ function f_delete_point(a_data) {
 
 
 
-function f_cut_shape_segments(a_data, a_zoom_level) {
+function f_cut_shape_segments(a_data, a_settings) {
 	//使う関数
 	//点と線分の距離
 	//そのまま流用したため、未検証。
@@ -1504,9 +1505,9 @@ function f_cut_shape_segments(a_data, a_zoom_level) {
 	}
 	
 	
-	//切断の前にズームレベル16タイルに分けて目次を作る。
-	const c_z = 16;
-	const c_z_tile = 2 ** (c_z - 8 - a_zoom_level); //ズームレベルa_zoom_levelのタイル座標をズームレベル16のタイル番号に変換する。
+	//切断の前にズームレベルc_zタイルに分けて目次を作る。
+	const c_z = a_settings["cut_zoom_level"];
+	const c_z_tile = 2 ** (c_z - 8 - a_settings["zoom_level"]); //ズームレベルzoom_levelのタイル座標をズームレベルc_zのタイル番号に変換する。
 	//経度は基準をずらしているのに注意。
 	const c_index = {}; //c_shape_segmentsの目次をつくる。
 	for (let i1 = 0; i1 < a_data["shape_segments"].length; i1++) {
@@ -1529,6 +1530,8 @@ function f_cut_shape_segments(a_data, a_zoom_level) {
 		const c_py = a_data["stops"][i1]["stop_y"];
 		const c_px_tile = Math.floor(c_px * c_z_tile);
 		const c_py_tile = Math.floor(c_py * c_z_tile);
+		//
+		
 		//最寄のshape segmentを探す。
 		for (let i2 = c_px_tile - 1; i2 <= c_px_tile + 1; i2++) {
 			for (let i3 = c_py_tile - 1; i3 <= c_py_tile + 1; i3++) {
