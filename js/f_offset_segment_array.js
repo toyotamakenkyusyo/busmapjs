@@ -4,7 +4,7 @@ export function f_offset_segment_array(a_segment_array) {
 		"remove_cross": true, //余計な線の交差を除く
 		"separate_stops": true//, //停車地を分けて統合しない
 	};
-	f_offset_segment_array_once(a_segment_array); //初回計算
+	f_offset_segment_array_once(a_segment_array, a_settings); //初回計算
 	if (a_settings["remove_cross"] === true) { //余計な線の交差を除く
 		let l_exist; //逆の順序が存在するときtrue
 		let l_sids; //統合する点のidたち（始点側）
@@ -49,7 +49,7 @@ export function f_offset_segment_array(a_segment_array) {
 				}
 			}
 			a_segment_array = c_new_segment_array; //代入して変える
-			f_offset_segment_array_once(a_segment_array); //再計算
+			f_offset_segment_array_once(a_segment_array, a_settings); //再計算
 			if (l_exist === false) { //逆の順序が存在しなければ終了する。
 				break;
 			}
@@ -59,7 +59,7 @@ export function f_offset_segment_array(a_segment_array) {
 
 
 
-function f_offset_segment_array_once(a_segment_array) {
+function f_offset_segment_array_once(a_segment_array, a_settings) {
 	//始点
 	a_segment_array[0]["st"] = 0;
 	const c_v0z = a_segment_array[0]["z"];
@@ -80,14 +80,14 @@ function f_offset_segment_array_once(a_segment_array) {
 	a_segment_array[a_segment_array.length - 1]["exy"][0]["y"] = (-1) * c_vnz * c_vnx / c_vnn + a_segment_array[a_segment_array.length - 1]["ey"];
 	//途中
 	for (let i1 = 0; i1 < a_segment_array.length - 1; i1++) {
-		f_offset_point(a_segment_array[i1], a_segment_array[i1 + 1]);
+		f_offset_point(a_segment_array[i1], a_segment_array[i1 + 1], a_settings);
 	}
 }
 
 
 
 
-function f_offset_point(a_1, a_2) { //左手系に注意
+function f_offset_point(a_1, a_2, a_settings) { //左手系に注意
 	//2つの有向線分
 	const c_s1 = a_1;
 	const c_s2 = a_2;
@@ -116,8 +116,16 @@ function f_offset_point(a_1, a_2) { //左手系に注意
 	
 	//以下は後でまとめてもよい？
 	const c_xy = [];
-	for (let i1 = 0; i1 < c_z["xy"].length; i1++) {
-		c_xy.push({"x": c_s1z * c_z["xy"][i1]["x"][0] + c_s2z * c_z["xy"][i1]["x"][1] + c_z["xy"][i1]["x"][2], "y": c_s1z * c_z["xy"][i1]["y"][0] + c_s2z * c_z["xy"][i1]["y"][1] + c_z["xy"][i1]["y"][2]});
+	if (c_z["parallel"] === true) { //3点
+		c_xy.push({"curve": false, "x": c_s1z * c_z["xy"][0]["x"][0] + c_s2z * c_z["xy"][0]["x"][1] + c_z["xy"][0]["x"][2], "y": c_s1z * c_z["xy"][0]["y"][0] + c_s2z * c_z["xy"][0]["y"][1] + c_z["xy"][0]["y"][2]});
+		c_xy.push({"curve": false, "x": c_s1z * c_z["xy"][1]["x"][0] + c_s2z * c_z["xy"][1]["x"][1] + c_z["xy"][1]["x"][2], "y": c_s1z * c_z["xy"][1]["y"][0] + c_s2z * c_z["xy"][1]["y"][1] + c_z["xy"][1]["y"][2]});
+		c_xy.push({"curve": false, "x": c_s1z * c_z["xy"][2]["x"][0] + c_s2z * c_z["xy"][2]["x"][1] + c_z["xy"][2]["x"][2], "y": c_s1z * c_z["xy"][2]["y"][0] + c_s2z * c_z["xy"][2]["y"][1] + c_z["xy"][2]["y"][2]});
+	} else if (c_z["parallel"] === false && a_settings["curve"] === true && c_s1["et"] >1 && c_s2["st"] < 0) { //3点、曲線
+		c_xy.push({"curve": false, "x": c_s1z * c_z["xy"][0]["x"][0] + c_s2z * c_z["xy"][0]["x"][1] + c_z["xy"][0]["x"][2], "y": c_s1z * c_z["xy"][0]["y"][0] + c_s2z * c_z["xy"][0]["y"][1] + c_z["xy"][0]["y"][2]});
+		c_xy.push({"curve": true, "x": c_s1z * c_z["xy"][1]["x"][0] + c_s2z * c_z["xy"][1]["x"][1] + c_z["xy"][1]["x"][2], "y": c_s1z * c_z["xy"][1]["y"][0] + c_s2z * c_z["xy"][1]["y"][1] + c_z["xy"][1]["y"][2]});
+		c_xy.push({"curve": false, "x": c_s1z * c_z["xy"][2]["x"][0] + c_s2z * c_z["xy"][2]["x"][1] + c_z["xy"][2]["x"][2], "y": c_s1z * c_z["xy"][2]["y"][0] + c_s2z * c_z["xy"][2]["y"][1] + c_z["xy"][2]["y"][2]});
+	} else { //中の点のみ
+		c_xy.push({"curve": false, "x": c_s1z * c_z["xy"][1]["x"][0] + c_s2z * c_z["xy"][1]["x"][1] + c_z["xy"][1]["x"][2], "y": c_s1z * c_z["xy"][1]["y"][0] + c_s2z * c_z["xy"][1]["y"][1] + c_z["xy"][1]["y"][2]});
 	}
 	c_s1["exy"] = c_xy;
 	c_s2["sxy"] = c_xy;
@@ -215,16 +223,14 @@ function f_offset(a_1, a_2) { //左手系に注意
 	//d1tはずらし幅z1、z2のとき、z1 * d1t[0] + z2 * d1t[1] + d1t[2]の値
 	
 	if (Math.abs(c_xyxynn) < 0.1) { //平行に近い
-		return {"d1t": [0, 0, 1], "d2t": [0, 0, 0], "xy": [{"x": [c_v1yn, 0, c_p2x], "y": [c_v1xn, 0, c_p2y]}, {"x": [c_v1yn * 0.5, c_v2yn * 0.5, (c_p2x + c_p3x) * 0.5], "y": [c_v1xn * 0.5, c_v2xn * 0.5, (c_p2y + c_p3y) * 0.5]}, {"x": [0, c_v2yn, c_p3x], "y": [0, c_v2xn, c_p3y]}]};
+		return {"parallel": true, "d1t": [0, 0, 1], "d2t": [0, 0, 0], "xy": [{"x": [c_v1yn, 0, c_p2x], "y": [c_v1xn, 0, c_p2y]}, {"x": [c_v1yn * 0.5, c_v2yn * 0.5, (c_p2x + c_p3x) * 0.5], "y": [c_v1xn * 0.5, c_v2xn * 0.5, (c_p2y + c_p3y) * 0.5]}, {"x": [0, c_v2yn, c_p3x], "y": [0, c_v2xn, c_p3y]}]};
 	}
 	//p2とp3が同じで、折り返し（p1とp4が同じ）の場合は角を丸めたいが、場合分けを省略
 	//p2とp3が同じで、標柱で切断した点の場合、場合分けを省略
 	//p2とp3が同じで、オフセット幅が同じなら1点で曲げたいが、場合分けを省略
 	//p2とp3が同じ場合、場合分けを省略
 	
-	return {"d1t": [(-1) * c_yxyx * c_xxyy / c_v1n, c_yxyx * c_v2n, 1 + l_d1t], "d2t": [(-1) * c_yxyx * c_v1n, c_yxyx * c_xxyy / c_v2n, l_d2t], "xy": [{"x": [(-1) * c_v1n * c_v2x * c_yxyx, c_v2n * c_v1x * c_yxyx, c_pcx], "y": [(-1) * c_v1n * c_v2y * c_yxyx, c_v2n * c_v1y * c_yxyx, c_pcy]}]};
-	//曲線機能は停止
-	
+	return {"parallel": false, "d1t": [(-1) * c_yxyx * c_xxyy / c_v1n, c_yxyx * c_v2n, 1 + l_d1t], "d2t": [(-1) * c_yxyx * c_v1n, c_yxyx * c_xxyy / c_v2n, l_d2t], "xy": [{"x": [c_v1yn, 0, c_p2x], "y": [c_v1xn, 0, c_p2y]}, {"x": [(-1) * c_v1n * c_v2x * c_yxyx, c_v2n * c_v1x * c_yxyx, c_pcx], "y": [(-1) * c_v1n * c_v2y * c_yxyx, c_v2n * c_v1y * c_yxyx, c_pcy]}, {"x": [0, c_v2yn, c_p3x], "y": [0, c_v2xn, c_p3y]}]};
 }
 
 
