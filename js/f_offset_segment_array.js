@@ -1,13 +1,6 @@
-/*
-曲線
-停留所間ごとの分割→関係ない？
-高速化（c_segment_pairs）
-注意：左手系
-*/
-
-
 export function f_offset_segment_array(a_segment_array) {
 	const a_settings = {
+		"curve": true, //角を丸める
 		"remove_cross": true, //余計な線の交差を除く
 		"separate_stops": true//, //停車地を分けて統合しない
 	};
@@ -94,19 +87,25 @@ function f_offset_segment_array_once(a_segment_array) {
 
 
 
-function f_offset_point(a_1, a_2) {
+function f_offset_point(a_1, a_2) { //左手系に注意
 	//2つの有向線分
 	const c_s1 = a_1;
 	const c_s2 = a_2;
-	//const c_segment_pair_key = "segment_pair_key_" + String(c_s1["sx"]) + "_" + String(c_s1["sy"]) + "_" + String(c_s1["ex"]) + "_" + String(c_s1["ey"]) + "_" + String(c_s2["sx"]) + "_" + String(c_s2["sy"]) + "_" + String(c_s2["ex"]) + "_" + String(c_s2["ey"]);
-	
-	/*
+	//高速化のため、segment_pairsに記録する
+	if (window.busmapjs === undefined) {
+		window.busmapjs = {};
+	} 
+	if (window.busmapjs["segment_pairs"] === undefined) {
+		window.busmapjs["segment_pairs"] = {};
+	}
+	const c_segment_pairs = window.busmapjs["segment_pairs"];
+	const c_segment_pair_key = "segment_pair_key_" + String(c_s1["sx"]) + "_" + String(c_s1["sy"]) + "_" + String(c_s1["ex"]) + "_" + String(c_s1["ey"]) + "_" + String(c_s2["sx"]) + "_" + String(c_s2["sy"]) + "_" + String(c_s2["ex"]) + "_" + String(c_s2["ey"]);
 	if (c_segment_pairs[c_segment_pair_key] === undefined) {
 		c_segment_pairs[c_segment_pair_key] = f_offset(c_s1, c_s2);
 	}
 	const c_z = c_segment_pairs[c_segment_pair_key];
-	*/
-	const c_z = f_offset(c_s1, c_s2);
+	
+	//const c_z = f_offset(c_s1, c_s2); //segment_pairsを用いない場合
 	
 	
 	//ずらし幅
@@ -132,7 +131,7 @@ function f_offset_point(a_1, a_2) {
 //折れ点、折れ点の線分上における相対的な位置を出力する（有向線分1と有向線分2のオフセット幅の函数になる）
 //有向線分1のずらし幅をz1、有向線分2のずらし幅をz2とすると、出力は a × z1 + b × z2 + c の形になる。この[a, b, c]を出力すればよい。
 
-function f_offset(a_1, a_2) {
+function f_offset(a_1, a_2) { //左手系に注意
 	let l_parallel = false;
 	const c_p1x = a_1["sx"];
 	const c_p1y = a_1["sy"];
