@@ -95,10 +95,10 @@ function f_offset_polyline(a_data, a_zoom_ratio) {
 				"sy": c_station_xy[c_sid]["y"],
 				"ex": c_station_xy[c_eid]["x"],
 				"ey": c_station_xy[c_eid]["y"],
-				"sn": true,
-				"en": true,
-				"w": null,
-				"z": null//,
+				"sn": true, //残す
+				"en": true, //残す
+				"w": null, //線幅
+				"z": null//, //オフセット幅
 			});
 		}
 	}
