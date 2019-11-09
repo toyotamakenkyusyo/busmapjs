@@ -9,6 +9,7 @@ window.f_busmap = async function f_busmap() {
 	const c_zoom_level = 10; //初期ズームレベル
 	//leaflet
 	document.getElementById("div_leaflet").style.height = "512px";
+	document.getElementById("div_leaflet").style.background = "#FFFFFF";
 	let l_map = L.map("div_leaflet"); //leafletの読み込み。
 	L.tileLayer("https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png", {attribution: "<a href=\"https://maps.gsi.go.jp/development/ichiran.html\">地理院タイル</a>", opacity: 0.25}).addTo(l_map); //背景地図（地理院地図等）を表示する。
 	L.svg().addTo(l_map); //svg地図を入れる。
