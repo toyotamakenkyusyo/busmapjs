@@ -20,7 +20,7 @@ window.f_busmap = async function f_busmap() {
 	
 	//オフセットした折れ線、折れ線上の駅の位置を返す
 	console.time("t");
-	f_offset_polyline(c_data, f_zoom_ratio(c_zoom_level) );
+	f_offset_polyline(c_data, f_zoom_ratio(c_zoom_level));
 	console.timeEnd("t");
 	console.log(c_data);
 	
