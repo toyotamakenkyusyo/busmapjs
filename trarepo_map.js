@@ -79,13 +79,43 @@ function f_offset_polyline(a_data, a_zoom_ratio) {
 		c_station_xy[i1]["x"] = f_lon_to_x(a_data["station"][i1]["lon"], "m");
 		c_station_xy[i1]["y"] = f_lat_to_y(a_data["station"][i1]["lat"], "m");
 	}
-	//折れ線の線分の列c_segment_arraysを作る
-	const c_segment_arrays = {};
+	//3点A-B-Cの組を作る
+	const c_station_triple = {};
 	for (let i1 in a_data["route"]) {
-		c_segment_arrays[i1] = [];
+		for (let i2 = 0; i2 < a_data["route"][i1]["stationList"].length - 2; i2++) {
+			const c_sid = a_data["route"][i1]["stationList"][i2];
+			const c_mid = a_data["route"][i1]["stationList"][i2 + 1];
+			const c_eid = a_data["route"][i1]["stationList"][i2 + 2];
+			c_station_triple["triple_" + c_sid + "_" + c_eid] = {"sid": c_sid, "mid": c_mid, "eid": c_eid};
+			c_station_triple["triple_" + c_eid + "_" + c_sid] = {"sid": c_eid, "mid": c_mid, "eid": c_sid};
+			//A-B-CとA-D-Cがあったとき、後から出たほうだけになる
+			//簡単のため、C-B-Aも作っておく
+		}
+	}
+	//c_shape_pt_arraysを作る
+	//A-B-CとA-Cがあるとき、A-CをA-B-Cに補完
+	const c_shape_pt_arrays = {};
+	for (let i1 in a_data["route"]) {
+		c_shape_pt_arrays[i1] = [];
+		c_shape_pt_arrays[i1].push({"id": a_data["route"][i1]["stationList"][0], "m": true}); //mは元からの点のときtrue
 		for (let i2 = 0; i2 < a_data["route"][i1]["stationList"].length - 1; i2++) {
 			const c_sid = a_data["route"][i1]["stationList"][i2];
 			const c_eid = a_data["route"][i1]["stationList"][i2 + 1];
+			if (c_station_triple["triple_" + c_sid + "_" + c_eid] !== undefined) { //補完点がある
+				c_shape_pt_arrays[i1].push({"id": c_station_triple["triple_" + c_sid + "_" + c_eid]["mid"], "m": false});
+			}
+			c_shape_pt_arrays[i1].push({"id": c_eid, "m": true});
+		}
+	}
+	
+	
+	//折れ線の線分の列c_segment_arraysを作る
+	const c_segment_arrays = {};
+	for (let i1 in c_shape_pt_arrays) {
+		c_segment_arrays[i1] = [];
+		for (let i2 = 0; i2 < c_shape_pt_arrays[i1].length - 1; i2++) {
+			const c_sid = c_shape_pt_arrays[i1][i2]["id"];
+			const c_eid = c_shape_pt_arrays[i1][i2 + 1]["id"];
 			c_segment_arrays[i1].push({
 				"sid": c_sid,
 				"eid": c_eid,
@@ -97,6 +127,8 @@ function f_offset_polyline(a_data, a_zoom_ratio) {
 				"ey": c_station_xy[c_eid]["y"],
 				"sn": true, //残す
 				"en": true, //残す
+				"sm": c_shape_pt_arrays[i1][i2]["m"], //元からの点
+				"em": c_shape_pt_arrays[i1][i2 + 1]["m"], //元からの点
 				"w": null, //線幅
 				"z": null//, //オフセット幅
 			});
@@ -164,7 +196,7 @@ function f_offset_polyline(a_data, a_zoom_ratio) {
 		//折れ線に変換する
 		c_polylines[i1] = [];
 		for (let i2 = 0; i2 < c_segment_arrays[i1][0]["sxy"].length; i2++) {
-			c_polylines[i1].push({"x": c_segment_arrays[i1][0]["sxy"][i2]["x"], "y": c_segment_arrays[i1][0]["sxy"][i2]["y"]});
+			c_polylines[i1].push({"x": c_segment_arrays[i1][0]["sxy"][i2]["x"], "y": c_segment_arrays[i1][0]["sxy"][i2]["y"], "m": c_segment_arrays[i1][0]["sm"]});
 			if (c_segment_arrays[i1][0]["sxy"].length === 3) {
 				c_polylines[i1][c_polylines[i1].length - 2]["ids"] = c_segment_arrays[i1][0]["sids"];
 			} else {
@@ -173,7 +205,7 @@ function f_offset_polyline(a_data, a_zoom_ratio) {
 		}
 		for (let i2 = 0; i2 < c_segment_arrays[i1].length; i2++) {
 			for (let i3 = 0; i3 < c_segment_arrays[i1][i2]["exy"].length; i3++) {
-				c_polylines[i1].push({"x": c_segment_arrays[i1][i2]["exy"][i3]["x"], "y": c_segment_arrays[i1][i2]["exy"][i3]["y"]});
+				c_polylines[i1].push({"x": c_segment_arrays[i1][i2]["exy"][i3]["x"], "y": c_segment_arrays[i1][i2]["exy"][i3]["y"], "m": c_segment_arrays[i1][i2]["em"]});
 				if (c_segment_arrays[i1][i2]["exy"].length === 3) {
 					c_polylines[i1][c_polylines[i1].length - 2]["ids"] = c_segment_arrays[i1][i2]["eids"];
 				} else {
@@ -196,10 +228,11 @@ function f_offset_polyline(a_data, a_zoom_ratio) {
 		for (let i2 = 0; i2 < c_polylines[i1].length; i2++) {
 			if (c_polylines[i1][i2]["ids"] !== undefined) {
 				if (c_polylines[i1][i2]["ids"].length === 1) { //各点idは1つだけの前提（統合していないはず）
-					a_data["route"][i1]["points"].push({"id": c_polylines[i1][i2]["ids"][0], "latlon": {"lat": c_polylines[i1][i2]["lat"], "lon": c_polylines[i1][i2]["lon"]}});
+					if (c_polylines[i1][i2]["m"] === true) { //元からある
+						a_data["route"][i1]["points"].push({"id": c_polylines[i1][i2]["ids"][0], "latlon": {"lat": c_polylines[i1][i2]["lat"], "lon": c_polylines[i1][i2]["lon"]}});
+					}
 				}
 			}
 		}
-		
 	}
 }
