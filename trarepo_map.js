@@ -70,7 +70,7 @@ window.f_busmap = async function f_busmap() {
 
 
 
-function f_offset_polyline(a_data, a_zoom_ratio) { //a_zoom_ratioは今のところ無効
+function f_offset_polyline(a_data, a_zoom_ratio) {
 	//緯度経度をxy（仮にEPSG:3857）に変換しておく
 	const c_station_xy = {};
 	for (let i1 in a_data["station"]) {
