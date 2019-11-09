@@ -1,89 +1,104 @@
-
 /*
 曲線
-停留所間ごとの分割
+停留所間ごとの分割→関係ない？
+高速化（c_segment_pairs）
 注意：左手系
 */
 
 
-
-
 export function f_offset_segment_array(a_segment_array) {
-	let l_segments = a_segment_array;
-	f_offset_3(l_segments); //初回計算
-	let l_exist = false; //逆の順序が存在するときtrue、しないと仮定
-	let l_sids = []; //統合する点のidたち（始点側）
-	while (0 < l_segments.length) { //無限ループ注意
-		l_exist = false;
-		l_sids = [];
-		const c_segments_2 = []; //残すsegment
-		for (let i2 = 0; i2 < l_segments.length; i2++) {
-			//統合する点のidをまとめる。
-			for (let i3 = 0; i3 < l_segments[i2]["sids"].length; i3++) {
-				l_sids.push(l_segments[i2]["sids"][i3]);
-			}
-			if ((0 < i2) && (i2 < l_segments.length - 1) //最初と最後は残すので除く
-				&& (l_segments[i2]["st"] > l_segments[i2]["et"]) //順序が逆
-				&& (l_segments[i2]["sn"] === false && l_segments[i2]["en"] === false) //残す指定なし
-			) { //逆の順序の場合
-				l_exist = true; //逆の順序が存在
-			} else {
-				c_segments_2.push(l_segments[i2]);
-				if (i2 !== 0) {
-					c_segments_2[c_segments_2.length - 2]["eids"] = l_sids;
+	const a_settings = {
+		"remove_cross": true, //余計な線の交差を除く
+		"separate_stops": true//, //停車地を分けて統合しない
+	};
+	f_offset_segment_array_once(a_segment_array); //初回計算
+	if (a_settings["remove_cross"] === true) { //余計な線の交差を除く
+		let l_exist; //逆の順序が存在するときtrue
+		let l_sids; //統合する点のidたち（始点側）
+		let l_s_stop; //停車地があるときtrue
+		while (0 < a_segment_array.length) { //無限ループ注意
+			l_exist = false; //逆の順序がないと仮定
+			l_sids = []; //リセット
+			l_s_stop = false; //リセット
+			const c_new_segment_array = []; //残すsegment
+			for (let i2 = 0; i2 < a_segment_array.length; i2++) {
+				//統合する点のidをまとめる。
+				for (let i3 = 0; i3 < a_segment_array[i2]["sids"].length; i3++) {
+					l_sids.push(a_segment_array[i2]["sids"][i3]);
 				}
-				c_segments_2[c_segments_2.length - 1]["sids"] = l_sids;
-				if (i2 === l_segments.length - 1) {
-					c_segments_2[c_segments_2.length - 1]["eids"] = l_segments[i2]["eids"];
+				//停車地があるか記録
+				if (a_segment_array[i2]["s_stop"] === true) {
+					l_s_stop = true;
 				}
-				l_sids = [];
+				if (
+					(0 < i2) && (i2 < a_segment_array.length - 1) //最初と最後は必ず残すので除く
+					&& (a_segment_array[i2]["st"] > a_segment_array[i2]["et"]) //順序が逆
+					&& (
+						(a_settings["separate_stops"] === true && a_segment_array[i2]["s_stop"] === false && a_segment_array[i2]["e_stop"] === false) //停車地を分ける、停車地がない場合
+						|| (a_settings["separate_stops"] === false) //停車地を分けない
+					)
+				) { //逆の順序の場合
+					l_exist = true; //逆の順序が存在
+				} else {
+					c_new_segment_array.push(a_segment_array[i2]);
+					if (i2 !== 0) { //最初以外
+						c_new_segment_array[c_new_segment_array.length - 2]["eids"] = l_sids;
+						c_new_segment_array[c_new_segment_array.length - 2]["e_stop"] = l_s_stop;
+					}
+					c_new_segment_array[c_new_segment_array.length - 1]["sids"] = l_sids;
+					c_new_segment_array[c_new_segment_array.length - 1]["s_stop"] = l_s_stop;
+					if (i2 === a_segment_array.length - 1) { //最後
+						c_new_segment_array[c_new_segment_array.length - 1]["eids"] = a_segment_array[i2]["eids"];
+						c_new_segment_array[c_new_segment_array.length - 1]["e_stop"] = a_segment_array[i2]["e_stop"];
+					}
+					l_sids = [];
+					l_s_stop = false;
+				}
 			}
-		}
-		l_segments = c_segments_2; //代入して変える
-		f_offset_3(l_segments); //再計算
-		if (l_exist === false) { //逆の順序が存在しなければ終了する。
-			break;
+			a_segment_array = c_new_segment_array; //代入して変える
+			f_offset_segment_array_once(a_segment_array); //再計算
+			if (l_exist === false) { //逆の順序が存在しなければ終了する。
+				break;
+			}
 		}
 	}
-	
 }
 
 
 
-function f_offset_3(a_segments) {
-	const c_segments = a_segments;
+function f_offset_segment_array_once(a_segment_array) {
 	//始点
-	c_segments[0]["st"] = 0;
-	const c_v0z = c_segments[0]["z"];
-	const c_v0x = c_segments[0]["ex"] - c_segments[0]["sx"];
-	const c_v0y = c_segments[0]["ey"] - c_segments[0]["sy"];
+	a_segment_array[0]["st"] = 0;
+	const c_v0z = a_segment_array[0]["z"];
+	const c_v0x = a_segment_array[0]["ex"] - a_segment_array[0]["sx"];
+	const c_v0y = a_segment_array[0]["ey"] - a_segment_array[0]["sy"];
 	const c_v0n = ((c_v0x * c_v0x) + (c_v0y * c_v0y)) ** 0.5;
-	c_segments[0]["sxy"] = [{}];
-	c_segments[0]["sxy"][0]["x"] = c_v0z * c_v0y / c_v0n + c_segments[0]["sx"];
-	c_segments[0]["sxy"][0]["y"] = (-1) * c_v0z * c_v0x / c_v0n + c_segments[0]["sy"];
+	a_segment_array[0]["sxy"] = [{}];
+	a_segment_array[0]["sxy"][0]["x"] = c_v0z * c_v0y / c_v0n + a_segment_array[0]["sx"];
+	a_segment_array[0]["sxy"][0]["y"] = (-1) * c_v0z * c_v0x / c_v0n + a_segment_array[0]["sy"];
 	//終点
-	c_segments[c_segments.length - 1]["et"] = 1;
-	const c_vnz = c_segments[c_segments.length - 1]["z"];
-	const c_vnx = c_segments[c_segments.length - 1]["ex"] - c_segments[c_segments.length - 1]["sx"];
-	const c_vny = c_segments[c_segments.length - 1]["ey"] - c_segments[c_segments.length - 1]["sy"];
+	a_segment_array[a_segment_array.length - 1]["et"] = 1;
+	const c_vnz = a_segment_array[a_segment_array.length - 1]["z"];
+	const c_vnx = a_segment_array[a_segment_array.length - 1]["ex"] - a_segment_array[a_segment_array.length - 1]["sx"];
+	const c_vny = a_segment_array[a_segment_array.length - 1]["ey"] - a_segment_array[a_segment_array.length - 1]["sy"];
 	const c_vnn = ((c_vnx * c_vnx) + (c_vny * c_vny)) ** 0.5;
-	c_segments[c_segments.length - 1]["exy"] = [{}];
-	c_segments[c_segments.length - 1]["exy"][0]["x"] = c_vnz * c_vny / c_vnn + c_segments[c_segments.length - 1]["ex"];
-	c_segments[c_segments.length - 1]["exy"][0]["y"] = (-1) * c_vnz * c_vnx / c_vnn + c_segments[c_segments.length - 1]["ey"];
+	a_segment_array[a_segment_array.length - 1]["exy"] = [{}];
+	a_segment_array[a_segment_array.length - 1]["exy"][0]["x"] = c_vnz * c_vny / c_vnn + a_segment_array[a_segment_array.length - 1]["ex"];
+	a_segment_array[a_segment_array.length - 1]["exy"][0]["y"] = (-1) * c_vnz * c_vnx / c_vnn + a_segment_array[a_segment_array.length - 1]["ey"];
 	//途中
-	for (let i1 = 0; i1 < c_segments.length - 1; i1++) {
-		f_offset_2(c_segments[i1], c_segments[i1 + 1]);
+	for (let i1 = 0; i1 < a_segment_array.length - 1; i1++) {
+		f_offset_point(a_segment_array[i1], a_segment_array[i1 + 1]);
 	}
 }
 
 
 
 
-function f_offset_2(a_1, a_2) {
+function f_offset_point(a_1, a_2) {
 	//2つの有向線分
 	const c_s1 = a_1;
 	const c_s2 = a_2;
-	const c_segment_pair_key = "segment_pair_key_" + String(c_s1["sx"]) + "_" + String(c_s1["sy"]) + "_" + String(c_s1["ex"]) + "_" + String(c_s1["ey"]) + "_" + String(c_s2["sx"]) + "_" + String(c_s2["sy"]) + "_" + String(c_s2["ex"]) + "_" + String(c_s2["ey"]);
+	//const c_segment_pair_key = "segment_pair_key_" + String(c_s1["sx"]) + "_" + String(c_s1["sy"]) + "_" + String(c_s1["ex"]) + "_" + String(c_s1["ey"]) + "_" + String(c_s2["sx"]) + "_" + String(c_s2["sy"]) + "_" + String(c_s2["ex"]) + "_" + String(c_s2["ey"]);
 	
 	/*
 	if (c_segment_pairs[c_segment_pair_key] === undefined) {

@@ -125,8 +125,8 @@ function f_offset_polyline(a_data, a_zoom_ratio) {
 				"sy": c_station_xy[c_sid]["y"],
 				"ex": c_station_xy[c_eid]["x"],
 				"ey": c_station_xy[c_eid]["y"],
-				"sn": true, //残す
-				"en": true, //残す
+				"s_stop": true, //停車地あり
+				"e_stop": true, //停車地あり
 				"sm": c_shape_pt_arrays[i1][i2]["m"], //元からの点
 				"em": c_shape_pt_arrays[i1][i2 + 1]["m"], //元からの点
 				"w": null, //線幅
