@@ -119,12 +119,23 @@ window.f_busmap = async function f_busmap(a_settings) {
 	}
 	console.timeEnd("make_bmd");
 	console.log(l_data);
-	const c_bmd = l_data;
+	//const c_bmd = l_data;
+	const c_bmd = {
+		"rt": l_data["rt"],
+		"stops": l_data["stops"],
+		"ur_stops": l_data["ur_stops"],
+		"parent_station": l_data["parent_station"],
+		"ur_routes": l_data["ur_routes"],
+		"calendar": l_data["calendar"],
+		"trips": l_data["trips"],
+		"stop_times": l_data["stop_times"],
+		"shapes": l_data["shapes"]//,
+	};
 	//f_leaflet(c_bmd);
 	
 	
 
-	
+	//throw new Error("終了");
 	
 	
 	//f_prepare_common(a_data[0]);
@@ -264,72 +275,6 @@ function f_open(a_bmd, a_settings) {
 	}
 	console.timeEnd("L");
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-//colorが未設定のところを補充する。
-function f_color_gtfs(a_data) {
-	for (let i1 = 0; i1 < a_data["routes"].length; i1++) {
-		if ((a_data["routes"][i1]["route_color"] === "") || (a_data["routes"][i1]["route_color"] === undefined)) {
-			//カラーバリアフリー
-			//const c_red = Math.round((Math.random() * 15)).toString(16) + Math.round((Math.random() * 15)).toString(16);
-			//const c_green = c_red;
-			//const c_blue = Math.round((Math.random() * 15)).toString(16) + Math.round((Math.random() * 15)).toString(16);
-			//a_data["routes"][i1]["route_color"] = c_red + c_green + c_blue;
-			//完全ランダム
-			a_data["routes"][i1]["route_color"] = Math.round((Math.random() * 15)).toString(16) + "F" + Math.round((Math.random() * 15)).toString(16) + "F" + Math.round((Math.random() * 15)).toString(16) + "F"; //本来はFFFFFF
-			
-			//青黄10色から選択。
-			//const c_colors = ["8080FF", "4040FF", "0000FF", "0000C0", "000080", "FFFF80", "FFFF40", "FFFF00", "C0C000", "808000"];
-			//a_data["routes"][i1]["route_color"] = c_colors[Math.round(Math.random() * 10)];
-			
-			
-		}
-		if ((a_data["routes"][i1]["route_text_color"] === "") || (a_data["routes"][i1]["route_text_color"] === undefined)) {
-			a_data["routes"][i1]["route_text_color"] = "000000";
-		}
-	}
-}
-
-
-function f_make_shape(a_data) {
-	if (a_data["shapes"].length !== 0) {
-		return a_data;
-	}
-	const c_shapes = [];
-	for (let i1 = 0; i1 < a_data["stop_times"].length; i1++) {
-		for (let i2 = 0; i2 < a_data["stops"].length; i2++) {
-			if (a_data["stop_times"][i1]["stop_id"] === a_data["stops"][i2]["stop_id"]) {
-				c_shapes.push({
-					"shape_id": "shape_id_" + a_data["stop_times"][i1]["trip_id"]
-					, "shape_pt_lat": a_data["stops"][i2]["stop_lat"]
-					, "shape_pt_lon": a_data["stops"][i2]["stop_lon"]
-					, "shape_pt_sequence": a_data["stops"][i2]["stop_sequence"]
-				});
-				break;
-			}
-		}
-	}
-	for (let i1 = 0; i1 < a_data["trips"].length; i1++) {
-		a_data["trips"][i1]["shape_id"] = "shape_id_" + a_data["trips"][i1]["trip_id"]
-	}
-	a_data["shapes"] = c_shapes;
-}
-
-
-
-
-
 
 
 
