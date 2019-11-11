@@ -161,7 +161,7 @@ window.f_busmap = async function f_busmap(a_settings) {
 	f_make_shape_segments(c_bmd);
 	console.timeEnd("t_9");
 	console.time("t_10");
-	f_cut_shape_segments(c_bmd, a_settings["zoom_level"]); //3s遅い。高速化困難。ここでshape_pointが増加、stopにnearest_shape_pt_idを追加、shape_pt_arrayに変更あり。
+	f_cut_shape_segments(c_bmd, a_settings); //3s遅い。高速化困難。ここでshape_pointが増加、stopにnearest_shape_pt_idを追加、shape_pt_arrayに変更あり。
 	console.timeEnd("t_10");
 	console.time("t_11");
 	f_make_new_shape_pt_array(c_bmd);
@@ -525,7 +525,7 @@ function f_delete_point(a_data) {
 
 
 
-function f_cut_shape_segments(a_data, a_zoom_level) {
+function f_cut_shape_segments(a_data, a_settings) {
 	//使う関数
 	//点と線分の距離
 	//そのまま流用したため、未検証。
@@ -556,9 +556,9 @@ function f_cut_shape_segments(a_data, a_zoom_level) {
 	}
 	
 	
-	//切断の前にズームレベル16タイルに分けて目次を作る。
-	const c_z = 16;
-	const c_z_tile = 2 ** (c_z - 8 - a_zoom_level); //ズームレベルa_zoom_levelのタイル座標をズームレベル16のタイル番号に変換する。
+	//切断の前にズームレベルc_zタイルに分けて目次を作る。
+	const c_z = a_settings["cut_zoom_level"];
+	const c_z_tile = 2 ** (c_z - 8 - a_settings["zoom_level"]); //ズームレベルa_zoom_levelのタイル座標をズームレベルc_zのタイル番号に変換する。
 	//経度は基準をずらしているのに注意。
 	const c_index = {}; //c_shape_segmentsの目次をつくる。
 	for (let i1 = 0; i1 < a_data["shape_segments"].length; i1++) {

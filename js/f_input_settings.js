@@ -18,6 +18,7 @@ export function f_input_settings(a_settings) {
 		"stop_name_overlap":true,
 		"zoom_level": 16,
 		"svg_zoom_level": 16, //互換性のため残す
+		"cut_zoom_level": 16, //f_cut_shape_segments用
 		"svg_zoom_ratio": 0, //SVG表示縮小率=zoom_level - svg_zoom_level
 		"background_map": true,
 		"background_layers": [["https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png", {attribution: "<a href=\"https://maps.gsi.go.jp/development/ichiran.html\">地理院タイル</a>", opacity: 0.25}]],
