@@ -5,6 +5,7 @@ export function f_from_api(a_api) {
 		c_stops.push({
 			"stop_id": a_api["station"][i1]["id"],
 			"stop_name": a_api["station"][i1]["name"],
+			"parent_station": a_api["station"][i1]["id"],
 			"stop_lat": a_api["station"][i1]["lat"],
 			"stop_lon": a_api["station"][i1]["lon"]//,
 		});
