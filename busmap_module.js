@@ -128,8 +128,7 @@ window.f_busmap = async function f_busmap(a_settings) {
 		"ur_routes": l_data["ur_routes"],
 		"calendar": l_data["calendar"],
 		"trips": l_data["trips"],
-		"stop_times": l_data["stop_times"],
-		"shapes": l_data["shapes"]//,
+		"stop_times": l_data["stop_times"]//,
 	};
 	//f_leaflet(c_bmd);
 	
