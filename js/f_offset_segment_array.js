@@ -203,7 +203,7 @@ function f_offset(a_1, a_2) { //左手系に注意
 	const c_d2x = c_pcx - c_p3x;
 	const c_d2y = c_pcy - c_p3y;
 	let l_d2t;
-	if (c_p4x !== c_p4x) { //y軸に平行でない
+	if (c_p4x !== c_p3x) { //y軸に平行でない
 		l_d2t = (c_pcx - c_p3x) / (c_p4x - c_p3x);
 	} else if (c_p4y !== c_p3y) { //x軸に平行でない
 		l_d2t = (c_pcy - c_p3y) / (c_p4y - c_p3y);
