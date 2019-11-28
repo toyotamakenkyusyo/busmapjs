@@ -20,6 +20,7 @@ ur_routeのwidthの計算からは元のur_routeと分離すべき
 
 export function f_set_width_offset(a_data, a_lonlat_xy, a_settings) {
 	//parent_routesをつくる。
+	const c_tile_size = 256; //タイルの1辺のピクセル数
 	const c_parent_route_id_key = a_settings["parent_route_id"]; //このkeyをidとして統合する。
 	const c_parent_routes = [];
 	for (let i1 = 0; i1 < a_data["ur_routes"].length; i1++) {
@@ -163,8 +164,8 @@ export function f_set_width_offset(a_data, a_lonlat_xy, a_settings) {
 			c_ur_route_child_shape_segment_arrays[i1].push({
 				"id": c_id,
 				"direction": c_direction,
-				"w": l_width,
-				"z": l_offset//,
+				"w": l_width / c_tile_size, //仮
+				"z": l_offset / c_tile_size//, //仮
 			});
 		}
 	}
@@ -217,12 +218,6 @@ export function f_set_width_offset(a_data, a_lonlat_xy, a_settings) {
 		}
 		return l_width;
 	}
-	
-	
-	
-	
-	
-	
 	
 	
 }

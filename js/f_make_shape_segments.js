@@ -85,8 +85,8 @@ export function f_make_shape_segments(a_data, a_lonlat_xy, a_settings) {
 	}
 	
 	//余計な点を除く
-	const c_delete_overlap = true;
-	if (c_delete_overlap ===  true) {
+	const c_delete_overlap = false; //以下、いまくいかない
+	if (c_delete_overlap === true) {
 		//一直線上か否かの判定は？
 		const c_delete_shape_points = {}; //消す予定のshape point
 		const c_delete_shape_segments = {}; //消す予定のshape segment
@@ -531,6 +531,7 @@ c_child_shape_segment_array→戻す
 	
 	*/
 	
+	console.log(c_shape_segment_arrays);
 	
 	a_data["shape_segments"] = c_shape_segments;
 	a_data["child_shape_segments"] = c_child_shape_segments;
