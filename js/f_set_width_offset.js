@@ -174,15 +174,22 @@ export function f_set_width_offset(a_data, a_lonlat_xy, a_settings) {
 	for (let i1 = 0; i1 < c_ur_route_child_shape_segment_arrays.length; i1++) {
 		for (let i2 = 0; i2 < c_ur_route_child_shape_segment_arrays[i1].length; i2++) {
 			const c_child_shape_segment = a_data["child_shape_segments"][c_ur_route_child_shape_segment_arrays[i1][i2]["id"]];
-			const c_sid = c_child_shape_segment["sid"];
-			const c_eid = c_child_shape_segment["eid"];
-			const c_s_shape_point = a_data["shape_points"][c_sid];
-			const c_e_shape_point = a_data["shape_points"][c_eid];
+			let l_sid;
+			let l_eid;
+			if (c_ur_route_child_shape_segment_arrays[i1][i2]["direction"] === 1) {
+				l_sid = c_child_shape_segment["sid"];
+				l_eid = c_child_shape_segment["eid"];
+			} else if (c_ur_route_child_shape_segment_arrays[i1][i2]["direction"] === -1) {
+				l_sid = c_child_shape_segment["eid"];
+				l_eid = c_child_shape_segment["sid"];
+			}
+			const c_s_shape_point = a_data["shape_points"][l_sid];
+			const c_e_shape_point = a_data["shape_points"][l_eid];
 			const c_zoom_level = 16; //仮
-			c_ur_route_child_shape_segment_arrays[i1][i2]["sid"] = c_sid;
-			c_ur_route_child_shape_segment_arrays[i1][i2]["eid"] = c_eid;
-			c_ur_route_child_shape_segment_arrays[i1][i2]["sids"] = [c_sid];
-			c_ur_route_child_shape_segment_arrays[i1][i2]["eids"] = [c_eid];
+			c_ur_route_child_shape_segment_arrays[i1][i2]["sid"] = l_sid;
+			c_ur_route_child_shape_segment_arrays[i1][i2]["eid"] = l_eid;
+			c_ur_route_child_shape_segment_arrays[i1][i2]["sids"] = [l_sid];
+			c_ur_route_child_shape_segment_arrays[i1][i2]["eids"] = [l_eid];
 			c_ur_route_child_shape_segment_arrays[i1][i2]["sx"] = a_lonlat_xy(c_s_shape_point["lon"], "lon_to_x", c_zoom_level);
 			c_ur_route_child_shape_segment_arrays[i1][i2]["sy"] = a_lonlat_xy(c_s_shape_point["lat"], "lat_to_y", c_zoom_level);
 			c_ur_route_child_shape_segment_arrays[i1][i2]["ex"] = a_lonlat_xy(c_e_shape_point["lon"], "lon_to_x", c_zoom_level);

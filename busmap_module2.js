@@ -60,7 +60,7 @@ window.f_busmap = async function f_busmap(a_settings) {
 	if (a_settings["leaflet"] === true) {
 		l_map = L.map("div_leaflet"); //leafletの読み込み。
 		for (let i1 = 0; i1 < a_settings["background_layers"].length; i1++) {
-			L.tileLayer(a_settings["background_layers"][i1][0], a_settings["background_layers"][i1][1]).addTo(l_map); //背景地図（地理院地図等）を表示する。
+			//L.tileLayer(a_settings["background_layers"][i1][0], a_settings["background_layers"][i1][1]).addTo(l_map); //背景地図（地理院地図等）を表示する。
 		}
 		L.svg().addTo(l_map); //svg地図を入れる。
 		l_map.setView([35.454518, 133.850126], 16); //初期表示位置（仮）
