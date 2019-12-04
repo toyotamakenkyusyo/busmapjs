@@ -60,7 +60,7 @@ window.f_busmap = async function f_busmap(a_settings) {
 	if (a_settings["leaflet"] === true) {
 		l_map = L.map("div_leaflet"); //leafletの読み込み。
 		for (let i1 = 0; i1 < a_settings["background_layers"].length; i1++) {
-			//L.tileLayer(a_settings["background_layers"][i1][0], a_settings["background_layers"][i1][1]).addTo(l_map); //背景地図（地理院地図等）を表示する。
+			L.tileLayer(a_settings["background_layers"][i1][0], a_settings["background_layers"][i1][1]).addTo(l_map); //背景地図（地理院地図等）を表示する。
 		}
 		L.svg().addTo(l_map); //svg地図を入れる。
 		l_map.setView([35.454518, 133.850126], 16); //初期表示位置（仮）
@@ -216,15 +216,73 @@ function f_open(a_bmd, a_settings) {
 	console.timeEnd("T");
 	console.time("G");
 	
+	
+	
+	
+	//オフセット
+	for (let i1 = 14; i1 <= 16; i1++) {
+		const c_zoom_ratio = 2 ** (16 - i1);
+		console.log(c_zoom_ratio);
+		a_bmd["zoom_" + String(i1)] = [];
+		for (let i2 = 0; i2 < a_bmd["ur_route_child_shape_segment_arrays"].length; i2++) {
+			a_bmd["zoom_" + String(i1)][i2] = {};
+			const c_array = []; //a_bmd["ur_route_child_shape_segment_arrays"][i1]のコピー
+			for (let i3 = 0; i3 < a_bmd["ur_route_child_shape_segment_arrays"][i2].length; i3++) {
+				c_array[i3] = {};
+				for (let i4 in a_bmd["ur_route_child_shape_segment_arrays"][i2][i3]) {
+					c_array[i3][i4] = a_bmd["ur_route_child_shape_segment_arrays"][i2][i3][i4];
+				}
+				c_array[i3]["sids"] = [c_array[i3]["sid"]];
+				c_array[i3]["sids"] = [c_array[i3]["eid"]];
+				c_array[i3]["w"] = c_array[i3]["w"] * c_zoom_ratio; //オフセット倍率を変更
+				c_array[i3]["z"] = c_array[i3]["z"] * c_zoom_ratio; //オフセット倍率を変更
+			}
+			f_offset_segment_array(c_array); //オフセット
+			const c_return = f_make_polyline(c_array); //折れ線に変換する
+			a_bmd["zoom_" + String(i1)][i2] = c_return;
+			a_bmd["zoom_" + String(i1)][i2]["l_polyline"] = L.polyline(c_return["polyline"], {"color": "#" + a_bmd["ur_routes"][i2]["route_color"], "weight": 4}).addTo(l_map);
+		}
+	}
+	
+	f_zoom();
+	//ズームレベル変更→leaflet変更
+	l_map.on("zoom", f_zoom);
+	function f_zoom() {
+		const c_zoom_level = l_map.getZoom();
+		if (c_zoom_level <= 14) {
+			for (let i1 = 0; i1 < a_bmd["ur_route_child_shape_segment_arrays"].length; i1++) {
+				a_bmd["zoom_14"][i1]["l_polyline"].addTo(l_map);
+				a_bmd["zoom_15"][i1]["l_polyline"].remove(l_map);
+				a_bmd["zoom_16"][i1]["l_polyline"].remove(l_map);
+			}
+		} else if (c_zoom_level === 15) {
+			for (let i1 = 0; i1 < a_bmd["ur_route_child_shape_segment_arrays"].length; i1++) {
+				a_bmd["zoom_14"][i1]["l_polyline"].remove(l_map);
+				a_bmd["zoom_15"][i1]["l_polyline"].addTo(l_map);
+				a_bmd["zoom_16"][i1]["l_polyline"].remove(l_map);
+			}
+		} else if (c_zoom_level >= 16) {
+			for (let i1 = 0; i1 < a_bmd["ur_route_child_shape_segment_arrays"].length; i1++) {
+				a_bmd["zoom_14"][i1]["l_polyline"].remove(l_map);
+				a_bmd["zoom_15"][i1]["l_polyline"].remove(l_map);
+				a_bmd["zoom_16"][i1]["l_polyline"].addTo(l_map);
+			}
+		}
+	}
+	
+	throw new Error("ここまで");
+	
+	
+	
+	
 	for (let i1 = 0; i1 < a_bmd["ur_route_child_shape_segment_arrays"].length; i1++) {
 		f_offset_segment_array(a_bmd["ur_route_child_shape_segment_arrays"][i1]);
 	}
 	
-	
-	
 	//オフセットした線を作る
 	const c_polylines = {};
 	a_bmd["l_polyline"] = [];
+	
 	for (let i1 in a_bmd["ur_route_child_shape_segment_arrays"]) {
 		f_offset_segment_array(a_bmd["ur_route_child_shape_segment_arrays"][i1]);
 		//折れ線に変換する
