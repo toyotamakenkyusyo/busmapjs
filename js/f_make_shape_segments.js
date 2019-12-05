@@ -477,11 +477,12 @@ export function f_make_shape_segments(a_data, a_lonlat_xy, a_settings) {
 		let l_check;
 		l_check = true;
 		if (l_add_first === true) {
+			const c_first_stop_id = a_data["ur_routes"][i1]["stop_array"][0]["stop_id"];
 			l_check = false;
 			for (let i2 in c_shape_points) {
 				const c_near_stops = c_shape_points[i2]["near_stops"];
 				for (let i3 = 0; i3 < c_near_stops.length; i3++) {
-					if (c_near_stops[i3] === c_number_array[0]["stop_id"]) {
+					if (c_near_stops[i3] === c_first_stop_id) {
 						c_new_array.push(i2);
 						l_check = true;
 					}
@@ -494,15 +495,22 @@ export function f_make_shape_segments(a_data, a_lonlat_xy, a_settings) {
 		for (let i2 = l_first; i2 <= l_last; i2++) {
 			c_new_array.push(c_child_shape_pt_arrays[i1][i2]);
 		}
+		l_check = true;
 		if (l_add_last === true) {
+			const c_last_stop_id = a_data["ur_routes"][i1]["stop_array"][a_data["ur_routes"][i1]["stop_array"].length - 1]["stop_id"];
+			l_check = false;
 			for (let i2 in c_shape_points) {
 				const c_near_stops = c_shape_points[i2]["near_stops"];
 				for (let i3 = 0; i3 < c_near_stops.length; i3++) {
-					if (c_near_stops[i3] === c_number_array[c_number_array.length - 1]["stop_id"]) {
+					if (c_near_stops[i3] === c_last_stop_id) {
 						c_new_array.push(i2);
+						l_check = true;
 					}
 				}
 			}
+		}
+		if (l_check === false) {
+			console.log("最後の追加失敗");
 		}
 		c_child_shape_pt_arrays[i1] = c_new_array;
 		

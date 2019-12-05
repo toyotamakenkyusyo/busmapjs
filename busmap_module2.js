@@ -414,20 +414,20 @@ function f_make_polyline(a_child_shape_segment_array) {
 	const c_polyline = [];
 	for (let i2 = 0; i2 < a_child_shape_segment_array[0]["sxy"].length; i2++) {
 		c_polyline.push({"x": a_child_shape_segment_array[0]["sxy"][i2]["x"], "y": a_child_shape_segment_array[0]["sxy"][i2]["y"], "original": a_child_shape_segment_array[0]["sm"]});
-		if (a_child_shape_segment_array[0]["sxy"].length === 3) {
-			c_polyline[c_polyline.length - 2]["ids"] = a_child_shape_segment_array[0]["sids"];
-		} else {
-			c_polyline[c_polyline.length - 1]["ids"] = a_child_shape_segment_array[0]["sids"];
-		}
+	}
+	if (a_child_shape_segment_array[0]["sxy"].length === 3) {
+		c_polyline[c_polyline.length - 2]["ids"] = a_child_shape_segment_array[0]["sids"];
+	} else {
+		c_polyline[c_polyline.length - 1]["ids"] = a_child_shape_segment_array[0]["sids"];
 	}
 	for (let i2 = 0; i2 < a_child_shape_segment_array.length; i2++) {
 		for (let i3 = 0; i3 < a_child_shape_segment_array[i2]["exy"].length; i3++) {
 			c_polyline.push({"x": a_child_shape_segment_array[i2]["exy"][i3]["x"], "y": a_child_shape_segment_array[i2]["exy"][i3]["y"], "original": a_child_shape_segment_array[i2]["em"]});
-			if (a_child_shape_segment_array[i2]["exy"].length === 3) {
-				c_polyline[c_polyline.length - 2]["ids"] = a_child_shape_segment_array[i2]["eids"];
-			} else {
-				c_polyline[c_polyline.length - 1]["ids"] = a_child_shape_segment_array[i2]["eids"];
-			}
+		}
+		if (a_child_shape_segment_array[i2]["exy"].length === 3) {
+			c_polyline[c_polyline.length - 2]["ids"] = a_child_shape_segment_array[i2]["eids"];
+		} else {
+			c_polyline[c_polyline.length - 1]["ids"] = a_child_shape_segment_array[i2]["eids"];
 		}
 	}
 	return c_polyline;
