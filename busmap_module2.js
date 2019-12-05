@@ -59,8 +59,10 @@ window.f_busmap = async function f_busmap(a_settings) {
 	//leafletの初期設定
 	if (a_settings["leaflet"] === true) {
 		l_map = L.map("div_leaflet"); //leafletの読み込み。
-		for (let i1 = 0; i1 < a_settings["background_layers"].length; i1++) {
-			L.tileLayer(a_settings["background_layers"][i1][0], a_settings["background_layers"][i1][1]).addTo(l_map); //背景地図（地理院地図等）を表示する。
+		if (a_settings["background_map"] === true) {
+			for (let i1 = 0; i1 < a_settings["background_layers"].length; i1++) {
+				L.tileLayer(a_settings["background_layers"][i1][0], a_settings["background_layers"][i1][1]).addTo(l_map); //背景地図（地理院地図等）を表示する。
+			}
 		}
 		L.svg().addTo(l_map); //svg地図を入れる。
 		l_map.setView([35.454518, 133.850126], 16); //初期表示位置（仮）
@@ -222,8 +224,9 @@ function f_open(a_bmd, a_settings) {
 	//オフセット
 	for (let i1 = 14; i1 <= 16; i1++) {
 		const c_zoom_ratio = 2 ** (16 - i1);
-		console.log(c_zoom_ratio);
+		console.log(c_zoom_ratio)
 		a_bmd["zoom_" + String(i1)] = [];
+		a_bmd["layer_zoom_" + String(i1)] = L.layerGroup().addTo(l_map);
 		for (let i2 = 0; i2 < a_bmd["ur_route_child_shape_segment_arrays"].length; i2++) {
 			a_bmd["zoom_" + String(i1)][i2] = {};
 			const c_array = []; //a_bmd["ur_route_child_shape_segment_arrays"][i1]のコピー
@@ -233,14 +236,17 @@ function f_open(a_bmd, a_settings) {
 					c_array[i3][i4] = a_bmd["ur_route_child_shape_segment_arrays"][i2][i3][i4];
 				}
 				c_array[i3]["sids"] = [c_array[i3]["sid"]];
-				c_array[i3]["sids"] = [c_array[i3]["eid"]];
+				c_array[i3]["eids"] = [c_array[i3]["eid"]];
 				c_array[i3]["w"] = c_array[i3]["w"] * c_zoom_ratio; //オフセット倍率を変更
 				c_array[i3]["z"] = c_array[i3]["z"] * c_zoom_ratio; //オフセット倍率を変更
 			}
+			
+			
+			
+			
 			f_offset_segment_array(c_array); //オフセット
 			
-			//追加
-			
+			console.log(c_array);
 			//折れ線に変換する
 			const c_polyline = f_make_polyline(c_array);
 			//緯度経度
@@ -254,7 +260,7 @@ function f_open(a_bmd, a_settings) {
 			for (let i3 = 0; i3 < c_polyline.length; i3++) {
 				c_polyline[i3]["near_stops"] = [];
 				if (c_polyline[i3]["ids"] === undefined) {
-					continue;
+					c_polyline[i3]["ids"] = [];
 				}
 				for (let i4 = 0; i4 < c_polyline[i3]["ids"].length; i4++) {
 					const c_near_stops = a_bmd["shape_points"][c_polyline[i3]["ids"][i4]]["near_stops"];
@@ -264,132 +270,43 @@ function f_open(a_bmd, a_settings) {
 				}
 			}
 			const c_return2 = f_2(c_polyline, a_bmd["ur_routes"][i2]["stop_array"]);
-			console.log(c_return2);
-			//console.log(c_return2);
 			for (let i3 = 0; i3 < c_return2["polyline_array"].length; i3++) {
-				if (!(c_return2["polyline_array"][i3].length >= 2)) {
-					//continue;
-				}
-				a_bmd["zoom_" + String(i1)].push([]);
-				a_bmd["zoom_" + String(i1)][a_bmd["zoom_" + String(i1)].length - 1]["l_polyline"] = L.polyline(c_return2["polyline_array"][i3], {"color": "#" + a_bmd["ur_routes"][i2]["route_color"], "weight": 4}).addTo(l_map);
-				//a_bmd["zoom_" + String(i1)].push({"l_polyline": L.polyline(c_return2["polyline_array"][i3], {"color": "#" + a_bmd["ur_routes"][i2]["route_color"], "weight": 4}).addTo(l_map)});
+				a_bmd["layer_zoom_" + String(i1)].addLayer(L.polyline(c_return2["polyline_array"][i3], {"color": "#" + a_bmd["ur_routes"][i2]["route_color"], "weight": 4}));
 			}
-			
-			
-			
-			//追加ここまで
-			
-			/*
-			const c_return = f_make_polyline(c_array); //折れ線に変換する
-			a_bmd["zoom_" + String(i1)][i2] = c_return;
-			a_bmd["zoom_" + String(i1)][i2]["l_polyline"] = L.polyline(c_return["polyline"], {"color": "#" + a_bmd["ur_routes"][i2]["route_color"], "weight": 4}).addTo(l_map);
-			*/
+			for (let i3 = 0; i3 < c_return2["stop_array"].length; i3++) {
+				a_bmd["layer_zoom_" + String(i1)].addLayer(L.circle(c_return2["stop_array"][i3], {"radius": 2, "stroke": 1, "color": "#000000", "fill": true, "fillColor": "#FFFFFF"}));
+			}
 		}
 	}
 	
 	f_zoom();
 	//ズームレベル変更→leaflet変更
 	l_map.on("zoom", f_zoom);
+	
+	
 	function f_zoom() {
 		const c_zoom_level = l_map.getZoom();
 		if (c_zoom_level <= 14) {
-			for (let i1 = 0; i1 < a_bmd["zoom_14"].length; i1++) {
-				if (a_bmd["zoom_14"][i1]["l_polyline"] !== undefined) {
-					a_bmd["zoom_14"][i1]["l_polyline"].addTo(l_map);
-				}
-			}
-			for (let i1 = 0; i1 < a_bmd["zoom_15"].length; i1++) {
-				if (a_bmd["zoom_15"][i1]["l_polyline"] !== undefined) {
-					a_bmd["zoom_15"][i1]["l_polyline"].remove(l_map);
-				}
-			}
-			for (let i1 = 0; i1 < a_bmd["zoom_16"].length; i1++) {
-				if (a_bmd["zoom_16"][i1]["l_polyline"] !== undefined) {
-					a_bmd["zoom_16"][i1]["l_polyline"].remove(l_map);
-				}
-			}
+			a_bmd["layer_zoom_14"].addTo(l_map);
+			a_bmd["layer_zoom_15"].remove(l_map);
+			a_bmd["layer_zoom_16"].remove(l_map);
 		} else if (c_zoom_level === 15) {
-			for (let i1 = 0; i1 < a_bmd["zoom_14"].length; i1++) {
-				if (a_bmd["zoom_14"][i1]["l_polyline"] !== undefined) {
-					a_bmd["zoom_14"][i1]["l_polyline"].remove(l_map);
-				}
-			}
-			for (let i1 = 0; i1 < a_bmd["zoom_15"].length; i1++) {
-				if (a_bmd["zoom_15"][i1]["l_polyline"] !== undefined) {
-					a_bmd["zoom_15"][i1]["l_polyline"].addTo(l_map);
-				}
-			}
-			for (let i1 = 0; i1 < a_bmd["zoom_16"].length; i1++) {
-				if (a_bmd["zoom_16"][i1]["l_polyline"] !== undefined) {
-					a_bmd["zoom_16"][i1]["l_polyline"].remove(l_map);
-				}
-			}
+			a_bmd["layer_zoom_14"].remove(l_map);
+			a_bmd["layer_zoom_15"].addTo(l_map);
+			a_bmd["layer_zoom_16"].remove(l_map);
 		} else if (c_zoom_level >= 16) {
-			for (let i1 = 0; i1 < a_bmd["zoom_14"].length; i1++) {
-				if (a_bmd["zoom_14"][i1]["l_polyline"] !== undefined) {
-					a_bmd["zoom_14"][i1]["l_polyline"].remove(l_map);
-				}
-			}
-			for (let i1 = 0; i1 < a_bmd["zoom_15"].length; i1++) {
-				if (a_bmd["zoom_15"][i1]["l_polyline"] !== undefined) {
-					a_bmd["zoom_15"][i1]["l_polyline"].remove(l_map);
-				}
-			}
-			for (let i1 = 0; i1 < a_bmd["zoom_16"].length; i1++) {
-				if (a_bmd["zoom_16"][i1]["l_polyline"] !== undefined) {
-					a_bmd["zoom_16"][i1]["l_polyline"].addTo(l_map);
-				}
-			}
+			a_bmd["layer_zoom_14"].remove(l_map);
+			a_bmd["layer_zoom_15"].remove(l_map);
+			a_bmd["layer_zoom_16"].addTo(l_map);
 		}
 	}
+	
 	
 	throw new Error("ここまで");
 	
 	
 	
 	
-	for (let i1 = 0; i1 < a_bmd["ur_route_child_shape_segment_arrays"].length; i1++) {
-		f_offset_segment_array(a_bmd["ur_route_child_shape_segment_arrays"][i1]);
-	}
-	
-	//オフセットした線を作る
-	const c_polylines = {};
-	a_bmd["l_polyline"] = [];
-	
-	for (let i1 in a_bmd["ur_route_child_shape_segment_arrays"]) {
-		f_offset_segment_array(a_bmd["ur_route_child_shape_segment_arrays"][i1]);
-		//折れ線に変換する
-		const c_polyline = f_make_polyline(a_bmd["ur_route_child_shape_segment_arrays"][i1]);
-		//緯度経度
-		const c_zoom_level = 16; //仮、set_width_offsetと同じ
-		for (let i2 = 0; i2 < c_polyline.length; i2++) {
-			c_polyline[i2]["lon"] = f_lonlat_xy(c_polyline[i2]["x"], "x_to_lon", c_zoom_level);
-			c_polyline[i2]["lat"] = f_lonlat_xy(c_polyline[i2]["y"], "y_to_lat", c_zoom_level);
-		}
-		//near_stopsを入れる
-		console.log(c_polyline);
-		for (let i2 = 0; i2 < c_polyline.length; i2++) {
-			c_polyline[i2]["near_stops"] = [];
-			for (let i3 = 0; i3 < c_polyline[i2]["ids"].length; i3++) {
-				const c_near_stops = a_bmd["shape_points"][c_polyline[i2]["ids"][i3]]["near_stops"];
-				for (let i4 = 0; i4 < c_near_stops.length; i4++) {
-					c_polyline[i2]["near_stops"].push(c_near_stops[i4]);
-				}
-			}
-		}
-		const c_return2 = f_2(c_polyline, a_bmd["ur_routes"][i1]["stop_array"]);
-		
-		const c_return = c_polyline
-		console.log(c_return);
-		a_bmd["l_polyline"][i1] = L.polyline(c_return["polyline"], {"color": "#" + a_bmd["ur_routes"][i1]["route_color"], "weight": 4}).addTo(l_map);
-	}
-	
-	
-	
-	
-	
-	
-	throw new Error("ここまで");
 	console.log("ここまでできている");
 	console.log(a_bmd);
 	
@@ -413,61 +330,33 @@ function f_open(a_bmd, a_settings) {
 function f_make_polyline(a_child_shape_segment_array) {
 	const c_polyline = [];
 	for (let i2 = 0; i2 < a_child_shape_segment_array[0]["sxy"].length; i2++) {
-		c_polyline.push({"x": a_child_shape_segment_array[0]["sxy"][i2]["x"], "y": a_child_shape_segment_array[0]["sxy"][i2]["y"], "original": a_child_shape_segment_array[0]["sm"]});
+		c_polyline.push({"x": a_child_shape_segment_array[0]["sxy"][i2]["x"], "y": a_child_shape_segment_array[0]["sxy"][i2]["y"], "original": a_child_shape_segment_array[0]["sm"], "ids": []});
 	}
-	if (a_child_shape_segment_array[0]["sxy"].length === 3) {
-		c_polyline[c_polyline.length - 2]["ids"] = a_child_shape_segment_array[0]["sids"];
-	} else {
-		c_polyline[c_polyline.length - 1]["ids"] = a_child_shape_segment_array[0]["sids"];
+	for (let i2 = 0; i2 < a_child_shape_segment_array[0]["sids"].length; i2++) {
+		if (a_child_shape_segment_array[0]["sxy"].length === 3) { //これはあり得ない？
+			c_polyline[c_polyline.length - 2]["ids"].push(a_child_shape_segment_array[0]["sids"][i2]);
+		} else {
+			c_polyline[c_polyline.length - 1]["ids"].push(a_child_shape_segment_array[0]["sids"][i2]);
+		}
 	}
 	for (let i2 = 0; i2 < a_child_shape_segment_array.length; i2++) {
 		for (let i3 = 0; i3 < a_child_shape_segment_array[i2]["exy"].length; i3++) {
-			c_polyline.push({"x": a_child_shape_segment_array[i2]["exy"][i3]["x"], "y": a_child_shape_segment_array[i2]["exy"][i3]["y"], "original": a_child_shape_segment_array[i2]["em"]});
+			c_polyline.push({"x": a_child_shape_segment_array[i2]["exy"][i3]["x"], "y": a_child_shape_segment_array[i2]["exy"][i3]["y"], "original": a_child_shape_segment_array[i2]["em"], "ids": []});
 		}
-		if (a_child_shape_segment_array[i2]["exy"].length === 3) {
-			c_polyline[c_polyline.length - 2]["ids"] = a_child_shape_segment_array[i2]["eids"];
-		} else {
-			c_polyline[c_polyline.length - 1]["ids"] = a_child_shape_segment_array[i2]["eids"];
+		for (let i3 = 0; i3 < a_child_shape_segment_array[i2]["eids"].length; i3++) {
+			if (a_child_shape_segment_array[i2]["exy"].length === 3) {
+				c_polyline[c_polyline.length - 2]["ids"].push(a_child_shape_segment_array[i2]["eids"][i3]);
+			} else {
+				c_polyline[c_polyline.length - 1]["ids"].push(a_child_shape_segment_array[i2]["eids"][i3]);
+			}
 		}
 	}
 	return c_polyline;
 }
-	
-	/*
-	
 
-	
-	*/
-	
-	//問題点
-	//途中で停留所所が見つからず、2回目に出現する位置にずれると、途中が抜けて変になりうる
-	
-	
-	/*
-	//緯度経度
-	for (let i2 = 0; i2 < c_polyline.length; i2++) {
-		c_polyline[i2]["lon"] = f_lonlat_xy(c_polyline[i2]["x"], "x_to_lon", c_zoom_level);
-		c_polyline[i2]["lat"] = f_lonlat_xy(c_polyline[i2]["y"], "y_to_lat", c_zoom_level);
-	}
-	//折れ線
-	const c_polyline_lonlat = [];
-	for (let i2 = 0; i2 < c_polyline.length; i2++) {
-		c_polyline_lonlat.push({"lon": c_polyline[i2]["lon"], "lat": c_polyline[i2]["lat"]});
-	}
-	//点
-	const c_points = [];
-	for (let i2 = 0; i2 < c_polyline.length; i2++) {
-		if (c_polyline[i2]["ids"] !== undefined) {
-			if (c_polyline[i2]["ids"].length === 1) { //各点idは1つだけの前提（統合していない場合のみ仮に対応）
-				if (c_polyline[i2]["original"] === true) { //元からある
-					c_points.push({"id": c_polyline[i2]["ids"][0], "latlon": {"lat": c_polyline[i2]["lat"], "lon": c_polyline[i2]["lon"]}});
-				}
-			}
-		}
-	}
-	
-	return {"polyline": c_polyline_lonlat, "points": c_points};
-	*/
+
+//問題点
+//途中で停留所所が見つからず、2回目に出現する位置にずれると、途中が抜けて変になりうる
 
 function f_2(a_polyline, a_stop_array) {
 	const c_number_array = [];
@@ -476,9 +365,6 @@ function f_2(a_polyline, a_stop_array) {
 			c_number_array.push({"number": i1, "stop_id": a_polyline[i1]["near_stops"][i2]});
 		}
 	}
-	
-	
-	
 	const c_cut_number_array = [];
 	let l_stop_id;
 	let l_number = 0;
@@ -492,8 +378,14 @@ function f_2(a_polyline, a_stop_array) {
 		}
 	}
 	
-	console.log({"na": c_number_array, "sa": a_stop_array, "ca": c_cut_number_array});
+	const c_ids = [];
+	for (let i1 = 0; i1 < a_polyline.length; i1++) {
+		for (let i2 = 0; i2 < a_polyline[i1]["ids"].length; i2++) {
+			c_ids.push(a_polyline[i1]["ids"][i2]);
+		}
+	}
 	
+	console.log({"na": c_number_array, "sa": a_stop_array, "ca": c_cut_number_array, "al": a_polyline.length, "id": c_ids});
 	const c_polyline_array = [];
 	for (let i1 = 0; i1 < c_cut_number_array.length - 1; i1++) {
 		c_polyline_array.push([]);
@@ -501,49 +393,11 @@ function f_2(a_polyline, a_stop_array) {
 			c_polyline_array[i1].push({"lon": a_polyline[i2]["lon"], "lat": a_polyline[i2]["lat"]});
 		}
 	}
-	return {"polyline_array": c_polyline_array, "stop_array": null};
-
-
-
-
-
-
-/*
-
-
-	//console.log(a_stop_array);
-	//console.log(a_polyline);
-	const c_stops = [];
-	let l_stop_sequence = -1;
-	let l_stop_id = a_stop_array[l_stop_sequence + 1]["stop_id"];
-	const c_polyline_array = [];
 	const c_stop_array = [];
-	//console.log(l_stop_id);
-	label_1: 
-	for (let i1 = 0; i1 < a_polyline.length; i1++) {
-		if (c_polyline_array.length !== 0) {
-			c_polyline_array[l_stop_sequence].push({"lon": a_polyline[i1]["lon"], "lat": a_polyline[i1]["lat"]});
-		} else {
-			c_polyline_array[0]=[{"lon": a_polyline[i1]["lon"], "lat": a_polyline[i1]["lat"]}];
-			l_stop_sequence += 1;
-		}
-		for (let i2 = 0; i2 < a_polyline[i1]["near_stops"].length; i2++) {
-			c_stops.push(a_polyline[i1]["near_stops"][i2]);
-			if (a_polyline[i1]["near_stops"][i2] === l_stop_id) {
-				c_stop_array.push({"lon": a_polyline[i1]["lon"], "lat": a_polyline[i1]["lat"]});
-				if (l_stop_sequence === a_stop_array.length - 1) {
-					break label_1; //最後までいっているので終了
-				}
-				l_stop_sequence = l_stop_sequence + 1;
-				c_polyline_array[l_stop_sequence] = [];
-				c_polyline_array[l_stop_sequence].push({"lon": a_polyline[i1]["lon"], "lat": a_polyline[i1]["lat"]});
-				l_stop_id = a_stop_array[l_stop_sequence + 1]["stop_id"];
-			}
-		}
+	for (let i1 = 0; i1 < c_cut_number_array.length; i1++) {
+		c_stop_array.push({"lon": a_polyline[c_cut_number_array[i1]]["lon"], "lat": a_polyline[c_cut_number_array[i1]]["lat"]});
 	}
-	console.log({"pl":c_stops, "st": a_stop_array});
 	return {"polyline_array": c_polyline_array, "stop_array": c_stop_array};
-	*/
 }
 
 

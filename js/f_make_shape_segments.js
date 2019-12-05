@@ -407,7 +407,7 @@ export function f_make_shape_segments(a_data, a_lonlat_xy, a_settings) {
 	//冗長な場合の短縮は省略するか
 	//同じshape pointに異なる標柱があるときどうする？
 	
-	
+	/*
 	//仮に最初と最後以外に途中に抜けがない前提とする
 	for (let i1 = 0; i1 < a_data["ur_routes"].length; i1++) {
 		const c_number_array = []; //child_shape_pt_arrayからstopがある位置を抽出
@@ -464,13 +464,13 @@ export function f_make_shape_segments(a_data, a_lonlat_xy, a_settings) {
 				}
 			}
 		}
-		//最後があるが、その後の大部分が欠けているとき、最後を別に加える
+		//最後があるが、その前の大部分が欠けているとき、最後を別に加える
 		if (l_count < a_data["ur_routes"][i1]["stop_array"].length - 5) {
 			l_last = null;
 		}
 		if (l_last === null) {
 			l_add_last = true;
-			l_last = c_number_array[c_number_array.length - 1]["number"];
+			l_last = c_child_shape_pt_arrays[i1].length - 1;
 		}
 		//書き換える
 		const c_new_array = [];
@@ -518,7 +518,7 @@ export function f_make_shape_segments(a_data, a_lonlat_xy, a_settings) {
 		
 	}
 	
-	
+	*/
 	
 	
 	
@@ -569,7 +569,7 @@ export function f_make_shape_segments(a_data, a_lonlat_xy, a_settings) {
 				}
 			}
 			const c_sid_n = c_shape_segments[i1]["near_stops"][c_shape_segments[i1]["near_stops"].length - 1]["id"];
-			const c_eid_n = c_shape_segments[i1]["near_stops"][0]["eid"];
+			const c_eid_n = c_shape_segments[i1]["eid"];
 			const c_id_n = "shape_segment_" + c_sid_n + "_" + c_eid_n;
 			c_child_shape_segments[c_id_n] = {
 				"id": c_id_n,
@@ -603,6 +603,9 @@ export function f_make_shape_segments(a_data, a_lonlat_xy, a_settings) {
 					"id": c_esid,
 					"direction": -1//,
 				});
+			} else {
+				console.log("未発見");
+				//起点終点処理で追加したものが含まれない
 			}
 		}
 	}
