@@ -220,8 +220,8 @@ export function f_make_shape_segments(a_data, a_lonlat_xy, a_settings) {
 	for (let i1 in c_shape_segments) {
 		const c_sid = c_shape_segments[i1]["sid"];
 		const c_eid = c_shape_segments[i1]["eid"];
-		const c_x = Math.floor((c_shape_points[c_sid]["x"] + c_shape_points[c_eid]["x"]) * 0.5 / 256);
-		const c_y = Math.floor((c_shape_points[c_sid]["y"] + c_shape_points[c_eid]["y"]) * 0.5 / 256);
+		const c_x = Math.floor((c_shape_points[c_sid]["x"] + c_shape_points[c_eid]["x"]) * 0.5);
+		const c_y = Math.floor((c_shape_points[c_sid]["y"] + c_shape_points[c_eid]["y"]) * 0.5);
 		const c_tile = "tile_" + String(c_x) + "_" + String(c_y);
 		if (c_shape_segments_index[c_tile] === undefined) {
 			c_shape_segments_index[c_tile] = {};
@@ -235,8 +235,8 @@ export function f_make_shape_segments(a_data, a_lonlat_xy, a_settings) {
 		let l_nearest_shape_segment_id; //最寄のshape segmentのid
 		const c_stop_x = c_ur_stops[i1]["stop_x"];
 		const c_stop_y = c_ur_stops[i1]["stop_y"];
-		const c_tile_x = Math.floor(c_stop_x / 256);
-		const c_tile_y = Math.floor(c_stop_y / 256);
+		const c_tile_x = Math.floor(c_stop_x);
+		const c_tile_y = Math.floor(c_stop_y);
 		for (let i2 = c_tile_x -1; i2 <= c_tile_x + 1; i2++) {
 			for (let i3 = c_tile_y -1; i3 <= c_tile_y + 1; i3++) {
 				const c_key = "tile_" + String(i2) + "_" + String(i3);
@@ -400,6 +400,119 @@ export function f_make_shape_segments(a_data, a_lonlat_xy, a_settings) {
 	//起点終点処理
 	//とりあえず省略
 	
+	//場合分け
+	//途中にぬけがある
+	//最初がない
+	//最後がない
+	//冗長な場合の短縮は省略するか
+	//同じshape pointに異なる標柱があるときどうする？
+	
+	
+	//仮に最初と最後以外に途中に抜けがない前提とする
+	for (let i1 = 0; i1 < a_data["ur_routes"].length; i1++) {
+		const c_number_array = []; //child_shape_pt_arrayからstopがある位置を抽出
+		for (let i2 = 0; i2 < c_child_shape_pt_arrays[i1].length; i2++) {
+			const c_near_stops = c_shape_points[c_child_shape_pt_arrays[i1][i2]]["near_stops"];
+			for (let i3 = 0; i3 < c_near_stops.length; i3++) {
+				c_number_array.push({"number": i2, "stop_id": c_near_stops[i3]});
+			}
+		}
+		let l_stop_id;
+		let l_number; //今まで探した位置
+		let l_count; //何個見つかるか
+		let l_add_first = false; //最初を追加
+		let l_add_last = false; //最後を追加
+		let l_first; //最初の位置、ないときnull
+		let l_last; //最後の位置、ないときnull
+		//前から探す
+		l_number = 0;
+		l_count = 0;
+		l_first = null;
+		for (let i2 = 0; i2 < a_data["ur_routes"][i1]["stop_array"].length; i2++) {
+			l_stop_id = a_data["ur_routes"][i1]["stop_array"][i2]["stop_id"];
+			for (let i3 = l_number; i3 < c_number_array.length; i3++) {
+				if (c_number_array[i3]["stop_id"] === l_stop_id) {
+					if (i2 === 0) {
+						l_first = c_number_array[i3]["number"];
+					}
+					l_number = i3;
+					l_count += 1;
+				}
+			}
+		}
+		//最初があるが、その後の大部分が欠けているとき、最初を別に加える
+		if (l_count < c_number_array.length - 5) {
+			l_first = null;
+		}
+		if (l_first === null) {
+			l_add_first = true;
+			l_first = 0;
+		}
+		//後から探す
+		l_number = c_number_array.length - 1;
+		l_count = 0;
+		l_last = null;
+		for (let i2 = a_data["ur_routes"][i1]["stop_array"].length - 1; i2 >= 0; i2--) {
+			l_stop_id = a_data["ur_routes"][i1]["stop_array"][i2]["stop_id"];
+			for (let i3 = l_number; i3 >=0; i3--) {
+				if (c_number_array[i3]["stop_id"] === l_stop_id) {
+					if (i2 === a_data["ur_routes"][i1]["stop_array"].length - 1) {
+						l_last = c_number_array[i3]["number"];
+					}
+					l_number = i3;
+					l_count += 1;
+				}
+			}
+		}
+		//最後があるが、その後の大部分が欠けているとき、最後を別に加える
+		if (l_count < a_data["ur_routes"][i1]["stop_array"].length - 5) {
+			l_last = null;
+		}
+		if (l_last === null) {
+			l_add_last = true;
+			l_last = c_number_array[c_number_array.length - 1]["number"];
+		}
+		//書き換える
+		const c_new_array = [];
+		let l_check;
+		l_check = true;
+		if (l_add_first === true) {
+			l_check = false;
+			for (let i2 in c_shape_points) {
+				const c_near_stops = c_shape_points[i2]["near_stops"];
+				for (let i3 = 0; i3 < c_near_stops.length; i3++) {
+					if (c_near_stops[i3] === c_number_array[0]["stop_id"]) {
+						c_new_array.push(i2);
+						l_check = true;
+					}
+				}
+			}
+		}
+		if (l_check === false) {
+			console.log("最初の追加失敗");
+		}
+		for (let i2 = l_first; i2 <= l_last; i2++) {
+			c_new_array.push(c_child_shape_pt_arrays[i1][i2]);
+		}
+		if (l_add_last === true) {
+			for (let i2 in c_shape_points) {
+				const c_near_stops = c_shape_points[i2]["near_stops"];
+				for (let i3 = 0; i3 < c_near_stops.length; i3++) {
+					if (c_near_stops[i3] === c_number_array[c_number_array.length - 1]["stop_id"]) {
+						c_new_array.push(i2);
+					}
+				}
+			}
+		}
+		c_child_shape_pt_arrays[i1] = c_new_array;
+		
+		//console.log(c_child_shape_pt_arrays[i1]);
+		
+	}
+	
+	
+	
+	
 	
 	//child_shape_segmentsを作る
 	const c_child_shape_segments = {};
@@ -467,7 +580,7 @@ export function f_make_shape_segments(a_data, a_lonlat_xy, a_settings) {
 	const c_child_shape_segment_arrays = [];
 	for (let i1 = 0; i1 < c_child_shape_pt_arrays.length; i1++) {
 		c_child_shape_segment_arrays.push([]);
-		for (let i2 = 0; i2 < c_child_shape_pt_arrays[i1].length; i2++) {
+		for (let i2 = 0; i2 < c_child_shape_pt_arrays[i1].length - 1; i2++) {
 			const c_sid = c_child_shape_pt_arrays[i1][i2];
 			const c_eid = c_child_shape_pt_arrays[i1][i2 + 1];
 			const c_seid = "shape_segment_" + c_sid + "_" + c_eid;
