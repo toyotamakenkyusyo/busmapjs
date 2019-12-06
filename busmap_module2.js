@@ -135,7 +135,7 @@ window.f_busmap = async function f_busmap(a_settings) {
 		"rt": l_data["rt"],
 		"stops": l_data["stops"],
 		"ur_stops": l_data["ur_stops"],
-		"parent_station": l_data["parent_station"],
+		"parent_stations": l_data["parent_stations"],
 		"ur_routes": l_data["ur_routes"],
 		"calendar": l_data["calendar"],
 		"trips": l_data["trips"],
@@ -286,6 +286,14 @@ function f_open(a_bmd, a_settings) {
 		}
 	}
 	
+	
+	for (let i1 = 0; i1 < a_bmd["parent_stations"].length; i1++) {
+		L.marker({"lon": a_bmd["parent_stations"][i1]["stop_lon"], "lat": a_bmd["parent_stations"][i1]["stop_lat"]}, {"icon": L.divIcon({"html": a_bmd["parent_stations"][i1]["stop_name"], className: "className", iconSize: [256, 16], iconAnchor: [-4, -4]})}).addTo(l_map);
+	}
+	
+	
+	
+	
 	f_zoom();
 	//ズームレベル変更→leaflet変更
 	l_map.on("zoom", f_zoom);
@@ -389,6 +397,7 @@ function f_2(a_polyline, a_stop_array) {
 			}
 		}
 	}
+	
 	
 	const c_ids = [];
 	for (let i1 = 0; i1 < a_polyline.length; i1++) {

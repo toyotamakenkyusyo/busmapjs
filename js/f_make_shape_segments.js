@@ -26,7 +26,7 @@
 
 
 export function f_make_shape_segments(a_data, a_lonlat_xy, a_settings) {
-	const c_zoom_level = 16; //タイル区切りの都合で"m"は不可？
+	const c_zoom_level = a_settings["cut_zoom_level"]; //タイル区切りの都合で"m"は不可？
 	//点、有向線分、折れ線の3段階構造とし、冗長なデータを持たせない？
 	//点
 	console.log(a_data);
@@ -398,7 +398,6 @@ export function f_make_shape_segments(a_data, a_lonlat_xy, a_settings) {
 	}
 	
 	//起点終点処理
-	//とりあえず省略
 	
 	//場合分け
 	//途中にぬけがある
@@ -672,44 +671,6 @@ c_child_shape_segment_array→戻す
 	}
 	
 	
-	/*
-	//往復の統合
-	const c_shape_segment_arrays = [];
-	const c_shape_segments = {};
-	for (let i1 = 0; a_data["ur_routes"].length; i1++) {
-		c_shape_segment_arrays[i1] = [];
-		for (let i2 = 0; i2 < a_data["ur_routes"][i1]["shape_pt_array"].length - 1; i2++) {
-			const c_s_lon = a_data["ur_routes"][i1]["shape_pt_array"][i2]["shape_pt_lon"];
-			const c_s_lat = a_data["ur_routes"][i1]["shape_pt_array"][i2]["shape_pt_lat"];
-			const c_sid = "shape_point_" + c_s_lon + "_" + c_s_lat;
-			const c_e_lon = a_data["ur_routes"][i1]["shape_pt_array"][i2 + 1]["shape_pt_lon"];
-			const c_e_lat = a_data["ur_routes"][i1]["shape_pt_array"][i2 + 1]["shape_pt_lat"];
-			const c_eid = "shape_point_" + c_e_lon + "_" + c_e_lat;
-			const c_id = "shape_segment_" + c_sid + "_" + c_eid;
-			const c_shape_segment = {
-				"id": c_id,
-				"sid": c_sid,
-				"eid": c_eid,
-				//"sids": [c_sid],
-				//"eids": [c_eid],
-				"sx": c_shape_points[c_sid]["x"],
-				"sy": c_shape_points[c_sid]["y"],
-				"ex": c_shape_points[c_eid]["x"],
-				"ey": c_shape_points[c_eid]["y"],
-				//"s_stop": null, //停車地ありのときtrue
-				//"e_stop": null, //停車地ありのときtrue
-				"s_original": true, //元からの点
-				"e_original": true, //元からの点
-				//"w": null, //線幅
-				//"z": null//, //オフセット幅
-			}
-			c_shape_segment_arrays[i1].push(c_shape_segment);
-			if (c_shape_segments[c_id] === undefined) {
-				c_shape_segments[c_id] = c_shape_segment;
-			}
-		}
-	}
-	*/
 	
 	
 	
