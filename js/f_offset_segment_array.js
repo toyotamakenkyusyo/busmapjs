@@ -1,6 +1,6 @@
 export function f_offset_segment_array(a_segment_array) {
 	const a_settings = {
-		"curve": false, //角を丸める
+		"curve": true, //角を丸める
 		"remove_cross": false, //余計な線の交差を除く
 		"separate_stops": true//, //停車地を分けて統合しない
 	};
