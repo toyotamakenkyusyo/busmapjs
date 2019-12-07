@@ -52,7 +52,8 @@ import {f_offset_segment_array} from "./js/f_offset_segment_array.js";
 
 window.f_busmap = async function f_busmap(a_settings) {
 
-	console.time("make_bmd");
+	console.time("T");
+	console.time("t0");
 	//初期設定
 	a_settings = f_input_settings(a_settings);
 	//HTMLの初期設定
@@ -68,8 +69,7 @@ window.f_busmap = async function f_busmap(a_settings) {
 		L.svg().addTo(l_map); //svg地図を入れる。
 		l_map.setView([35.454518, 133.850126], 16); //初期表示位置（仮）
 	}
-	
-	
+	console.timeEnd("t0");
 	//a_settings["data"] = "https://toyotamakenkyusyo.github.io/gtfs/3270001000564/next/GTFS-JP.zip"; //仮
 	//a_settings["data"] = "test.geojson"; //仮
 	//a_settings["data_type"] = "geojson"; //仮
@@ -77,12 +77,15 @@ window.f_busmap = async function f_busmap(a_settings) {
 	//データの読み込みと前処理
 	let l_data = {};
 	if (a_settings["data_type"] === "gtfs") {
+		console.time("t11");
 		const c_arraybuffer = await f_xhr_get(a_settings["data"], "arraybuffer");
 		const c_text = await f_zip_to_text(c_arraybuffer, Zlib);
 		//Zlibはhttps://cdn.jsdelivr.net/npm/zlibjs@0.3.1/bin/unzip.min.js
 		for (let i1 in c_text) {
 			l_data[i1.replace(".txt", "")] = f_csv_to_json(c_text[i1]);
 		}
+		console.timeEnd("t11");
+		console.time("t12");
 		//GTFSの差異を統一（ur_routesを作るのに必要なroute_sort_order、pickup_type、drop_off_type）
 		//pickup_typeとdrop_off_typeを補う
 		f_set_stop_type(l_data);
@@ -90,8 +93,11 @@ window.f_busmap = async function f_busmap(a_settings) {
 		f_set_route_sort_order(l_data);
 		//緯度、経度、順番の型を数に変換
 		f_number_gtfs(l_data);
+		console.timeEnd("t12");
+		console.time("t13");
 		//ur_routesを作る
 		f_make_ur_routes(l_data);
+		console.timeEnd("t13");
 	} else if (a_settings["data_type"] === "json" || a_settings["data_type"] === "geojson" || a_settings["data_type"] === "topojson" || a_settings["data_type"] === "api") {
 		l_data = await f_xhr_get(a_settings["data"], "json");
 		if (a_settings["data_type"] === "topojson") {
@@ -110,8 +116,7 @@ window.f_busmap = async function f_busmap(a_settings) {
 	} else {
 		new Error("読み込みできないタイプ");
 	}
-	
-	
+	console.time("t2");
 	//route_color、route_text_colorを補う
 	f_set_color(l_data);
 	//shape_pt_arrayを補う
@@ -128,7 +133,7 @@ window.f_busmap = async function f_busmap(a_settings) {
 		const c_rt_url = c_cors_url + a_settings["rt"];
 		a_data["rt"] = f_binary_to_json(await f_xhr_get(c_rt_url, "arraybuffer"), c_grb);
 	}
-	console.timeEnd("make_bmd");
+	
 	console.log(l_data);
 	//const c_bmd = l_data;
 	const c_bmd = {
@@ -154,19 +159,22 @@ window.f_busmap = async function f_busmap(a_settings) {
 		//当面機能停止
 		//document.getElementById("ur_route_list").innerHTML = f_ur_route_list(c_bmd);
 	}
-	
+	console.timeEnd("t2");
+	console.time("t3");
 	f_make_shape_segments(c_bmd, f_lonlat_xy, a_settings); //新規
-	
+	console.timeEnd("t3");
+	console.time("t4");
 	f_trip_number(c_bmd);//便数を数える
 	//グローバルに移す
 	if (a_settings["global"] === true) {
 		l_data = c_bmd;
 		l_settings = a_settings;
 	}
-	
-	console.time("t_14");
+	console.timeEnd("t4");
+	console.timeEnd("T");
+	console.time("U");
 	f_open(c_bmd, a_settings); //6s遅い！
-	console.timeEnd("t_14");
+	console.timeEnd("U");
 	
 }
 
@@ -198,6 +206,7 @@ function f_change_setting(a_key, a_value) {
 
 
 function f_open(a_bmd, a_settings) {
+	console.time("u1");
 	if (a_settings["change"] === true) {
 		//表示するur_routeの設定
 		//showはいずれにしても必要？
@@ -212,24 +221,19 @@ function f_open(a_bmd, a_settings) {
 		}
 		*/
 	}
-
-	
-	console.time("T");
+	console.timeEnd("u1");
+	console.time("u2");
 	f_set_width_offset(a_bmd, f_lonlat_xy, a_settings); //新規
-	console.timeEnd("T");
-	console.time("G");
-	
-	
-	
-	
+	console.timeEnd("u2");
+	console.time("u3");
 	//オフセット
 	const c_groups = {};
 	for (let i1 = 0; i1 < a_bmd["parent_routes"].length; i1++) {
 		const c_parent_route_id = a_bmd["parent_routes"][i1]["parent_route_id"];
 		c_groups["parent_route_id_" + c_parent_route_id] = {};
 	}
-	
-	
+	console.timeEnd("u3");
+	console.time("u4");
 	for (let i1 = 14; i1 <= 16; i1++) {
 		const c_zoom_ratio = 2 ** (16 - i1);
 		console.log(c_zoom_ratio)
@@ -258,7 +262,7 @@ function f_open(a_bmd, a_settings) {
 			
 			f_offset_segment_array(c_array); //オフセット
 			
-			console.log(c_array);
+			//console.log(c_array);
 			//折れ線に変換する
 			const c_polyline = f_make_polyline(c_array);
 			//緯度経度
@@ -312,13 +316,44 @@ function f_open(a_bmd, a_settings) {
 	}
 	
 	
+	console.timeEnd("u4");
+	console.time("u5");
 	for (let i1 = 0; i1 < a_bmd["parent_stations"].length; i1++) {
 		L.marker({"lon": a_bmd["parent_stations"][i1]["stop_lon"], "lat": a_bmd["parent_stations"][i1]["stop_lat"]}, {"icon": L.divIcon({"html": a_bmd["parent_stations"][i1]["stop_name"], className: "className", iconSize: [256, 16], iconAnchor: [-4, -4]})}).addTo(l_map);
 	}
+	console.timeEnd("u5");
+	console.time("u6");
 	
+	f_zoom();
+	//ズームレベル変更→leaflet変更
+	l_map.on("zoom", f_zoom);
+	console.timeEnd("u6");
 	
-	
-	
+	function f_zoom() {
+		const c_zoom_level = l_map.getZoom();
+		if (c_zoom_level <= 14) {
+			c_groups["zoom_14"].addTo(l_map);
+			c_groups["zoom_15"].remove(l_map);
+			c_groups["zoom_16"].remove(l_map);
+			a_bmd["layer_zoom_14"].addTo(l_map);
+			a_bmd["layer_zoom_15"].remove(l_map);
+			a_bmd["layer_zoom_16"].remove(l_map);
+		} else if (c_zoom_level === 15) {
+			c_groups["zoom_14"].remove(l_map);
+			c_groups["zoom_15"].addTo(l_map);
+			c_groups["zoom_16"].remove(l_map);
+			a_bmd["layer_zoom_14"].remove(l_map);
+			a_bmd["layer_zoom_15"].addTo(l_map);
+			a_bmd["layer_zoom_16"].remove(l_map);
+		} else if (c_zoom_level >= 16) {
+			c_groups["zoom_14"].remove(l_map);
+			c_groups["zoom_15"].remove(l_map);
+			c_groups["zoom_16"].addTo(l_map);
+			a_bmd["layer_zoom_14"].remove(l_map);
+			a_bmd["layer_zoom_15"].remove(l_map);
+			a_bmd["layer_zoom_16"].addTo(l_map);
+		}
+	}
 	
 	//クリックしたところを強調
 	function f_change_parent_route_color(a_parent_route_id, a_to) {
@@ -337,12 +372,18 @@ function f_open(a_bmd, a_settings) {
 	}
 	
 	
+	console.time("u7");
 	
 	//経路検索
 	const c_parent_station_index = {};
 	for (let i1 = 0; i1 < a_bmd["ur_stops"].length; i1++) {
 		c_parent_station_index[a_bmd["ur_stops"][i1]["stop_id"]] = a_bmd["ur_stops"][i1]["parent_station"];
 	}
+	
+	//テスト
+	f_search_route("37", "131");
+	
+	console.timeEnd("u7");
 	//2点間
 	function f_search_from_start_end(a_start_parent_station, a_end_parent_station) {
 		const c_ur_route_stop_arrays = [];
@@ -352,10 +393,8 @@ function f_open(a_bmd, a_settings) {
 			let l_end = false;
 			for (let i2 = 0; i2 < a_bmd["ur_routes"][i1]["stop_array"].length; i2++) {
 				const c_parent_station = c_parent_station_index[a_bmd["ur_routes"][i1]["stop_array"][i2]["stop_id"]];
-				console.log(c_parent_station + "と" + a_start_parent_station);
 				if (l_start === true) {
 					l_stop_array.push(a_bmd["ur_routes"][i1]["stop_array"][i2 - 1]["stop_id"] + "_to_" + a_bmd["ur_routes"][i1]["stop_array"][i2]["stop_id"]);
-					console.log("ここ356");
 				}
 				if (c_parent_station === a_start_parent_station) {
 					l_stop_array = [];
@@ -430,8 +469,6 @@ function f_open(a_bmd, a_settings) {
 		return c_ur_route_stop_arrays;
 	}
 	
-	//テスト
-	f_search_route("37", "131");
 	
 	function f_search_route(a_start_parent_station, a_end_parent_station) {
 		const c_route_se = f_search_from_start_end(a_start_parent_station, a_end_parent_station);
@@ -460,8 +497,8 @@ function f_open(a_bmd, a_settings) {
 						c_mid_parent_station[i2] = true;
 					}
 				}
-				console.log(c_route_s);
-				console.log(c_route_e);
+				//console.log(c_route_s);
+				//console.log(c_route_e);
 				for (let i2 = 0; i2 < c_route_s.length; i2++) {
 					for (let i3 in c_route_s[i2]) {
 						if (c_mid_parent_station[i3] === true) {
@@ -490,8 +527,8 @@ function f_open(a_bmd, a_settings) {
 				c_parent_route_se["parent_route_id_" + c_parent_route_id][c_id] = true;
 			}
 		}
-		console.log(c_route_se);
-		console.log(c_parent_route_se);
+		//console.log(c_route_se);
+		//console.log(c_parent_route_se);
 		//表示に反映する
 		for (let i1 = 0; i1 < a_bmd["parent_routes"].length; i1++) {
 			const c_parent_route_id = a_bmd["parent_routes"][i1]["parent_route_id"];
@@ -511,40 +548,9 @@ function f_open(a_bmd, a_settings) {
 	
 	
 	
-	f_zoom();
-	//ズームレベル変更→leaflet変更
-	l_map.on("zoom", f_zoom);
+
 	
-	
-	function f_zoom() {
-		const c_zoom_level = l_map.getZoom();
-		if (c_zoom_level <= 14) {
-			c_groups["zoom_14"].addTo(l_map);
-			c_groups["zoom_15"].remove(l_map);
-			c_groups["zoom_16"].remove(l_map);
-			a_bmd["layer_zoom_14"].addTo(l_map);
-			a_bmd["layer_zoom_15"].remove(l_map);
-			a_bmd["layer_zoom_16"].remove(l_map);
-		} else if (c_zoom_level === 15) {
-			c_groups["zoom_14"].remove(l_map);
-			c_groups["zoom_15"].addTo(l_map);
-			c_groups["zoom_16"].remove(l_map);
-			a_bmd["layer_zoom_14"].remove(l_map);
-			a_bmd["layer_zoom_15"].addTo(l_map);
-			a_bmd["layer_zoom_16"].remove(l_map);
-		} else if (c_zoom_level >= 16) {
-			c_groups["zoom_14"].remove(l_map);
-			c_groups["zoom_15"].remove(l_map);
-			c_groups["zoom_16"].addTo(l_map);
-			a_bmd["layer_zoom_14"].remove(l_map);
-			a_bmd["layer_zoom_15"].remove(l_map);
-			a_bmd["layer_zoom_16"].addTo(l_map);
-		}
-	}
-	
-	console.timeEnd("G");
-	throw new Error("ここまで");
-	
+	//throw new Error("ここまで");
 	
 	
 	/*

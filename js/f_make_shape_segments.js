@@ -186,34 +186,67 @@ export function f_make_shape_segments(a_data, a_lonlat_xy, a_settings) {
 			"stop_lon": c_stop_lon,
 			"stop_lat": c_stop_lat,
 			"stop_x": a_lonlat_xy(c_stop_lon, "lon_to_x", c_zoom_level),
-			"stop_y": a_lonlat_xy(c_stop_lat, "lat_to_y", c_zoom_level),
-			"shape_segment_arrays": [], //通るur_routeのshape_segment_arrays
-			"shape_segments_min": {}, //通るur_routeが全て通るshape_segment
-			"shape_segments_max": {}//, //通るur_routeに通るものがあるshape_sgement
+			"stop_y": a_lonlat_xy(c_stop_lat, "lat_to_y", c_zoom_level)//,
+			//"shape_segment_arrays": [], //通るur_routeのshape_segment_arrays
+			//"shape_segments_min": {}, //通るur_routeが（全て？）通るshape_segment
+			//"shape_segments_max": {}//, //通るur_routeに通るものがあるshape_sgement（機能停止中）
 		});
 		c_ur_stops_index[c_stop_id] = c_ur_stops[c_ur_stops.length - 1];
 	}
+	
+	//高速化に失敗
+	/*
+	console.time("これは？");
+	
+	const c_shape_segments_stops = {};
+	for (let i1 = 0; i1 < c_shape_segment_arrays.length; i1++) {
+		for (let i2 = 0; i2 < c_shape_segment_arrays[i1].length; i2++) {
+			const c_id = c_shape_segment_arrays[i1][i2]["id"];
+			if (c_shape_segments_stops[c_id] === undefined) {
+				c_shape_segments_stops[c_id] = {"ur_route_numbers": [], "ur_stops": {}};//{};
+			}
+			c_shape_segments_stops[c_id]["ur_route_numbers"].push(i1);
+		}
+	}
+	for (let i1 in c_shape_segments_stops) {
+		for (let i2 = 0; i2 < c_shape_segments_stops[i1]["ur_route_numbers"].length; i2++) {
+			const c_number = c_shape_segments_stops[i1]["ur_route_numbers"][i2];
+			for (let i3 = 0; i3 < a_data["ur_routes"][c_number]["stop_array"].length; i3++) {
+				const c_stop_id = a_data["ur_routes"][c_number]["stop_array"][i3]["stop_id"];
+				c_shape_segments_stops[i1]["ur_stops"][c_stop_id] = true;
+			}
+		}
+	}
+	console.timeEnd("これは？");
+	*/
+	
 	//c_ur_stopsに通るur_routeのshape_segment_arrayをまとめる
+	/*
 	for (let i1 = 0; i1 < a_data["ur_routes"].length; i1++) {
 		for (let i2 = 0; i2 < a_data["ur_routes"][i1]["stop_array"].length; i2++) {
 			const c_stop_id = a_data["ur_routes"][i1]["stop_array"][i2]["stop_id"];
 			c_ur_stops_index[c_stop_id]["shape_segment_arrays"].push(c_shape_segment_arrays[i1]);
 		}
 	}
+	*/
+	/*
+	console.time("ここの");
 	//通るshape_segmentをまとめる
 	for (let i1 = 0; i1 < c_ur_stops.length; i1++) {
+		for (let i2 = 0; i2 < c_ur_stops[i1]["shape_segment_arrays"][0].length; i2++) {
+			const c_id = c_ur_stops[i1]["shape_segment_arrays"][0][i2]["id"];
+			c_ur_stops[i1]["shape_segments_min"][c_id] = true; //存在しうるときtrue
+		}
 		for (let i2 = 0; i2 < c_ur_stops[i1]["shape_segment_arrays"].length; i2++) {
 			for (let i3 = 0; i3 < c_ur_stops[i1]["shape_segment_arrays"][i2].length; i3++) {
 				const c_id = c_ur_stops[i1]["shape_segment_arrays"][i2][i3]["id"];
 				c_ur_stops[i1]["shape_segments_max"][c_id] = true; //存在しうるときtrue
-				if (i2 === 0) { //最初のみ、追加する
-					c_ur_stops[i1]["shape_segments_min"][c_id] = true; //存在しうるときtrue
-				} else { //次からは削る
-					c_ur_stops[i1]["shape_segments_min"][c_id] = false; //存在しえないときfalse
-				}
 			}
 		}
+		
 	}
+	console.timeEnd("ここの");
+	*/
 	
 	//c_zoom_levelのタイル番号に分けたshape_segmentsの目次を作る
 	const c_shape_segments_index = {};
@@ -244,9 +277,9 @@ export function f_make_shape_segments(a_data, a_lonlat_xy, a_settings) {
 					continue;
 				}
 				for (let i4 in c_shape_segments_index[c_key]) {
-					if (c_ur_stops[i1]["shape_segments_max"][i4] !== true) { //仮にmaxのみ判定
-						continue; //通り得なければとばす
-					}
+					//if (c_ur_stops[i1]["shape_segments_min"][i4] !== true) { //仮にmaxのみ判定
+					//	continue; //通り得なければとばす
+					//}
 					const c_sid = c_shape_segments_index[c_key][i4]["sid"];
 					const c_eid = c_shape_segments_index[c_key][i4]["eid"];
 					const c_sx = c_shape_points[c_sid]["x"];
