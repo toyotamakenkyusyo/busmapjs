@@ -3584,7 +3584,7 @@ function f_stop_timetable(a_stop_id) {
 	for (let i1 = 0; i1 < l_data["trips"].length; i1++) {
 		for (let i2 = 0; i2 < l_data["trips"][i1]["stop_times"].length; i2++) {
 			let l_exist = false;
-			for (i3 = 0; i3 < c_stop_ids.length; i3++) {
+			for (let i3 = 0; i3 < c_stop_ids.length; i3++) {
 				if (l_data["trips"][i1]["stop_times"][i2]["stop_id"] === c_stop_ids[i3]) {
 					l_exist = true;
 				}
