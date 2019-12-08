@@ -295,6 +295,7 @@ function f_open(a_bmd, a_settings) {
 						c_groups["parent_route_id_" + c_parent_route_id][i3] = L.featureGroup();
 					}
 					for (let i4 = 0; i4 < c_cut_polyline["curves"][i3].length; i4++) {
+						//console.log(c_cut_polyline["curves"][i3][i4]["curve"]);
 						const c_curve = L.curve(c_cut_polyline["curves"][i3][i4]["curve"], {"color": "#" + a_bmd["ur_routes"][i2]["route_color"], "weight": c_cut_polyline["curves"][i3][i4]["width"] * 256 /  c_zoom_ratio});
 						
 					c_curve.on("click", function(e) {
@@ -319,7 +320,7 @@ function f_open(a_bmd, a_settings) {
 	console.timeEnd("u4");
 	console.time("u5");
 	for (let i1 = 0; i1 < a_bmd["parent_stations"].length; i1++) {
-		L.marker({"lon": a_bmd["parent_stations"][i1]["stop_lon"], "lat": a_bmd["parent_stations"][i1]["stop_lat"]}, {"icon": L.divIcon({"html": a_bmd["parent_stations"][i1]["stop_name"], className: "className", iconSize: [256, 16], iconAnchor: [-4, -4]})}).addTo(l_map);
+		L.marker({"lon": a_bmd["parent_stations"][i1]["stop_lon"], "lat": a_bmd["parent_stations"][i1]["stop_lat"]}, {"icon": L.divIcon({"html": "<span style=\"writing-mode:  vertical-rl;\">" + a_bmd["parent_stations"][i1]["stop_name"] + "</span>", className: "className", iconSize: [256, 256], iconAnchor: [-4, -4]})}).addTo(l_map);
 	}
 	console.timeEnd("u5");
 	console.time("u6");
@@ -381,7 +382,7 @@ function f_open(a_bmd, a_settings) {
 	}
 	
 	//テスト
-	f_search_route("37", "131");
+	//f_search_route("37", "131");
 	
 	console.timeEnd("u7");
 	//2点間
@@ -626,7 +627,7 @@ function f_cut_polyline(a_polyline, a_stop_array) {
 		for (let i2 = c_cut_stop_number_array[i1]["number"]; i2 <= c_cut_stop_number_array[i1 + 1]["number"]; i2++) {
 			if (i2 === c_cut_stop_number_array[i1]["number"]) { //最初
 				c_polylines[c_id].push({"polyline": [], "width": a_polyline[i2 + 1]["width"]});
-			} else if (a_polyline[i2]["width"] !== a_polyline[i2 + 1]["width"]) { //太さが変わるとき
+			} else if (i2 < c_cut_stop_number_array[i1 + 1]["number"] && a_polyline[i2]["width"] !== a_polyline[i2 + 1]["width"]) { //太さが変わるとき
 				c_polylines[c_id][c_polylines[c_id].length - 1]["polyline"].push({"lon": a_polyline[i2]["lon"], "lat": a_polyline[i2]["lat"]});
 				c_polylines[c_id].push({"polyline": [], "width": a_polyline[i2 + 1]["width"]});
 			}
@@ -645,7 +646,7 @@ function f_cut_polyline(a_polyline, a_stop_array) {
 				c_curves[c_id].push({"curve": [], "width": a_polyline[i2 + 1]["width"]});
 				c_curves[c_id][c_curves[c_id].length - 1]["curve"].push("M");
 				c_curves[c_id][c_curves[c_id].length - 1]["curve"].push([a_polyline[i2]["lat"], a_polyline[i2]["lon"]]);
-			} else if (a_polyline[i2]["width"] !== a_polyline[i2 + 1]["width"]) { //太さが変わるとき
+			} else if (i2 < c_cut_stop_number_array[i1 + 1]["number"] && a_polyline[i2]["width"] !== a_polyline[i2 + 1]["width"]) { //太さが変わるとき
 				//前の点
 				if (a_polyline[i2 - 1]["curve"] === true && a_polyline[i2 - 1]["width"] === a_polyline[i2]["width"]) { //前が曲線で、太さが変わっていない
 					c_curves[c_id][c_curves[c_id].length - 1]["curve"].push([a_polyline[i2]["lat"], a_polyline[i2]["lon"]]);
@@ -660,7 +661,7 @@ function f_cut_polyline(a_polyline, a_stop_array) {
 			} else { //太さが変わらないとき
 				if (a_polyline[i2 - 1]["curve"] === true && a_polyline[i2 - 1]["width"] === a_polyline[i2]["width"]) { //前が曲線で、太さが変わっていない
 					c_curves[c_id][c_curves[c_id].length - 1]["curve"].push([a_polyline[i2]["lat"], a_polyline[i2]["lon"]]);
-				} else if (a_polyline[i2]["curve"] === true) { //曲線
+				} else if (i2 < c_cut_stop_number_array[i1 + 1]["number"] && a_polyline[i2]["curve"] === true) { //曲線
 					c_curves[c_id][c_curves[c_id].length - 1]["curve"].push("Q");
 					c_curves[c_id][c_curves[c_id].length - 1]["curve"].push([a_polyline[i2]["lat"], a_polyline[i2]["lon"]]);
 				} else { //線分
@@ -834,6 +835,9 @@ function f_trip_number(a_data) {
 				if (a_data["ur_routes"][i1]["service_array"][i2]["service_id"] === a_data["calendar"][i3]["service_id"]) {
 					const c_day = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
 					for (let i4 = 0; i4 < c_day.length; i4++) {
+						if (a_data["calendar"][i2] === undefined) {
+							continue; //calendarがない場合があるので追加
+						}
 						if (a_data["calendar"][i2][c_day[i4]] === "1") {
 							a_data["ur_routes"][i1]["trip_number"] += a_data["ur_routes"][i1]["service_array"][i2]["number"] / 7;//trip_numberではない！
 							//console.log(a_data["ur_routes"][i1]["service_array"][i2]["number"]);
