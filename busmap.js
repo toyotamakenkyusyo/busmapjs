@@ -251,7 +251,7 @@ function f_geojson_to_json(a_geojson) {
 	const c_stops = [];
 	for (let i1 = 0; i1 < a_geojson["features"].length; i1++) {
 		const c_feature = a_geojson["features"][i1];
-		if (c_feature["geometry"]["type"] === "Point") { //標柱
+		if (c_feature["geometry"]["type"] === "Point" && c_feature["properties"]["stop_id"] !== undefined) { //標柱
 			let l_lon = c_feature["geometry"]["coordinates"][0];
 			let l_lat = c_feature["geometry"]["coordinates"][1];
 			if (l_lat > 90 || l_lat < -90) { //緯度経度が逆の場合、修正する
