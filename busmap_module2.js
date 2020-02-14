@@ -68,6 +68,7 @@ window.f_busmap = async function f_busmap(a_settings) {
 		}
 		L.svg().addTo(l_map); //svg地図を入れる。
 		l_map.setView([35.454518, 133.850126], 16); //初期表示位置（仮）
+		//l_map.setView([34.66167,133.935], 16); //初期表示位置（仮）
 	}
 	console.timeEnd("t0");
 	//a_settings["data"] = "https://toyotamakenkyusyo.github.io/gtfs/3270001000564/next/GTFS-JP.zip"; //仮
@@ -319,8 +320,9 @@ function f_open(a_bmd, a_settings) {
 	
 	console.timeEnd("u4");
 	console.time("u5");
+	
 	for (let i1 = 0; i1 < a_bmd["parent_stations"].length; i1++) {
-		L.marker({"lon": a_bmd["parent_stations"][i1]["stop_lon"], "lat": a_bmd["parent_stations"][i1]["stop_lat"]}, {"icon": L.divIcon({"html": "<span style=\"writing-mode:  vertical-rl;\">" + a_bmd["parent_stations"][i1]["stop_name"] + "</span>", className: "className", iconSize: [256, 256], iconAnchor: [-4, -4]})}).addTo(l_map);
+		L.marker({"lon": a_bmd["parent_stations"][i1]["stop_lon"], "lat": a_bmd["parent_stations"][i1]["stop_lat"]}, {"icon": L.divIcon({"html": "<span style=\"writing-mode:  vertical-rl;\" onclick=\"f_set_stop_id('" + a_bmd["parent_stations"][i1]["stop_id"] + "');\">" + a_bmd["parent_stations"][i1]["stop_name"] + "</span>", className: "className", iconSize: [256, 256], iconAnchor: [-4, -4]})}).addTo(l_map);
 	}
 	console.timeEnd("u5");
 	console.time("u6");
@@ -372,6 +374,16 @@ function f_open(a_bmd, a_settings) {
 		}
 	}
 	
+	window.start_stop_id = null;
+	window.end_stop_id = null;
+	//停留所名をクリックして経路検索
+	window.f_set_stop_id = function (a_stop_id) {
+		window.start_stop_id = window.end_stop_id;
+		window.end_stop_id = a_stop_id;
+		console.log(window.start_stop_id + "→" + window.end_stop_id);
+		
+		f_search_route(window.start_stop_id, window.end_stop_id);
+	}
 	
 	console.time("u7");
 	
@@ -590,6 +602,25 @@ function f_make_polyline(a_child_shape_segment_array) {
 			c_polyline.push({"x": a_child_shape_segment_array[i2]["exy"][2]["x"], "y": a_child_shape_segment_array[i2]["exy"][2]["y"], "curve": a_child_shape_segment_array[i2]["exy"][2]["curve"], "original": a_child_shape_segment_array[i2]["em"], "width": a_child_shape_segment_array[i2 + 1]["w"], "ids": []});
 		} else {
 			c_polyline.push({"x": a_child_shape_segment_array[i2]["exy"][0]["x"], "y": a_child_shape_segment_array[i2]["exy"][0]["y"], "curve": a_child_shape_segment_array[i2]["exy"][0]["curve"], "original": a_child_shape_segment_array[i2]["em"], "width": a_child_shape_segment_array[i2]["w"], "ids": a_child_shape_segment_array[i2]["eids"]});
+		}
+	}
+	//NaNがないか確認
+	for (let i1 = 0; i1 < c_polyline.length; i1++) {
+		if (isNaN(c_polyline[i1]["x"])) {
+			console.log(c_polyline[i1]["x"]);
+			if (i1 !== 0) {
+				c_polyline[i1]["x"] = c_polyline[i1 - 1]["x"];
+			} else {
+				c_polyline[i1]["x"] = c_polyline[i1 + 2]["x"];
+			}
+		}
+		if (isNaN(c_polyline[i1]["y"])) {
+			console.log(c_polyline[i1]["y"]);
+			if (i1 !== 0) {
+				c_polyline[i1]["y"] = c_polyline[i1 - 1]["y"];
+			} else {
+				c_polyline[i1]["y"] = c_polyline[i1 + 2]["y"];
+			}
 		}
 	}
 	return c_polyline;
