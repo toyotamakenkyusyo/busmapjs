@@ -60,8 +60,9 @@ window.f_busmap = async function f_busmap(a_settings) {
 			}
 		}
 		L.svg().addTo(l_map); //svg地図を入れる。
-		l_map.setView([35.454518, 133.850126], 16); //初期表示位置（仮）
-		//l_map.setView([34.66167,133.935], 16); //初期表示位置（仮）
+		if (a_settings["set_view_latlon"] !== null && a_settings["set_view_zoom"] !== null) {
+			l_map.setView(a_settings["set_view_latlon"], a_settings["set_view_zoom"]); //初期表示位置（仮）
+		}
 	}
 	console.timeEnd("t0");
 	//a_settings["data"] = "https://toyotamakenkyusyo.github.io/gtfs/3270001000564/next/GTFS-JP.zip"; //仮

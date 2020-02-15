@@ -10,6 +10,8 @@ export function f_input_settings(a_settings) {
 		"global": true,//trueの場合、値をc_globalに渡し、変更可能にする
 		"change": true,
 		"leaflet": true,
+		"set_view_latlon": null, //Leafletの初期表示位置の緯度経度（[35, 135]）
+		"set_view_zoom": null, //Leafletの初期表示位置のズームレベル（16）
 		"clickable": true,//線等をクリックできる
 		"timetable": true,//時刻表を表示する
 		"direction": true,
