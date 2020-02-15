@@ -6,10 +6,6 @@
 //rt関係
 //f_busmap({});
 console.log("ここ");
-//クリックできるところを青字下線
-//document.getElementsByTagName("style")[0].innerHTML += " span[onclick] {color: blue; text-decoration: underline;}";
-document.getElementsByTagName("head")[0].innerHTML += "<style>span[onclick] {color: blue; text-decoration: underline;}</style>";
-
 
 //グローバル変数
 let l_map; //leaflet
