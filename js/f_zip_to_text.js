@@ -1,5 +1,6 @@
-//a_zlibはhttps://cdn.jsdelivr.net/npm/zlibjs@0.3.1/bin/unzip.min.jsのZlibを入れる
 export async function f_zip_to_text(a_arraybuffer, a_zlib) {
+	//a_arraybufferは展開したいGTFSのZIPのarraybuffer
+	//a_zlibはhttps://cdn.jsdelivr.net/npm/zlibjs@0.3.1/bin/unzip.min.jsのZlibを入れる
 	const c_byte = new Uint8Array(a_arraybuffer);
 	const c_unzip = new a_zlib.Unzip(c_byte);
 	const c_filenames = c_unzip.getFilenames();
@@ -8,5 +9,5 @@ export async function f_zip_to_text(a_arraybuffer, a_zlib) {
 	for (let i1 = 0; i1 < c_filenames.length; i1++) {
 		c_files[c_filenames[i1]] = new TextDecoder("utf-8").decode(Uint8Array.from(c_unzip.decompress(c_filenames[i1])).buffer);
 	}
-	return c_files;
+	return c_files; //展開したGTFSの各ファイルのCSVの文字列を出力
 }

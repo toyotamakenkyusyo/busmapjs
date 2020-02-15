@@ -25,7 +25,7 @@ import {f_html} from "./js/f_html.js";
 import {f_xhr_get} from "./js/f_xhr_get.js";
 import {f_zip_to_text} from "./js/f_zip_to_text.js";
 import {f_csv_to_json} from "./js/f_csv_to_json.js";
-import {f_binary_to_json} from "./js/f_binary_to_json.js";
+import {f_binary_to_json} from "./js/f_binary_to_json.js"; //GTFS-RTの読み込みに用いる
 
 import {f_from_topojson} from "./js/f_from_topojson.js";
 import {f_from_geojson} from "./js/f_from_geojson.js";
@@ -54,10 +54,8 @@ window.f_busmap = async function f_busmap(a_settings) {
 
 	console.time("T");
 	console.time("t0");
-	//初期設定
-	a_settings = f_input_settings(a_settings);
-	//HTMLの初期設定
-	document.getElementById(a_settings["div_id"]).innerHTML = f_html(a_settings);
+	a_settings = f_input_settings(a_settings); //初期設定
+	document.getElementById(a_settings["div_id"]).innerHTML = f_html(a_settings); //HTMLの初期設定
 	//leafletの初期設定
 	if (a_settings["leaflet"] === true) {
 		l_map = L.map("div_leaflet"); //leafletの読み込み。
@@ -80,24 +78,18 @@ window.f_busmap = async function f_busmap(a_settings) {
 	if (a_settings["data_type"] === "gtfs") {
 		console.time("t11");
 		const c_arraybuffer = await f_xhr_get(a_settings["data"], "arraybuffer");
-		const c_text = await f_zip_to_text(c_arraybuffer, Zlib);
-		//Zlibはhttps://cdn.jsdelivr.net/npm/zlibjs@0.3.1/bin/unzip.min.js
+		const c_text = await f_zip_to_text(c_arraybuffer, Zlib); //Zlibはhttps://cdn.jsdelivr.net/npm/zlibjs@0.3.1/bin/unzip.min.jsにある
 		for (let i1 in c_text) {
 			l_data[i1.replace(".txt", "")] = f_csv_to_json(c_text[i1]);
 		}
 		console.timeEnd("t11");
 		console.time("t12");
-		//GTFSの差異を統一（ur_routesを作るのに必要なroute_sort_order、pickup_type、drop_off_type）
-		//pickup_typeとdrop_off_typeを補う
-		f_set_stop_type(l_data);
-		//route_sort_orderを補う
-		f_set_route_sort_order(l_data);
-		//緯度、経度、順番の型を数に変換
-		f_number_gtfs(l_data);
+		f_set_stop_type(l_data); //pickup_typeとdrop_off_typeを補う（ur_routesを作るため）
+		f_set_route_sort_order(l_data); //route_sort_orderを補う（ur_routesを作るため）
+		f_number_gtfs(l_data); //緯度、経度、順番の型を数に変換
 		console.timeEnd("t12");
 		console.time("t13");
-		//ur_routesを作る
-		f_make_ur_routes(l_data);
+		f_make_ur_routes(l_data); //ur_routesを作る
 		console.timeEnd("t13");
 	} else if (a_settings["data_type"] === "json" || a_settings["data_type"] === "geojson" || a_settings["data_type"] === "topojson" || a_settings["data_type"] === "api") {
 		l_data = await f_xhr_get(a_settings["data"], "json");
