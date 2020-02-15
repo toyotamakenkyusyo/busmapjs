@@ -7,6 +7,14 @@
 //f_busmap({});
 console.log("ここ");
 
+
+//開発予定メモ
+//SVG出力機能の回復
+//クリックしたときの各種機能の回復
+//時刻表の回復
+//高速化、遅くなった部分がないか確認
+
+
 //グローバル変数
 let l_map; //leaflet
 let l_data = {};//グローバルな情報を扱う。
@@ -300,7 +308,7 @@ function f_open(a_bmd, a_settings) {
 	console.time("u5");
 	
 	for (let i1 = 0; i1 < a_bmd["parent_stations"].length; i1++) {
-		L.marker({"lon": a_bmd["parent_stations"][i1]["stop_lon"], "lat": a_bmd["parent_stations"][i1]["stop_lat"]}, {"icon": L.divIcon({"html": "<span style=\"writing-mode:  vertical-rl;\" onclick=\"f_set_stop_id('" + a_bmd["parent_stations"][i1]["stop_id"] + "');\">" + a_bmd["parent_stations"][i1]["stop_name"] + "</span>", className: "className", iconSize: [256, 256], iconAnchor: [-4, -4]})}).addTo(l_map);
+		L.marker({"lon": a_bmd["parent_stations"][i1]["stop_lon"], "lat": a_bmd["parent_stations"][i1]["stop_lat"]}, {"icon": L.divIcon({"html": "<span style=\"writing-mode: " + a_settings["writing_mode"] + ";\" onclick=\"f_set_stop_id('" + a_bmd["parent_stations"][i1]["stop_id"] + "');\">" + a_bmd["parent_stations"][i1]["stop_name"] + "</span>", className: "className", iconSize: [256, 256], iconAnchor: [-4, -4]})}).addTo(l_map);
 	}
 	console.timeEnd("u5");
 	console.time("u6");

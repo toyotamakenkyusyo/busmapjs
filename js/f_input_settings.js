@@ -26,6 +26,7 @@ export function f_input_settings(a_settings) {
 		"background_layers": [["https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png", {attribution: "<a href=\"https://maps.gsi.go.jp/development/ichiran.html\">地理院タイル</a>", opacity: 0.25}]],
 		"font_size": 16, //停留所名のフォントサイズ
 		"font_family": "'源ノ角ゴシック'", //停留所名のフォント、二重のクオーテーションマークに注意
+		"writing_mode": "horizontal-tb", //横書き（horizontal-tb）か縦書き（vertical-rl）か
 		"stop_color_standard": "#000000", //通常の停留所記号の色
 		"stop_color_nonstandard": "#FFFFFF", //起終点等の停留所記号の色
 		"stop_color_location": "#C0C0C0", //位置を示す停留所記号の色
