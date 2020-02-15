@@ -78,7 +78,7 @@ window.f_busmap = async function f_busmap(a_settings) {
 	if (a_settings["data_type"] === "gtfs") {
 		console.time("t11");
 		const c_arraybuffer = await f_xhr_get(a_settings["data"], "arraybuffer");
-		const c_text = await f_zip_to_text(c_arraybuffer, Zlib); //Zlibはhttps://cdn.jsdelivr.net/npm/zlibjs@0.3.1/bin/unzip.min.jsにある
+		const c_text = f_zip_to_text(c_arraybuffer, Zlib); //Zlibはhttps://cdn.jsdelivr.net/npm/zlibjs@0.3.1/bin/unzip.min.jsにある
 		for (let i1 in c_text) {
 			l_data[i1.replace(".txt", "")] = f_csv_to_json(c_text[i1]);
 		}

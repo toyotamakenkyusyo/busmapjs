@@ -1,6 +1,6 @@
-export async function f_zip_to_text(a_arraybuffer, a_zlib) {
-	//a_arraybufferは展開したいGTFSのZIPのarraybuffer
-	//a_zlibはhttps://cdn.jsdelivr.net/npm/zlibjs@0.3.1/bin/unzip.min.jsのZlibを入れる
+export function f_zip_to_text(a_arraybuffer, a_zlib) {
+	//a_arraybufferは展開したいGTFSのZIPのarraybufferを入力
+	//a_zlibはhttps://cdn.jsdelivr.net/npm/zlibjs@0.3.1/bin/unzip.min.jsのZlibを入力
 	const c_byte = new Uint8Array(a_arraybuffer);
 	const c_unzip = new a_zlib.Unzip(c_byte);
 	const c_filenames = c_unzip.getFilenames();
