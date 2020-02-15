@@ -37,7 +37,7 @@ import {f_make_ur_routes} from "./js/f_make_ur_routes.js";
 import {f_set_color} from "./js/f_set_color.js";
 import {f_make_shape_pt_array} from "./js/f_make_shape_pt_array.js";
 import {f_make_parent_stations} from "./js/f_make_parent_stations.js";
-
+import {f_count_trip_number} from "./js/f_count_trip_number.js";
 
 
 import {f_lonlat_xy} from "./js/f_lonlat_xy.js";
@@ -109,6 +109,7 @@ window.f_busmap = async function f_busmap(a_settings) {
 	f_set_color(l_data); //route_color、route_text_colorを補う
 	f_make_shape_pt_array(l_data); //shape_pt_arrayを加える
 	f_make_parent_stations(l_data); //stopsをur_stopsとparent_stationsに分け、location_typeを補う
+	f_count_trip_number(l_data);//便数を数える
 	
 	//GTFS-RTの読み込み
 	l_data["rt"] = null;
@@ -140,7 +141,6 @@ window.f_busmap = async function f_busmap(a_settings) {
 	f_make_shape_segments(c_bmd, f_lonlat_xy, a_settings); //新規
 	console.timeEnd("t3");
 	console.time("t4");
-	f_trip_number(c_bmd);//便数を数える
 	if (a_settings["global"] === true) { //グローバルに移す
 		l_data = c_bmd;
 		l_settings = a_settings;
@@ -823,34 +823,6 @@ function f_stop_array(a_data) {
 		//console.log(c_parent_route_stop_array);
 		a_data["parent_routes"][i1]["stop_array"] = c_parent_route_stop_array;
 		
-	}
-}
-
-
-
-
-function f_trip_number(a_data) {
-	//trip_numberを計算する。一週間の平均とする。
-	for (let i1 = 0; i1 < a_data["ur_routes"].length; i1++) {
-		if (a_data["ur_routes"][i1]["service_array"] !== "") {
-			a_data["ur_routes"][i1]["trip_number"] = 0;
-		}
-		for (let i2 = 0; i2 < a_data["ur_routes"][i1]["service_array"].length; i2++) {
-			for (let i3 = 0; i3 < a_data["calendar"].length; i3++) {
-				if (a_data["ur_routes"][i1]["service_array"][i2]["service_id"] === a_data["calendar"][i3]["service_id"]) {
-					const c_day = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
-					for (let i4 = 0; i4 < c_day.length; i4++) {
-						if (a_data["calendar"][i2] === undefined) {
-							continue; //calendarがない場合があるので追加
-						}
-						if (a_data["calendar"][i2][c_day[i4]] === "1") {
-							a_data["ur_routes"][i1]["trip_number"] += a_data["ur_routes"][i1]["service_array"][i2]["number"] / 7;//trip_numberではない！
-							//console.log(a_data["ur_routes"][i1]["service_array"][i2]["number"]);
-						}
-					}
-				}
-			}
-		}
 	}
 }
 
