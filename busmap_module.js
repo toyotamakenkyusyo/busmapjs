@@ -77,10 +77,9 @@ window.f_busmap = async function f_busmap(a_settings) {
 	let l_data = {};
 	if (a_settings["data_type"] === "gtfs") {
 		console.time("t11");
-		const c_arraybuffer = await f_xhr_get(a_settings["data"], "arraybuffer");
-		const c_text = f_zip_to_text(c_arraybuffer, Zlib); //Zlibはhttps://cdn.jsdelivr.net/npm/zlibjs@0.3.1/bin/unzip.min.jsにある
-		for (let i1 in c_text) {
-			l_data[i1.replace(".txt", "")] = f_csv_to_json(c_text[i1]);
+		const c_csvs = f_zip_to_text(await f_xhr_get(a_settings["data"], "arraybuffer"), Zlib); //Zlibはhttps://cdn.jsdelivr.net/npm/zlibjs@0.3.1/bin/unzip.min.jsにある
+		for (let i1 in c_csvs) {
+			l_data[i1.replace(".txt", "")] = f_csv_to_json(c_csvs[i1]);
 		}
 		console.timeEnd("t11");
 		console.time("t12");
@@ -110,13 +109,12 @@ window.f_busmap = async function f_busmap(a_settings) {
 		new Error("読み込みできないタイプ");
 	}
 	console.time("t2");
-	//route_color、route_text_colorを補う
-	f_set_color(l_data);
-	//shape_pt_arrayを補う
-	f_make_shape_pt_array(l_data);
+	
+	f_set_color(l_data); //route_color、route_text_colorを補う
+	f_make_shape_pt_array(l_data); //shape_pt_arrayを加える
 	//location_typeを補う（未作成）
 	f_make_parent_stations(l_data);
-	f_stop_number(l_data);
+	//f_stop_number(l_data); //互換性のため
 	
 	//GTFS-RTの読み込み
 	l_data["rt"] = null;
