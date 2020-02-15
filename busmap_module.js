@@ -40,9 +40,8 @@ import {f_make_ur_routes} from "./js/f_make_ur_routes.js";
 
 import {f_set_color} from "./js/f_set_color.js";
 import {f_make_shape_pt_array} from "./js/f_make_shape_pt_array.js";
-
 import {f_make_parent_stations} from "./js/f_make_parent_stations.js";
-import {f_stop_number} from "./js/f_stop_number.js";
+
 
 
 import {f_lonlat_xy} from "./js/f_lonlat_xy.js";
@@ -112,9 +111,7 @@ window.f_busmap = async function f_busmap(a_settings) {
 	
 	f_set_color(l_data); //route_color、route_text_colorを補う
 	f_make_shape_pt_array(l_data); //shape_pt_arrayを加える
-	//location_typeを補う（未作成）
-	f_make_parent_stations(l_data);
-	//f_stop_number(l_data); //互換性のため
+	f_make_parent_stations(l_data); //stopsをur_stopsとparent_stationsに分け、location_typeを補う
 	
 	//GTFS-RTの読み込み
 	l_data["rt"] = null;
@@ -126,7 +123,6 @@ window.f_busmap = async function f_busmap(a_settings) {
 	}
 	
 	console.log(l_data);
-	//const c_bmd = l_data;
 	const c_bmd = {
 		"rt": l_data["rt"],
 		"stops": l_data["stops"],
@@ -137,15 +133,7 @@ window.f_busmap = async function f_busmap(a_settings) {
 		"trips": l_data["trips"],
 		"stop_times": l_data["stop_times"]//,
 	};
-	//f_leaflet(c_bmd);
 	
-	
-
-	//throw new Error("終了");
-	
-	
-	//f_prepare_common(a_data[0]);
-	//f_next_2(c_bmd, c_input_settings);//ここから仮につなげる
 	if (a_settings["change"] === true) {
 		//当面機能停止
 		//document.getElementById("ur_route_list").innerHTML = f_ur_route_list(c_bmd);
@@ -156,8 +144,7 @@ window.f_busmap = async function f_busmap(a_settings) {
 	console.timeEnd("t3");
 	console.time("t4");
 	f_trip_number(c_bmd);//便数を数える
-	//グローバルに移す
-	if (a_settings["global"] === true) {
+	if (a_settings["global"] === true) { //グローバルに移す
 		l_data = c_bmd;
 		l_settings = a_settings;
 	}
