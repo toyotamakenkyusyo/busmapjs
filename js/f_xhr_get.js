@@ -1,4 +1,6 @@
 export function f_xhr_get(a_url, a_type) {
+	//a_urlはURLの文字列
+	//a_typeはresponseType（arraybuffer、json、text等）
 	function f_promise(a_resolve, a_reject) {
 		const c_xhr = new XMLHttpRequest();
 		c_xhr.responseType = a_type;
@@ -20,4 +22,5 @@ export function f_xhr_get(a_url, a_type) {
 		c_xhr.send(null);
 	}
 	return new Promise(f_promise);
+	//出力はresponseTypeに応じたもの（JSONならobject、textなら文字列等）
 }

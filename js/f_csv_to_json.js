@@ -1,4 +1,5 @@
 export function f_csv_to_json(a_csv) {
+	//a_csvはCSVの文字列。カンマ区切り。
 	//CSVを2次元配列にする。
 	let l_1 = 0;
 	let l_2 = 0;
@@ -27,4 +28,5 @@ export function f_csv_to_json(a_csv) {
 	}
 	//この段階では全てテキストになっている。
 	return c_json;
+	//c_jsonは[{"stop_id": "停留所ID", "stop_name": "停留所名", ……}, {……}, ……, {……}]
 }

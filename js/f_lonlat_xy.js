@@ -2,6 +2,9 @@
 //ウェブメルカトルのタイル番号（左手系）
 //EPSG:3857（メートル単位）（右手系）a_zoom_level === "m"とする。
 export function f_lonlat_xy(a_value, a_type, a_zoom_level) {
+	//a_valueは変換元の緯度、経度、x、yのいずれかの数値
+	//a_typeは"lon_to_x"、"lat_to_y"、"x_to_lon"、"y_to_lat"のいずれか
+	//a_zoom_levelはウェブメルカトルのzに相当。EPSG:3857の場合は"m"とする。
 	if (a_type === "lon_to_x") {
 		const a_lon = a_value;
 		if (a_zoom_level === "m") {
@@ -27,4 +30,5 @@ export function f_lonlat_xy(a_value, a_type, a_zoom_level) {
 		}
 		return Math.asin(Math.tanh((1 - a_y / (2 ** a_zoom_level) / 0.5) * Math.PI)) * 180 / Math.PI;
 	}
+	//出力は変換先の緯度、経度、x、yのいずれかの数値
 }
