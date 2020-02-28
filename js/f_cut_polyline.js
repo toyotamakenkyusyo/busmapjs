@@ -71,6 +71,18 @@ export function f_cut_polyline(a_polyline, a_stop_array) {
 			}
 		}
 	}
+	
+	if (c_cut_stop_number_array.length === 0) {
+		c_polylines["all"] = a_polyline;
+		c_curves["all"] = [{"curve": [], "width": a_polyline[1]["width"]}];
+		c_curves["all"][0]["curve"].push("M");
+		c_curves["all"][0]["curve"].push([a_polyline[0]["lat"], a_polyline[0]["lon"]]);
+		for (let i2 = 1; i2 < a_polyline.length; i2++) {
+			c_curves["all"][0]["curve"].push("L");
+			c_curves["all"][0]["curve"].push([a_polyline[i2]["lat"], a_polyline[i2]["lon"]]);
+		}
+	}
+	
 	const c_stop_array = [];
 	for (let i1 = 0; i1 < c_cut_stop_number_array.length; i1++) {
 		c_stop_array.push({"lon": a_polyline[c_cut_stop_number_array[i1]["number"]]["lon"], "lat": a_polyline[c_cut_stop_number_array[i1]["number"]]["lat"]});

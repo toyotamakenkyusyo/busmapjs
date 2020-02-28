@@ -35,7 +35,7 @@ export function f_prepare_json(a_data) {
 			new Error("route_idが不正");
 		}
 		if (typeof a_data["ur_routes"][i1]["route_color"] !== "string") { //色か否かも要判定？
-			a_data["ur_routes"][i1]["route_color"] = "FF0000"; //仮にFF0000とする。（たぶん不要）
+			//a_data["ur_routes"][i1]["route_color"] = "FF0000"; //仮にFF0000とする。（たぶん不要）
 		}
 		if (typeof a_data["ur_routes"][i1]["shape_pt_array"] !== "object") { //配列か否かも要判定？
 			a_data["ur_routes"][i1]["shape_pt_array"] = []; //仮の処置（たぶん不要）

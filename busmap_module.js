@@ -104,6 +104,7 @@ window.f_busmap = async function f_busmap(a_settings) {
 			l_data = f_from_topojson(l_data);
 		} else if (a_settings["data_type"] === "geojson") {
 			l_data = f_from_geojson(l_data);
+			l_data["routes"] = l_data["ur_routes"]; //臨時に追加
 		} else if (a_settings["data_type"] === "api") {
 			l_data = f_from_api(l_data);
 		}
@@ -273,6 +274,9 @@ function f_open(a_bmd, a_settings) {
 				}
 			}
 			
+			if (a_bmd["ur_routes"][i2]["stop_array"] === undefined) {
+				a_bmd["ur_routes"][i2]["stop_array"] = [];
+			}
 			
 			const c_cut_polyline = f_cut_polyline(c_polyline, a_bmd["ur_routes"][i2]["stop_array"]);
 			const c_parent_route_id = a_bmd["ur_routes"][i2][a_settings["parent_route_id"]];
