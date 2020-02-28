@@ -222,7 +222,7 @@ function f_open(a_bmd, a_settings) {
 	}
 	console.timeEnd("u3");
 	console.time("u4");
-	for (let i1 = 14; i1 <= 16; i1++) {
+	for (let i1 = 12; i1 <= 16; i1++) {
 		const c_zoom_ratio = 2 ** (16 - i1);
 		console.log(c_zoom_ratio)
 		a_bmd["layer_zoom_" + String(i1)] = L.layerGroup();
@@ -324,24 +324,58 @@ function f_open(a_bmd, a_settings) {
 	
 	function f_zoom() {
 		const c_zoom_level = l_map.getZoom();
-		if (c_zoom_level <= 14) {
+		if (c_zoom_level <= 12) {
+			c_groups["zoom_12"].addTo(l_map);
+			c_groups["zoom_13"].remove(l_map);
+			c_groups["zoom_14"].remove(l_map);
+			c_groups["zoom_15"].remove(l_map);
+			c_groups["zoom_16"].remove(l_map);
+			a_bmd["layer_zoom_12"].addTo(l_map);
+			a_bmd["layer_zoom_13"].remove(l_map);
+			a_bmd["layer_zoom_14"].remove(l_map);
+			a_bmd["layer_zoom_15"].remove(l_map);
+			a_bmd["layer_zoom_16"].remove(l_map);
+		} else if (c_zoom_level === 13) {
+			c_groups["zoom_12"].remove(l_map);
+			c_groups["zoom_13"].addTo(l_map);
+			c_groups["zoom_14"].remove(l_map);
+			c_groups["zoom_15"].remove(l_map);
+			c_groups["zoom_16"].remove(l_map);
+			a_bmd["layer_zoom_12"].remove(l_map);
+			a_bmd["layer_zoom_13"].addTo(l_map);
+			a_bmd["layer_zoom_14"].remove(l_map);
+			a_bmd["layer_zoom_15"].remove(l_map);
+			a_bmd["layer_zoom_16"].remove(l_map);
+		} else if (c_zoom_level === 14) {
+			c_groups["zoom_12"].remove(l_map);
+			c_groups["zoom_13"].remove(l_map);
 			c_groups["zoom_14"].addTo(l_map);
 			c_groups["zoom_15"].remove(l_map);
 			c_groups["zoom_16"].remove(l_map);
+			a_bmd["layer_zoom_12"].remove(l_map);
+			a_bmd["layer_zoom_13"].remove(l_map);
 			a_bmd["layer_zoom_14"].addTo(l_map);
 			a_bmd["layer_zoom_15"].remove(l_map);
 			a_bmd["layer_zoom_16"].remove(l_map);
 		} else if (c_zoom_level === 15) {
+			c_groups["zoom_12"].remove(l_map);
+			c_groups["zoom_13"].remove(l_map);
 			c_groups["zoom_14"].remove(l_map);
 			c_groups["zoom_15"].addTo(l_map);
 			c_groups["zoom_16"].remove(l_map);
+			a_bmd["layer_zoom_12"].remove(l_map);
+			a_bmd["layer_zoom_13"].remove(l_map);
 			a_bmd["layer_zoom_14"].remove(l_map);
 			a_bmd["layer_zoom_15"].addTo(l_map);
 			a_bmd["layer_zoom_16"].remove(l_map);
 		} else if (c_zoom_level >= 16) {
+			c_groups["zoom_12"].remove(l_map);
+			c_groups["zoom_13"].remove(l_map);
 			c_groups["zoom_14"].remove(l_map);
 			c_groups["zoom_15"].remove(l_map);
 			c_groups["zoom_16"].addTo(l_map);
+			a_bmd["layer_zoom_12"].remove(l_map);
+			a_bmd["layer_zoom_13"].remove(l_map);
 			a_bmd["layer_zoom_14"].remove(l_map);
 			a_bmd["layer_zoom_15"].remove(l_map);
 			a_bmd["layer_zoom_16"].addTo(l_map);
