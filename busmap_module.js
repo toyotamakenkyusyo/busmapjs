@@ -57,12 +57,26 @@ import {f_make_polyline} from "./js/f_make_polyline.js";
 import {f_cut_polyline} from "./js/f_cut_polyline.js";
 import {f_search_route} from "./js/f_search_route.js";
 
-window.f_busmap = async function f_busmap(a_settings) {
+window.busmapjs = {}; //ここに関数などをまとめる
+
+window.busmapjs.f_main = async function f_main(a_settings) {
 
 	console.time("T");
 	console.time("t0");
 	a_settings = f_input_settings(a_settings); //初期設定
 	document.getElementById(a_settings["div_id"]).innerHTML = f_html(a_settings); //HTMLの初期設定
+	
+	//設定変更
+	if (a_settings["change"] === true) {
+		window.busmapjs[a_settings["busmapjs_id"]] = {};
+		window.busmapjs[a_settings["busmapjs_id"]].settings = a_settings;
+		window.busmapjs.f_change_setting = function f_change_setting(a_busmapjs_id, a_key, a_value) {
+			window.busmapjs[a_busmapjs_id].settings[a_key] = a_value;
+			console.log("td_" + a_busmapjs_id + "_" + a_key);
+			document.getElementById("td_" + a_busmapjs_id + "_" + a_key).innerHTML = a_value;
+		}
+	}
+	
 	//leafletの初期設定
 	if (a_settings["leaflet"] === true) {
 		l_map = L.map("div_leaflet"); //leafletの読み込み。
@@ -168,11 +182,7 @@ window.f_busmap = async function f_busmap(a_settings) {
 
 
 
-//設定変更
-function f_change_setting(a_key, a_value) {
-	l_settings[a_key] = a_value;
-	document.getElementById("td_" + a_key).innerHTML = a_value;
-}
+
 
 
 

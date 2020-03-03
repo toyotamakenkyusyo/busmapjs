@@ -6,6 +6,7 @@ export function f_input_settings(a_settings) {
 		"rt": false,//GTFS-RTの読込
 		"data": "data",//データのURL
 		"data_type": "gtfs",//データがgtfs, json, geojson, topojson, apiか
+		"busmapjs_id": "busmapjs_1",
 		"div_id": "div",//挿入するdivのid
 		"global": true,//trueの場合、値をc_globalに渡し、変更可能にする
 		"change": true,
