@@ -1,60 +1,65 @@
 export function f_offset_segment_array(a_segment_array) {
 	const a_settings = {
 		"curve": true, //角を丸める
-		"remove_cross": false, //余計な線の交差を除く
-		"separate_stops": true//, //停車地を分けて統合しない
+		"remove_cross": true, //余計な線の交差を除く
+		"separate_stops": false//, //停車地を分けて統合しない
 	};
-	f_offset_segment_array_once(a_segment_array, a_settings); //初回計算
+	let l_segment_array = a_segment_array;
+	f_offset_segment_array_once(l_segment_array, a_settings); //初回計算
 	if (a_settings["remove_cross"] === true) { //余計な線の交差を除く
 		let l_exist; //逆の順序が存在するときtrue
 		let l_sids; //統合する点のidたち（始点側）
 		let l_s_stop; //停車地があるときtrue
-		while (0 < a_segment_array.length) { //無限ループ注意
+		while (0 < l_segment_array.length) { //無限ループ注意
 			l_exist = false; //逆の順序がないと仮定
 			l_sids = []; //リセット
 			l_s_stop = false; //リセット
 			const c_new_segment_array = []; //残すsegment
-			for (let i2 = 0; i2 < a_segment_array.length; i2++) {
+			for (let i2 = 0; i2 < l_segment_array.length; i2++) {
 				//統合する点のidをまとめる。
-				for (let i3 = 0; i3 < a_segment_array[i2]["sids"].length; i3++) {
-					l_sids.push(a_segment_array[i2]["sids"][i3]);
+				for (let i3 = 0; i3 < l_segment_array[i2]["sids"].length; i3++) {
+					l_sids.push(l_segment_array[i2]["sids"][i3]);
 				}
 				//停車地があるか記録
-				if (a_segment_array[i2]["s_stop"] === true) {
+				if (l_segment_array[i2]["s_stop"] === true) {
 					l_s_stop = true;
 				}
 				if (
-					(0 < i2) && (i2 < a_segment_array.length - 1) //最初と最後は必ず残すので除く
-					&& (a_segment_array[i2]["st"] > a_segment_array[i2]["et"]) //順序が逆
+					(0 < i2) && (i2 < l_segment_array.length - 1) //最初と最後は必ず残すので除く
 					&& (
-						(a_settings["separate_stops"] === true && a_segment_array[i2]["s_stop"] === false && a_segment_array[i2]["e_stop"] === false) //停車地を分ける、停車地がない場合
+						(l_segment_array[i2]["st"] > l_segment_array[i2]["et"])
+						&& ((l_segment_array[i2 - 1]["st"] <= l_segment_array[i2 - 1]["et"]) || (l_segment_array[i2 + 1]["st"] <= l_segment_array[i2 + 1]["et"]))
+					) //順序が逆（隣の少なくとも一方は順）
+					&& (
+						(a_settings["separate_stops"] === true && l_segment_array[i2]["s_stop"] === false && l_segment_array[i2]["e_stop"] === false) //停車地を分ける、停車地がない場合
 						|| (a_settings["separate_stops"] === false) //停車地を分けない
 					)
 				) { //逆の順序の場合
 					l_exist = true; //逆の順序が存在
 				} else {
-					c_new_segment_array.push(a_segment_array[i2]);
+					c_new_segment_array.push(l_segment_array[i2]);
 					if (i2 !== 0) { //最初以外
 						c_new_segment_array[c_new_segment_array.length - 2]["eids"] = l_sids;
 						c_new_segment_array[c_new_segment_array.length - 2]["e_stop"] = l_s_stop;
 					}
 					c_new_segment_array[c_new_segment_array.length - 1]["sids"] = l_sids;
 					c_new_segment_array[c_new_segment_array.length - 1]["s_stop"] = l_s_stop;
-					if (i2 === a_segment_array.length - 1) { //最後
-						c_new_segment_array[c_new_segment_array.length - 1]["eids"] = a_segment_array[i2]["eids"];
-						c_new_segment_array[c_new_segment_array.length - 1]["e_stop"] = a_segment_array[i2]["e_stop"];
+					if (i2 === l_segment_array.length - 1) { //最後
+						c_new_segment_array[c_new_segment_array.length - 1]["eids"] = l_segment_array[i2]["eids"];
+						c_new_segment_array[c_new_segment_array.length - 1]["e_stop"] = l_segment_array[i2]["e_stop"];
 					}
 					l_sids = [];
 					l_s_stop = false;
 				}
 			}
-			a_segment_array = c_new_segment_array; //代入して変える
-			f_offset_segment_array_once(a_segment_array, a_settings); //再計算
+			l_segment_array = c_new_segment_array; //代入して変える
+			f_offset_segment_array_once(l_segment_array, a_settings); //再計算
 			if (l_exist === false) { //逆の順序が存在しなければ終了する。
 				break;
 			}
 		}
 	}
+	return l_segment_array;
 }
 
 

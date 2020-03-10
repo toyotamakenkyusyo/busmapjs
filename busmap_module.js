@@ -243,22 +243,22 @@ function f_open(a_bmd, a_settings) {
 		}
 		c_groups["zoom_" + String(i1)] = L.layerGroup();
 		for (let i2 = 0; i2 < a_bmd["ur_route_child_shape_segment_arrays"].length; i2++) {
-			const c_array = []; //a_bmd["ur_route_child_shape_segment_arrays"][i1]のコピー
+			const c_array_0 = []; //a_bmd["ur_route_child_shape_segment_arrays"][i1]のコピー
 			for (let i3 = 0; i3 < a_bmd["ur_route_child_shape_segment_arrays"][i2].length; i3++) {
-				c_array[i3] = {};
+				c_array_0[i3] = {};
 				for (let i4 in a_bmd["ur_route_child_shape_segment_arrays"][i2][i3]) {
-					c_array[i3][i4] = a_bmd["ur_route_child_shape_segment_arrays"][i2][i3][i4];
+					c_array_0[i3][i4] = a_bmd["ur_route_child_shape_segment_arrays"][i2][i3][i4];
 				}
-				c_array[i3]["sids"] = [c_array[i3]["sid"]];
-				c_array[i3]["eids"] = [c_array[i3]["eid"]];
-				c_array[i3]["w"] = c_array[i3]["w"] * c_zoom_ratio; //オフセット倍率を変更
-				c_array[i3]["z"] = c_array[i3]["z"] * c_zoom_ratio; //オフセット倍率を変更
+				c_array_0[i3]["sids"] = [c_array_0[i3]["sid"]];
+				c_array_0[i3]["eids"] = [c_array_0[i3]["eid"]];
+				c_array_0[i3]["w"] = c_array_0[i3]["w"] * c_zoom_ratio; //オフセット倍率を変更
+				c_array_0[i3]["z"] = c_array_0[i3]["z"] * c_zoom_ratio; //オフセット倍率を変更
 			}
 			
 			
 			
 			
-			f_offset_segment_array(c_array); //オフセット
+			const c_array = f_offset_segment_array(c_array_0); //オフセット
 			
 			//console.log(c_array);
 			//折れ線に変換する
