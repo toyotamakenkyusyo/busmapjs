@@ -10,10 +10,12 @@ export function f_offset_segment_array(a_segment_array) {
 		let l_exist; //逆の順序が存在するときtrue
 		let l_sids; //統合する点のidたち（始点側）
 		let l_s_stop; //停車地があるときtrue
+		let l_delated; //1つ前が削除された場合true
 		while (0 < l_segment_array.length) { //無限ループ注意
 			l_exist = false; //逆の順序がないと仮定
 			l_sids = []; //リセット
 			l_s_stop = false; //リセット
+			l_delated = false; //リセット
 			const c_new_segment_array = []; //残すsegment
 			for (let i2 = 0; i2 < l_segment_array.length; i2++) {
 				//統合する点のidをまとめる。
@@ -36,6 +38,7 @@ export function f_offset_segment_array(a_segment_array) {
 					)
 				) { //逆の順序の場合
 					l_exist = true; //逆の順序が存在
+					l_delated = true;//1つ前を削除
 				} else {
 					c_new_segment_array.push(l_segment_array[i2]);
 					if (i2 !== 0) { //最初以外
@@ -44,6 +47,8 @@ export function f_offset_segment_array(a_segment_array) {
 					}
 					c_new_segment_array[c_new_segment_array.length - 1]["sids"] = l_sids;
 					c_new_segment_array[c_new_segment_array.length - 1]["s_stop"] = l_s_stop;
+					c_new_segment_array[c_new_segment_array.length - 1]["delated"] = l_delated; //1つ前を消されたか
+					l_delated = false; //リセット
 					if (i2 === l_segment_array.length - 1) { //最後
 						c_new_segment_array[c_new_segment_array.length - 1]["eids"] = l_segment_array[i2]["eids"];
 						c_new_segment_array[c_new_segment_array.length - 1]["e_stop"] = l_segment_array[i2]["e_stop"];
@@ -85,7 +90,9 @@ function f_offset_segment_array_once(a_segment_array, a_settings) {
 	a_segment_array[a_segment_array.length - 1]["exy"][0]["y"] = (-1) * c_vnz * c_vnx / c_vnn + a_segment_array[a_segment_array.length - 1]["ey"];
 	//途中
 	for (let i1 = 0; i1 < a_segment_array.length - 1; i1++) {
-		f_offset_point(a_segment_array[i1], a_segment_array[i1 + 1], a_settings);
+		if (a_segment_array[i1 + 1]["delated"] !== false) {
+			f_offset_point(a_segment_array[i1], a_segment_array[i1 + 1], a_settings);
+		}
 	}
 }
 
