@@ -234,7 +234,7 @@ function f_offset(a_1, a_2) { //左手系に注意
 	
 	//d1tはずらし幅z1、z2のとき、z1 * d1t[0] + z2 * d1t[1] + d1t[2]の値
 	
-	if (Math.abs(c_xyxynn) <= 0.1) { //平行に近い
+	if (Math.abs(c_xyxynn) <= 0.02) { //平行に近い
 		return {"parallel": true, "d1t": [0, 0, 1], "d2t": [0, 0, 0], "xy": [{"x": [c_v1yn, 0, c_p2x], "y": [c_v1xn, 0, c_p2y]}, {"x": [c_v1yn * 0.5, c_v2yn * 0.5, (c_p2x + c_p3x) * 0.5], "y": [c_v1xn * 0.5, c_v2xn * 0.5, (c_p2y + c_p3y) * 0.5]}, {"x": [0, c_v2yn, c_p3x], "y": [0, c_v2xn, c_p3y]}]};
 	}
 	//p2とp3が同じで、折り返し（p1とp4が同じ）の場合は角を丸めたいが、場合分けを省略
