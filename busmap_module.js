@@ -299,12 +299,13 @@ function f_open(a_bmd, a_settings) {
 						//console.log(c_cut_polyline["curves"][i3][i4]["curve"]);
 						const c_curve = L.curve(c_cut_polyline["curves"][i3][i4]["curve"], {"color": "#" + a_bmd["ur_routes"][i2]["route_color"], "weight": c_cut_polyline["curves"][i3][i4]["width"] * 256 /  c_zoom_ratio});
 						
-					c_curve.on("click", function(e) {
-						f_change_parent_route_color(c_parent_route_id, i3);
-					});
-					
-					c_groups["parent_route_id_" + c_parent_route_id][i3].addLayer(c_curve);
-					c_groups["zoom_" + String(i1)].addLayer(c_curve);
+						//クリックしたとき
+						c_curve.on("click", function(e) {
+							f_change_parent_route_color(c_parent_route_id, i3);
+						});
+						
+						c_groups["parent_route_id_" + c_parent_route_id][i3].addLayer(c_curve);
+						c_groups["zoom_" + String(i1)].addLayer(c_curve);
 					}
 				}
 			}
