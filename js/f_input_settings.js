@@ -23,6 +23,8 @@ export function f_input_settings(a_settings) {
 		"svg_zoom_level": 16, //互換性のため残す
 		"cut_zoom_level": 16, //f_cut_shape_segments用
 		"svg_zoom_ratio": 0, //SVG表示縮小率=zoom_level - svg_zoom_level
+		"min_zoom_level": 12, //オフセットする最小ズームレベル
+		"max_zoom_level": 16, //オフセットする最小ズームレベル
 		"background_map": true,
 		"background_layers": [["https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png", {attribution: "<a href=\"https://maps.gsi.go.jp/development/ichiran.html\">地理院タイル</a>", opacity: 0.25}]],
 		"font_size": 16, //停留所名のフォントサイズ
