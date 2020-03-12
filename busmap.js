@@ -913,7 +913,10 @@ console.log(a_data_i1["stop_times"]);
 	}
 	//shapesをtripsにまとめる。
 	for (let i2 = 0; i2 < c_bmd_i1["trips"].length; i2++) {
-		const c_shapes = c_shape_index["shape_id_" + c_bmd_i1["trips"][i2]["shape_id"]];
+		let c_shapes = c_shape_index["shape_id_" + c_bmd_i1["trips"][i2]["shape_id"]];
+		if (c_shapes === undefined) { //見つからない場合の応急処置
+			c_shapes = c_shape_index["shape_id_" + c_bmd_i1["trips"][0]["shape_id"]]; //仮
+		}
 		for (let i3 = 0; i3 < c_shapes.length; i3++) {
 			const c_shape = {};
 			for (let i4 in c_shapes[i3]) {
@@ -1136,10 +1139,12 @@ function f_number_gtfs(a_data) {
 	for (let i1 = 0; i1 < a_data["stop_times"].length; i1++) {
 		a_data["stop_times"][i1]["stop_sequence"] = Number(a_data["stop_times"][i1]["stop_sequence"]);
 	}
-	for (let i1 = 0; i1 < a_data["shapes"].length; i1++) {
-		a_data["shapes"][i1]["shape_pt_lat"] = Number(a_data["shapes"][i1]["shape_pt_lat"]);
-		a_data["shapes"][i1]["shape_pt_lon"] = Number(a_data["shapes"][i1]["shape_pt_lon"]);
-		a_data["shapes"][i1]["shape_pt_sequence"] = Number(a_data["shapes"][i1]["shape_pt_sequence"]);
+	if (a_data["shapes"] !== undefined && a_data["shapes"].length !== 0) {
+		for (let i1 = 0; i1 < a_data["shapes"].length; i1++) {
+			a_data["shapes"][i1]["shape_pt_lat"] = Number(a_data["shapes"][i1]["shape_pt_lat"]);
+			a_data["shapes"][i1]["shape_pt_lon"] = Number(a_data["shapes"][i1]["shape_pt_lon"]);
+			a_data["shapes"][i1]["shape_pt_sequence"] = Number(a_data["shapes"][i1]["shape_pt_sequence"]);
+		}
 	}
 }
 
@@ -1198,27 +1203,46 @@ function f_set_stop_type(a_data) {
 
 
 function f_make_shape(a_data) {
-	if (a_data["shapes"].length !== 0) {
-		return a_data;
-	}
-	const c_shapes = [];
-	for (let i1 = 0; i1 < a_data["stop_times"].length; i1++) {
-		for (let i2 = 0; i2 < a_data["stops"].length; i2++) {
-			if (a_data["stop_times"][i1]["stop_id"] === a_data["stops"][i2]["stop_id"]) {
-				c_shapes.push({
-					"shape_id": "shape_id_" + a_data["stop_times"][i1]["trip_id"]
-					, "shape_pt_lat": a_data["stops"][i2]["stop_lat"]
-					, "shape_pt_lon": a_data["stops"][i2]["stop_lon"]
-					, "shape_pt_sequence": a_data["stops"][i2]["stop_sequence"]
-				});
-				break;
+	if (a_data["shapes"] === undefined || a_data["shapes"].length === 0) {
+		let l_shapes = [];
+		for (let i1 = 0; i1 < a_data["routes"].length; i1++) {
+			let l_trip_id; //代表のtrip_id
+			console.log(a_data["routes"]);
+			for (let i2 = 0; i2 < a_data["trips"].length; i2++) {
+				if (a_data["routes"][i1]["route_id"] === a_data["trips"][i2]["route_id"]) { //tripを1つみつける。
+					l_trip_id = a_data["trips"][i2]["trip_id"];
+					a_data["trips"][i2]["shape_id"] = "shape_id_" + a_data["routes"][i1]["route_id"];
+				}
 			}
+			const c_shape_temp = []; //仮にstop_timesと緯度経度を集める
+			for (let i2 = 0; i2 < a_data["stop_times"].length; i2++) {
+				if (a_data["stop_times"][i2]["trip_id"] === l_trip_id) {
+					for (let i3 = 0; i3 < a_data["stops"].length; i3++) {
+						if (a_data["stop_times"][i2]["stop_id"] === a_data["stops"][i3]["stop_id"]) {
+							c_shape_temp.push({
+								"shape_id": "shape_id_" + a_data["routes"][i1]["route_id"],
+								"shape_pt_lat": a_data["stops"][i3]["stop_lat"],
+								"shape_pt_lon": a_data["stops"][i3]["stop_lon"],
+								"shape_pt_sequence": a_data["stop_times"][i2]["stop_sequence"]
+							});
+							break;
+						}
+					}
+				}
+			}
+			c_shape_temp.sort(function(a1,a2) {
+				if (a1["shape_pt_sequence"] < a2["shape_pt_sequence"]) {
+					return -1;
+				}
+				if (a1["shape_pt_sequence"] > a2["shape_pt_sequence"]) {
+					return 1;
+				}
+				return 0;
+			});
+			l_shapes = l_shapes.concat(c_shape_temp);
 		}
+		a_data["shapes"] = l_shapes;
 	}
-	for (let i1 = 0; i1 < a_data["trips"].length; i1++) {
-		a_data["trips"][i1]["shape_id"] = "shape_id_" + a_data["trips"][i1]["trip_id"]
-	}
-	a_data["shapes"] = c_shapes;
 }
 
 
