@@ -913,6 +913,9 @@ console.log(a_data_i1["stop_times"]);
 	}
 	//shapesをtripsにまとめる。
 	for (let i2 = 0; i2 < c_bmd_i1["trips"].length; i2++) {
+		if (c_bmd_i1["trips"][i2]["shape_id"] === undefined || c_bmd_i1["trips"][i2]["shape_id"] === "") {
+			c_bmd_i1["trips"][i2]["shape_id"] = "shape_id_" + c_bmd_i1["trips"][i2]["route_id"];
+		}
 		let c_shapes = c_shape_index["shape_id_" + c_bmd_i1["trips"][i2]["shape_id"]];
 		if (c_shapes === undefined) { //見つからない場合の応急処置
 			c_shapes = c_shape_index["shape_id_" + c_bmd_i1["trips"][0]["shape_id"]]; //仮
