@@ -297,7 +297,16 @@ function f_open(a_bmd, a_settings) {
 					}
 					for (let i4 = 0; i4 < c_cut_polyline["curves"][i3].length; i4++) {
 						//console.log(c_cut_polyline["curves"][i3][i4]["curve"]);
-						const c_curve = L.curve(c_cut_polyline["curves"][i3][i4]["curve"], {"color": "#" + a_bmd["ur_routes"][i2]["route_color"], "weight": c_cut_polyline["curves"][i3][i4]["width"] * 256 /  c_zoom_ratio});
+						//親のroutecolor
+						let l_route_color;
+						for (let i5 = 0; i5 < a_bmd["parent_routes"].length; i5++) {
+							if (c_parent_route_id === a_bmd["parent_routes"][i5]["parent_route_id"]) {
+								l_route_color = a_bmd["parent_routes"][i5]["route_color"];
+								break;
+							}
+						}
+						
+						const c_curve = L.curve(c_cut_polyline["curves"][i3][i4]["curve"], {"color": "#" + l_route_color/*a_bmd["ur_routes"][i2]["route_color"]*/, "weight": c_cut_polyline["curves"][i3][i4]["width"] * 256 /  c_zoom_ratio});
 						
 						//クリックしたとき
 						c_curve.on("click", function(e) {
