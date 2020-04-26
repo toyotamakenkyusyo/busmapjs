@@ -3952,8 +3952,14 @@ function f_parent_route_timetable(a_parent_route_id) {
 
 
 function f_output_svg() {
-	const c_svg = document.getElementsByClassName("leaflet-pane leaflet-overlay-pane")[0].firstElementChild.outerHTML;
-	const c_blob = new Blob([c_svg], {"type": "image/svg+xml"});
+	const c_svg = document.getElementsByClassName("leaflet-pane leaflet-overlay-pane")[0].firstElementChild.cloneNode(true);
+	//SVG出力対応
+	c_svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+	c_svg.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
+	c_svg.setAttribute("version", "1.1");
+	c_svg.style.transform = "translate(0,0)";
+	const c_svg_text = c_svg.outerHTML;
+	const c_blob = new Blob([c_svg_text], {"type": "image/svg+xml"});
 	if (window.navigator.msSaveBlob) { 
 		window.navigator.msSaveBlob(c_blob, "busmap.svg"); 
 	} else {
