@@ -3966,24 +3966,3 @@ function f_output_svg() {
 		document.getElementById("output_svg").href = window.URL.createObjectURL(c_blob);
 	}
 }
-
-//PDF出力試験、日本語ができず失敗
-/*
-function f_output_svg() {
-	//SVG出力
-	const c_svg = document.getElementsByClassName("leaflet-pane leaflet-overlay-pane")[0].firstElementChild.cloneNode(true);
-	c_svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-	c_svg.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
-	c_svg.setAttribute("version", "1.1");
-	c_svg.style.transform = "translate(0,0)";
-	//PDFに変換
-	const c_width = document.getElementById("div_leaflet").clientWidth;
-	const c_height = document.getElementById("div_leaflet").clientHeight;
-	const c_pdf = new jsPDF("l", "pt", [c_width, c_height]);
-	c_pdf.addFont('myFont.ttf', 'myFont', 'normal');
-	svg2pdf(c_svg, c_pdf, {xOffset: 0, yOffset: 0, scale: 1});
-	const c_uri = c_pdf.output('datauristring');
-	c_pdf.save("output.pdf");
-
-}
-*/
