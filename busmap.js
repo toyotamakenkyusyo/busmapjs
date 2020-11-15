@@ -3484,22 +3484,59 @@ function f_svg(a_data, a_settings) {
 	const c_x_width = Math.ceil((l_x_max - l_x_min) / 256 + 2) * 256;
 	const c_y_height = Math.ceil((l_y_max - l_y_min) / 256 + 2) * 256;
 
-	//スクロール
+	//スクロールの外側のdiv
 	const c_div = document.getElementById(a_settings["div_id"]);
+	c_div.innerHTML = ""; //一旦消す
 	c_div.style.width = "auto";
 	c_div.style.height = "768px";
+	c_div.style.position = "relative";
 	c_div.style.overflow = "scroll";
 	//ドラッグ非対応
 	
+	//スクロールの内側のdiv（これを拡大縮小する）
+	const c_div_scale = document.createElement("div");
+	c_div_scale.setAttribute("id", "div_scale");
+	c_div_scale.style.position = "relative";
+	c_div_scale.style.transformOrigin = "top left";
+	c_div_scale.style.transform = "scale(1)";
+	
+	
+	//背景地図
+	const c_x_left_tile = 2 ** (a_settings["zoom_level"] - 1) + Math.floor(l_x_min / 256 - 1);
+	const c_y_top_tile = Math.floor(l_y_min / 256 - 1);
+	const c_x_right_tile = c_x_left_tile + Math.ceil((l_x_max - l_x_min) / 256 + 2) - 1;
+	const c_y_bottom_tile = c_y_top_tile + Math.ceil((l_y_max - l_y_min) / 256 + 2) - 1;
+	
+	const c_gsi = {"x_min": c_x_left_tile, "x_max": c_x_right_tile, "x_direction": "wte", "y_min": c_y_top_tile, "y_max": c_y_bottom_tile, "y_direction": "nts", "zoom_level": a_settings["zoom_level"], "tile_size": 256, "url": "https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png", "opacity": 0.5};
+	c_div_scale.appendChild(f_make_tile_map(c_gsi));
+	c_div.appendChild(c_div_scale);
 
-	let l_svg = "<svg width=\"" + c_x_width + "\" height=\"" + c_y_height + "\" viewBox=\"0 0 " + c_x_width + " " + c_y_height + "\" id=\"g_scale\" transform=\"scale(1)\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" version=\"1.1\"><g><g transform=\"translate(" + String(-1 * c_x_left) + "," + String(-1 * c_y_top) + ")\">" + f_make_svg(a_data, a_settings) + "</g></g></svg>";
-	document.getElementById(a_settings["div_id"]).innerHTML = l_svg;
+	//バスマップのSVG
+	//let l_svg = "<svg width=\"" + c_x_width + "\" height=\"" + c_y_height + "\" viewBox=\"0 0 " + c_x_width + " " + c_y_height + "\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" version=\"1.1\"><g id=\"g_scale\" transform=\"scale(1)\"><g transform=\"translate(" + String(-1 * c_x_left) + "," + String(-1 * c_y_top) + ")\">" + f_make_svg(a_data, a_settings) + "</g></g></svg>";
+	//document.getElementById(a_settings["div_id"]).innerHTML = l_svg;
+	
+	const c_svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+	c_svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+	c_svg.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
+	c_svg.setAttribute("version", "1.1");
+	c_svg.setAttribute("width", String(c_x_width));
+	c_svg.setAttribute("height", String(c_y_height));
+	c_svg.setAttribute("viewBox", "0 0 " + String(c_x_width) + " " + String(c_y_height));
+	c_svg.style.position = "relative";
+	
+	const c_g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+	c_g.setAttribute("transform", "translate(" + String(-1 * c_x_left) + "," + String(-1 * c_y_top) + ")");
+	c_g.innerHTML = f_make_svg(a_data, a_settings);
+	c_svg.appendChild(c_g);
+	c_div_scale.appendChild(c_svg);
+	//初期位置を中心にする
+	c_div.scrollLeft = c_x_width / 2;
+	c_div.scrollTop = c_y_height / 2;
+	
 	
 	//拡大縮小
 	document.getElementById("id1").innerHTML = "<div onclick=\"f_scale(1)\">＋</div><div onclick=\"f_scale(-1)\">－</div>";
-	//初期位置を中心にする
-	document.getElementById(a_settings["div_id"]).scrollLeft = document.getElementById("g_scale").clientWidth / 2;
-	document.getElementById(a_settings["div_id"]).scrollTop = document.getElementById("g_scale").clientHeight / 2;
+
 
 }
 
@@ -3509,11 +3546,10 @@ let l_scale = 1;
 function f_scale(a) {
 	l_scale = l_scale * (2 ** a);
 	const c_div = document.getElementById("div1");
-	const c_g_scale = document.getElementById("g_scale");
-	const c_left = c_g_scale.clientWidth / 2 - (c_g_scale.clientWidth / 2 - (c_div.scrollLeft + c_div.clientWidth / 2)) * (2 ** a) - c_div.clientWidth / 2;
-	const c_top = c_g_scale.clientHeight / 2 - (c_g_scale.clientHeight / 2 - (c_div.scrollTop + c_div.clientHeight / 2)) * (2 ** a) - c_div.clientHeight / 2;
+	const c_left = (c_div.scrollLeft + c_div.clientWidth / 2) * (2 ** a) - c_div.clientWidth / 2;
+	const c_top = (c_div.scrollTop + c_div.clientHeight / 2) * (2 ** a) - c_div.clientHeight / 2;
 	
-	c_g_scale.setAttribute("transform", "scale(" + String(l_scale) + ")");
+	document.getElementById("div_scale").style.transform = "scale(" + String(l_scale) + ")";
 	//拡大縮小時にスクロールも移動したい
 	c_div.scrollLeft = c_left;
 	c_div.scrollTop = c_top;
@@ -3522,7 +3558,32 @@ function f_scale(a) {
 
 
 
-
+function f_make_tile_map(a_settings) {
+	const c_div = document.createElement("div");
+	c_div.style.position = "relative";
+	c_div.style.opacity = a_settings["opacity"];
+	c_div.style.height = (a_settings["y_max"] - a_settings["y_min"] + 1) * a_settings["tile_size"];
+	for (let i1 = a_settings["x_min"]; i1 <= a_settings["x_max"]; i1++) {
+		for (let i2 = a_settings["y_min"]; i2 <= a_settings["y_max"]; i2++) {
+			const c_img = document.createElement("img");
+			c_img.setAttribute("loading", "lazy"); //画像遅延読み込み
+			c_img.setAttribute("src", a_settings["url"].replace("{z}", a_settings["zoom_level"]).replace("{x}", String(i1)).replace("{y}", String(i2)));
+			c_img.style.position = "absolute";
+			if (a_settings["x_direction"] === "etw") { //東から西（逆）
+				c_img.style.left = String((a_settings["x_max"] - i1) * a_settings["tile_size"]) + "px";
+			} else {
+				c_img.style.left = String((i1 - a_settings["x_min"]) * a_settings["tile_size"]) + "px";
+			}
+			if (a_settings["y_direction"] === "stn") { //南から北（逆）
+				c_img.style.top = String((a_settings["y_max"] - i2) * a_settings["tile_size"]) + "px";
+			} else {
+				c_img.style.top = String((i2 - a_settings["y_min"]) * a_settings["tile_size"]) + "px";
+			}
+			c_div.appendChild(c_img);
+		}
+	}
+	return c_div;
+}
 
 
 
