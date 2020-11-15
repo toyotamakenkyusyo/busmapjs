@@ -3484,17 +3484,40 @@ function f_svg(a_data, a_settings) {
 	const c_x_width = Math.ceil((l_x_max - l_x_min) / 256 + 2) * 256;
 	const c_y_height = Math.ceil((l_y_max - l_y_min) / 256 + 2) * 256;
 
+	//スクロール
+	const c_div = document.getElementById(a_settings["div_id"]);
+	c_div.style.width = "auto";
+	c_div.style.height = "768px";
+	c_div.style.overflow = "scroll";
+	//ドラッグ非対応
+	
 
-
-	let l_svg = "<svg width=\"" + c_x_width + "\" height=\"" + c_y_height + "\" viewBox=\"0 0 " + c_x_width + " " + c_y_height + "\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" version=\"1.1\"><g transform=\"translate(" + String(-1 * c_x_left) + "," + String(-1 * c_y_top) + ")\">" + f_make_svg(a_data, a_settings) + "</g></svg>";
+	let l_svg = "<svg width=\"" + c_x_width + "\" height=\"" + c_y_height + "\" viewBox=\"0 0 " + c_x_width + " " + c_y_height + "\" id=\"g_scale\" transform=\"scale(1)\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" version=\"1.1\"><g><g transform=\"translate(" + String(-1 * c_x_left) + "," + String(-1 * c_y_top) + ")\">" + f_make_svg(a_data, a_settings) + "</g></g></svg>";
 	document.getElementById(a_settings["div_id"]).innerHTML = l_svg;
+	
+	//拡大縮小
+	document.getElementById("id1").innerHTML = "<div onclick=\"f_scale(1)\">＋</div><div onclick=\"f_scale(-1)\">－</div>";
+	//初期位置を中心にする
+	document.getElementById(a_settings["div_id"]).scrollLeft = document.getElementById("g_scale").clientWidth / 2;
+	document.getElementById(a_settings["div_id"]).scrollTop = document.getElementById("g_scale").clientHeight / 2;
+
 }
 
 
+let l_scale = 1;
 
-
-
-
+function f_scale(a) {
+	l_scale = l_scale * (2 ** a);
+	const c_div = document.getElementById("div1");
+	const c_g_scale = document.getElementById("g_scale");
+	const c_left = c_g_scale.clientWidth / 2 - (c_g_scale.clientWidth / 2 - (c_div.scrollLeft + c_div.clientWidth / 2)) * (2 ** a) - c_div.clientWidth / 2;
+	const c_top = c_g_scale.clientHeight / 2 - (c_g_scale.clientHeight / 2 - (c_div.scrollTop + c_div.clientHeight / 2)) * (2 ** a) - c_div.clientHeight / 2;
+	
+	c_g_scale.setAttribute("transform", "scale(" + String(l_scale) + ")");
+	//拡大縮小時にスクロールも移動したい
+	c_div.scrollLeft = c_left;
+	c_div.scrollTop = c_top;
+}
 
 
 
