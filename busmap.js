@@ -921,6 +921,11 @@ console.log(a_data_i1["stop_times"]);
 			c_shapes = c_shape_index["shape_id_" + c_bmd_i1["trips"][0]["shape_id"]]; //仮
 		}
 		for (let i3 = 0; i3 < c_shapes.length; i3++) {
+			if (i3 !== 0) {
+				if (c_bmd_i1["trips"][i2]["shapes"][c_bmd_i1["trips"][i2]["shapes"].length - 1]["shape_pt_lon"] === c_shapes[i3]["shape_pt_lon"] && c_bmd_i1["trips"][i2]["shapes"][c_bmd_i1["trips"][i2]["shapes"].length - 1]["shape_pt_lat"] === c_shapes[i3]["shape_pt_lat"]) {
+					continue;
+				}
+			}
 			const c_shape = {};
 			for (let i4 in c_shapes[i3]) {
 				c_shape[i4] = c_shapes[i3][i4];
