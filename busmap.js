@@ -1975,7 +1975,7 @@ function f_trip_number(a_data) {
 				if (a_data["ur_routes"][i1]["service_array"][i2]["service_id"] === a_data["calendar"][i3]["service_id"]) {
 					const c_day = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
 					for (let i4 = 0; i4 < c_day.length; i4++) {
-						if (a_data["calendar"][i2][c_day[i4]] === "1") {
+						if (a_data["calendar"][i3][c_day[i4]] === "1") {
 							a_data["ur_routes"][i1]["trip_number"] += a_data["ur_routes"][i1]["service_array"][i2]["number"] / 7;//trip_numberではない！
 							//console.log(a_data["ur_routes"][i1]["service_array"][i2]["number"]);
 						}
