@@ -3861,7 +3861,7 @@ function f_stop_timetable(a_stop_id) {
 	
 	
 	let l_innerHTML = "";
-	l_innerHTML += "<table><tbody><tr><td>標柱</td><td>経路名</td><td>便</td><td>運行日</td><td>発車時刻</td></tr>";
+	l_innerHTML += "<table><tbody><tr><td>標柱</td><td>経路名</td><td>行先</td><td>便</td><td>運行日</td><td>発車時刻</td></tr>";
 	for (let i1 = 0; i1 < c_timetable.length; i1++) {
 		const c_stop_time = c_timetable[i1]["stop_time"];
 		const c_trip = f_get(c_stop_time["trip_id"], l_data["trips"], "trip_id", "all");
@@ -3870,7 +3870,18 @@ function f_stop_timetable(a_stop_id) {
 		const c_parent_route_number = c_ur_route["parent_route_number"];
 		const c_route_color = l_data["parent_routes"][c_parent_route_number]["route_color"];
 		const c_route_text_color = l_data["parent_routes"][c_parent_route_number]["route_text_color"];
-		l_innerHTML += "<tr onclick=\"f_trip_timetable('" + c_stop_time["trip_id"] + "', '" + c_stop_time["stop_sequence"] + "', '" + c_stop_time["stop_id"] + "')\" style='background-color: #" + c_route_color + "; color: #" + c_route_text_color + ";'><td>" + c_stop_time["stop_id"] + "</td><td>" + c_ur_route["route_long_name"] + "</td><td>" + c_trip["trip_id"] + "</td><td>" + c_trip["service_id"] + "</td><td>" + c_stop_time["departure_time"] + "</td></tr>";
+		
+		//stop_headsign
+		let l_stop_headsign = "";
+		if (c_trip["trip_headsign"] !== undefined && c_trip["trip_headsign"] !== null) {
+			l_stop_headsign = c_trip["trip_headsign"];
+		}
+		if (c_stop_time["stop_headsign"] !== undefined && c_stop_time["stop_headsign"] !== null) {
+			l_stop_headsign = c_stop_time["stop_headsign"];
+		}
+		
+		
+		l_innerHTML += "<tr onclick=\"f_trip_timetable('" + c_stop_time["trip_id"] + "', '" + c_stop_time["stop_sequence"] + "', '" + c_stop_time["stop_id"] + "')\" style='background-color: #" + c_route_color + "; color: #" + c_route_text_color + ";'><td>" + c_stop_time["stop_id"] + "</td><td>" + c_ur_route["route_long_name"] + "</td><td>" + l_stop_headsign + "</td><td>" + c_trip["trip_id"] + "</td><td>" + c_trip["service_id"] + "</td><td>" + c_stop_time["departure_time"] + "</td></tr>";
 	}
 	l_innerHTML += "</tbody></table>";
 	return l_innerHTML;
