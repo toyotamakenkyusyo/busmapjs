@@ -4130,8 +4130,57 @@ function f_parent_route_timetable(a_parent_route_id) {
 		//まとめ
 		c_trips.push({"trip_id": l_data["trips"][i1]["trip_id"], "service_id": l_data["trips"][i1]["service_id"], "route_long_name": l_route_long_name, "route_color": l_route_color, "stop_times": c_stop_times});
 	}
+	
+	let l_timetable;
+	//HTML化（縦の時刻表）
+	const c_array = [];
+	c_array.push([]);
+	c_array[0].push("経路名");
+	c_array[0].push("行先");
+	c_array[0].push("運行日");
+	for (let i1 = 0; i1 < c_stops.length; i1++) {
+		c_array[0].push(c_stops[i1]["stop_name"]);
+	}
+	c_array.push([]);
+	c_array[1].push("route_id");
+	c_array[1].push("trip_headsign");
+	c_array[1].push("service_id");
+	for (let i1 = 0; i1 < c_stops.length; i1++) {
+		c_array[1].push(c_stops[i1]["stop_id"]);
+	}
+	for (let i1 = 0; i1 < c_trips.length; i1++) {
+		c_array.push([]);
+		c_array[2 + i1].push(c_trips[i1]["route_long_name"]);
+		if (c_trips[i1]["trip_headsign"] !== undefined && c_trips[i1]["trip_headsign"] !== null) { 
+			c_array[2 + i1].push(c_trips[i1]["trip_headsign"]);
+		} else if (c_trips[i1]["stop_times"][0]["stop_headsign"] !== undefined && c_trips[i1]["stop_times"][0]["stop_headsign"] !== null) {
+			c_array[2 + i1].push(c_trips[i1]["stop_times"][0]["stop_headsign"]);
+		} else {
+			c_array[2 + i1].push("");
+		}
+		c_array[2 + i1].push(c_trips[i1]["service_id"]);
+		for (let i2 = 0; i2 < c_trips[i1]["stop_times"].length; i2++) {
+			if (c_trips[i1]["stop_times"][i2] === "=") {
+				c_array[2 + i1].push("||");
+			} else {
+				c_array[2 + i1].push(c_trips[i1]["stop_times"][i2].split(":")[0] + ":" + c_trips[i1]["stop_times"][i2].split(":")[1]);
+			}
+		}
+	}
+	l_timetable = "<table><tbody>";
+	for (let i2 = 0; i2 < c_array[0].length; i2++) {
+		l_timetable += "<tr>";
+		for (let i1 = 0; i1 < c_array.length; i1++) {
+			l_timetable += "<td>" + c_array[i1][i2] + "</td>";
+		}
+		l_timetable += "</tr>";
+	}
+	l_timetable += "</tbody></table>";
+	
+	
 	//HTML化
-	let l_timetable = "<table><tbody>";
+	/*
+	l_timetable = "<table><tbody>";
 	l_timetable += "<tr><td>経路名</td><td>便</td><td>運行日</td>";
 	for (let i1 = 0; i1 < c_stops.length; i1++) {
 		l_timetable += "<td>" + c_stops[i1]["stop_name"] + "</td>";
@@ -4150,6 +4199,7 @@ function f_parent_route_timetable(a_parent_route_id) {
 		l_timetable += "</tr>";
 	}
 	l_timetable += "</tbody></table>";
+	*/
 	//SVG化
 	const c_height = c_stops.length / 2 * 16;
 	let l_svg = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"5760\" height=\"" + c_height  + "\" viewBox=\"0 -16 5760 " + (c_height + 16) + "\">";
