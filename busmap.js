@@ -3890,7 +3890,7 @@ function f_stop_timetable(a_stop_id) {
 			}
 		}
 		
-		l_innerHTML += "<tr onclick=\"f_trip_timetable('" + c_stop_time["trip_id"] + "', '" + c_stop_time["stop_sequence"] + "', '" + c_stop_time["stop_id"] + "')\" style='background-color: #" + c_route_color + "; color: #" + c_route_text_color + ";'><td>" + c_stop_time["stop_id"] + "</td><td>" + l_platform_code + "</td><td>" + c_ur_route["route_long_name"] + "</td><td>" + l_stop_headsign + "</td><td>" + c_trip["service_id"] + "</td><td>" + c_stop_time["departure_time"] + "</td><td>" + c_trip["trip_id"] + "</td></tr>";
+		l_innerHTML += "<tr onclick=\"f_trip_timetable('" + c_stop_time["trip_id"] + "', '" + c_stop_time["stop_sequence"] + "', '" + c_stop_time["stop_id"] + "')\" style='background-color: #" + c_route_color + "; color: #" + c_route_text_color + ";'><td>" + c_stop_time["stop_id"] + "</td><td>" + l_platform_code + "</td><td>" + c_ur_route["route_long_name"] + "</td><td>" + l_stop_headsign + "</td><td>" + c_trip["service_id"] + "</td><td>" + c_stop_time["departure_time"].split(":")[0] + ":" + c_stop_time["departure_time"].split(":")[1] + "</td><td>" + c_trip["trip_id"] + "</td></tr>";
 	}
 	l_innerHTML += "</tbody></table>";
 	return l_innerHTML;
