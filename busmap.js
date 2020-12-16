@@ -3861,7 +3861,7 @@ function f_stop_timetable(a_stop_id) {
 	
 	
 	let l_innerHTML = "";
-	l_innerHTML += "<table><tbody><tr><td>標柱</td><td>経路名</td><td>行先</td><td>便</td><td>運行日</td><td>発車時刻</td></tr>";
+	l_innerHTML += "<table><tbody><tr><td>標柱</td><td>のりば番号</td><td>経路名</td><td>行先</td><td>運行日</td><td>発車時刻</td><td>便</td></tr>";
 	for (let i1 = 0; i1 < c_timetable.length; i1++) {
 		const c_stop_time = c_timetable[i1]["stop_time"];
 		const c_trip = f_get(c_stop_time["trip_id"], l_data["trips"], "trip_id", "all");
@@ -3880,8 +3880,17 @@ function f_stop_timetable(a_stop_id) {
 			l_stop_headsign = c_stop_time["stop_headsign"];
 		}
 		
+		//platform_code
+		let l_platform_code = "";
+		for (let i2 = 0; i2 < l_data["stops"].length; i2++) {
+			if (l_data["stops"][i2]["stop_id"] === c_stop_time["stop_id"]) {
+				if (l_data["stops"][i2]["platform_code"] !== undefined && l_data["stops"][i2]["platform_code"] !== null) {
+					l_platform_code = l_data["stops"][i2]["platform_code"];
+				}
+			}
+		}
 		
-		l_innerHTML += "<tr onclick=\"f_trip_timetable('" + c_stop_time["trip_id"] + "', '" + c_stop_time["stop_sequence"] + "', '" + c_stop_time["stop_id"] + "')\" style='background-color: #" + c_route_color + "; color: #" + c_route_text_color + ";'><td>" + c_stop_time["stop_id"] + "</td><td>" + c_ur_route["route_long_name"] + "</td><td>" + l_stop_headsign + "</td><td>" + c_trip["trip_id"] + "</td><td>" + c_trip["service_id"] + "</td><td>" + c_stop_time["departure_time"] + "</td></tr>";
+		l_innerHTML += "<tr onclick=\"f_trip_timetable('" + c_stop_time["trip_id"] + "', '" + c_stop_time["stop_sequence"] + "', '" + c_stop_time["stop_id"] + "')\" style='background-color: #" + c_route_color + "; color: #" + c_route_text_color + ";'><td>" + c_stop_time["stop_id"] + "</td><td>" + l_platform_code + "</td><td>" + c_ur_route["route_long_name"] + "</td><td>" + l_stop_headsign + "</td><td>" + c_trip["service_id"] + "</td><td>" + c_stop_time["departure_time"] + "</td><td>" + c_trip["trip_id"] + "</td></tr>";
 	}
 	l_innerHTML += "</tbody></table>";
 	return l_innerHTML;
