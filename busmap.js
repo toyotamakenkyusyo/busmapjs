@@ -97,6 +97,15 @@ async function f_busmap(a_settings) {
 		//当面機能停止
 		//document.getElementById("ur_route_list").innerHTML = f_ur_route_list(c_bmd);
 	}
+	
+	//parent_routeがない場合は、route_idに変更する
+	for (let i1 = 0; i1 < c_bmd["ur_routes"].length; i1++) {
+		if (c_bmd["ur_routes"][i1][c_input_settings["parent_route_id"]] === undefined) {
+			c_input_settings["parent_route_id"] = "route_id";
+			break;
+		}
+	}
+	
 	console.time("t_5");
 	f_make_shape_points(c_bmd);
 	console.timeEnd("t_5");
