@@ -1783,6 +1783,7 @@ console.log(a_data_i1["stop_times"]);
 		if (c_shape_index["shape_id_" + c_bmd_i1["trips"][i2]["shape_id"]] === undefined) {
 			continue; //shape_idはあるが、対応するshapeがない場合は空の列のままにする
 		}
+		let c_shapes = c_shape_index["shape_id_" + c_bmd_i1["trips"][i2]["shape_id"]];
 		//以下、以前の処理
 		/*
 		if (c_bmd_i1["trips"][i2]["shape_id"] === undefined || c_bmd_i1["trips"][i2]["shape_id"] === "") {
