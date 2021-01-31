@@ -1775,15 +1775,26 @@ console.log(a_data_i1["stop_times"]);
 		});
 	}
 	//shapesをtripsにまとめる。
+	//shapesがない場合は空の列のままにする
 	for (let i2 = 0; i2 < c_bmd_i1["trips"].length; i2++) {
+		if (c_bmd_i1["trips"][i2]["shape_id"] === undefined || c_bmd_i1["trips"][i2]["shape_id"] === null || c_bmd_i1["trips"][i2]["shape_id"] === "") {
+			continue; //shape_idがない場合は空の列のままにする
+		}
+		if (c_shape_index["shape_id_" + c_bmd_i1["trips"][i2]["shape_id"]] === undefined) {
+			continue; //shape_idはあるが、対応するshapeがない場合は空の列のままにする
+		}
+		//以下、以前の処理
+		/*
 		if (c_bmd_i1["trips"][i2]["shape_id"] === undefined || c_bmd_i1["trips"][i2]["shape_id"] === "") {
-			c_bmd_i1["trips"][i2]["shape_id"] = "shape_id_" + c_bmd_i1["trips"][i2]["route_id"];
+			c_bmd_i1["trips"][i2]["shape_id"] = "shape_id_" + c_bmd_i1["trips"][i2]["route_id"]; // 以前の応急処置
 		}
 		let c_shapes = c_shape_index["shape_id_" + c_bmd_i1["trips"][i2]["shape_id"]];
 		if (c_shapes === undefined) { //見つからない場合の応急処置
 			c_shapes = c_shape_index["shape_id_" + c_bmd_i1["trips"][0]["shape_id"]]; //仮
 		}
+		*/
 		for (let i3 = 0; i3 < c_shapes.length; i3++) {
+			//同じ点が連続している場合に除去？
 			if (i3 !== 0) {
 				if (c_bmd_i1["trips"][i2]["shapes"][c_bmd_i1["trips"][i2]["shapes"].length - 1]["shape_pt_lon"] === c_shapes[i3]["shape_pt_lon"] && c_bmd_i1["trips"][i2]["shapes"][c_bmd_i1["trips"][i2]["shapes"].length - 1]["shape_pt_lat"] === c_shapes[i3]["shape_pt_lat"]) {
 					continue;
