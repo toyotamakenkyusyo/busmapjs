@@ -1339,7 +1339,7 @@ busmapjs.make_route_timetable = async function(a_ArrayBuffer) { //JSON化GTFSを
 	const c_walk_array = [];
 	for (const c_ur_route of c_bmd["ur_routes"]) {
 		if (c_ur_route["route_id"] !== "四御神線_A") {
-			continue;
+			//continue;
 		}
 		const c_node_array = [];
 		for (const c_stop of c_ur_route["stop_array"]) {
