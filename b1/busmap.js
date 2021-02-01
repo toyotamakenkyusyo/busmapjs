@@ -287,12 +287,12 @@ busmapjs.make_shapes = function(a_gtfs) {
 	let l_all_route_ids_relate_one_stop_order = true;
 	let l_all_shape_ids_relate_one_stop_order = true;
 	for (const i1 in c_temp_data["shapes"]) {
-		if (c_temp_data["shapes"][i1]["shape_pt_order"].length === 0 && c_temp_data["shapes"][i1]["stop_order_ids"].length > 1) {
+		if (c_temp_data["shapes"][i1]["shape_pt_order"].length === 0 && Object.keys(c_temp_data["shapes"][i1]["stop_order_ids"]).length > 1) {
 			l_all_shape_ids_relate_one_stop_order = false;
 		}
 	}
 	for (const i1 in c_temp_data["routes"]) {
-		if (c_temp_data["routes"][i1]["stop_order_ids"].length > 1) {
+		if (Object.keys(c_temp_data["routes"][i1]["stop_order_ids"]).length > 1) {
 			l_all_route_ids_relate_one_stop_order = false;
 		}
 	}
