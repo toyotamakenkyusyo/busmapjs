@@ -1752,6 +1752,9 @@ console.log(a_data_i1["stop_times"]);
 	}
 	//c_shape_index
 	const c_shape_index = {};
+	if (a_data_i1["shapes"] === undefined) {
+		a_data_i1["shapes"] = []; //仮に追加
+	}
 	for (let i2 = 0; i2 < a_data_i1["shapes"].length; i2++) {
 		c_shape_index["shape_id_" + a_data_i1["shapes"][i2]["shape_id"]] = [];
 	}
