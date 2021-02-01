@@ -2013,6 +2013,7 @@ busmapjs.sort_nodes = function(a_walk_array) {
 					});
 				} else {
 					c_suppressed_graph["links"][l_node_array_1] = {
+						"next_links": {},
 						"head_node_id": l_head_node_id,
 						"tail_node_id": c_node_id
 					};
@@ -2032,6 +2033,105 @@ busmapjs.sort_nodes = function(a_walk_array) {
 		}
 	}
 	
+	
+	//以下、簡易方式
+	
+	//next_linksを追加
+	for (let i1 = 0; i1 < c_walk_array_2.length; i1++) {
+		for (let i2 = 1; i2 <c_walk_array_2[i1]["link_array"].length; i2++) {
+			const c_link_id_1 = c_walk_array_2[i1]["link_array"][i2 - 1]["link_id"];
+			const c_direction_1 = c_walk_array_2[i1]["link_array"][i2 - 1]["direction"];
+			const c_link_id_2 = c_walk_array_2[i1]["link_array"][i2]["link_id"];
+			const c_direction_2 = c_walk_array_2[i1]["link_array"][i2]["direction"];
+			if (c_suppressed_graph["links"][c_link_id_1]["next_links"][c_link_id_2] === undefined) {
+				c_suppressed_graph["links"][c_link_id_1]["next_links"][c_link_id_2] = 0;
+			};
+			if (c_suppressed_graph["links"][c_link_id_2]["next_links"][c_link_id_1] === undefined) {
+				c_suppressed_graph["links"][c_link_id_2]["next_links"][c_link_id_1] = 0;
+			};
+			c_suppressed_graph["links"][c_link_id_1]["next_links"][c_link_id_2] += c_direction_1 * c_direction_2;
+			c_suppressed_graph["links"][c_link_id_2]["next_links"][c_link_id_1] += c_direction_1 * c_direction_2;
+		}
+	}
+	
+	//点数順に整列しておく
+	const c_score_order = [];
+	for (const c_link_id_1 in c_suppressed_graph["links"]) {
+		for (const c_link_id_2 in c_suppressed_graph["links"][c_link_id_1]["next_links"]) {
+			c_score_order.push({
+				"score": c_suppressed_graph["links"][c_link_id_1]["next_links"][c_link_id_2],
+				"abs_score": Math.abs(c_suppressed_graph["links"][c_link_id_1]["next_links"][c_link_id_2]),
+				"link_id_1": c_link_id_1,
+				"link_id_2": c_link_id_2
+			});
+		}
+	}
+	busmapjs.sort_array_key(c_score_order, "abs_score");
+	
+	let l_add_exist = true;
+	while (l_add_exist === true) {
+		l_add_exist = false;
+		for (let i1 = 0; i1 < c_score_order.length; i1++) {
+			if (c_score_order[i1]["used"] !== undefined) {
+				continue;
+			}
+			const c_link_id_1 = c_score_order[i1]["link_id_1"];
+			const c_link_id_2 = c_score_order[i1]["link_id_2"];
+			let l_direction = 1;
+			if (c_score_order[i1]["score"] < 0) {
+				l_direction = -1;
+			}
+			if (c_suppressed_graph["links"][c_link_id_1]["direction"] !== undefined && c_suppressed_graph["links"][c_link_id_2]["direction"] === undefined) {
+				c_suppressed_graph["links"][c_link_id_2]["direction"] = l_direction * c_suppressed_graph["links"][c_link_id_1]["direction"];
+				c_score_order[i1]["used"] = true;
+				l_add_exist = true;
+				break;
+			} else if (c_suppressed_graph["links"][c_link_id_1]["direction"] === undefined && c_suppressed_graph["links"][c_link_id_2]["direction"] !== undefined) {
+				c_suppressed_graph["links"][c_link_id_1]["direction"] = l_direction * c_suppressed_graph["links"][c_link_id_2]["direction"];
+				c_score_order[i1]["used"] = true;
+				l_add_exist = true;
+				break;
+			} else if (c_suppressed_graph["links"][c_link_id_1]["direction"] !== undefined && c_suppressed_graph["links"][c_link_id_2]["direction"] !== undefined) {
+				c_score_order[i1]["used"] = true;
+			}
+		}
+		if (l_add_exist === false) { //directionの追加がない場合
+			for (let i1 = 0; i1 < c_score_order.length; i1++) {
+				if (c_score_order[i1]["used"] !== undefined) {
+					continue;
+				}
+				const c_link_id_1 = c_score_order[i1]["link_id_1"];
+				const c_link_id_2 = c_score_order[i1]["link_id_2"];
+				if (c_suppressed_graph["links"][c_link_id_1]["direction"] === undefined) {
+					c_suppressed_graph["links"][c_link_id_1]["direction"] = 1;
+					l_add_exist = true;
+					break;
+				}
+				if (c_suppressed_graph["links"][c_link_id_2]["direction"] === undefined) {
+					c_suppressed_graph["links"][c_link_id_2]["direction"] = 1;
+					l_add_exist = true;
+					break;
+				}
+			}
+			//追加できるものがない場合、終了
+		}
+	}
+	
+	//残りを1で埋める（孤立しているもの）
+	for (const c_link_id in c_suppressed_graph["links"]) {
+		if (c_suppressed_graph["links"][c_link_id]["direction"] === undefined) {
+			c_suppressed_graph["links"][c_link_id]["direction"] = 1;
+		}
+	}
+	
+	
+	console.log(c_suppressed_graph["links"]);
+	
+	
+	//以上、簡易方式
+	
+	//以下、完全な方式だが遅い
+	/*
 	//c_suppressed_graphの辺に適当な順番をつける（順番は向き付けに使う）
 	let l_count = 1; //連続した正整数
 	for (const c_link_id in c_suppressed_graph["links"]) {
@@ -2123,7 +2223,7 @@ busmapjs.sort_nodes = function(a_walk_array) {
 	
 	
 	//最大になる向き付け
-	let l_max_score = Number.MIN_SAFE_INTEGER;; //最高点
+	let l_max_score = Number.MIN_SAFE_INTEGER; //最高点
 	let l_argmax_score = null; //最高点の向き付け
 	for (let i1 = 0; i1 < c_acyclic.length; i1++) {
 		if (l_max_score <= c_acyclic[i1]["score"]) {
@@ -2136,7 +2236,8 @@ busmapjs.sort_nodes = function(a_walk_array) {
 	for (const c_link_id in c_suppressed_graph["links"]) {
 		c_suppressed_graph["links"][c_link_id]["direction"] = -1 + 2 * (Math.floor(l_argmax_score / (2 ** c_suppressed_graph["links"][c_link_id]["code"])) % 2); //-1か1
 	}
-	
+	*/
+	//以上、完全な遅い方式
 	
 	const c_link_array = []; //最終的な並べ方
 	//トポロジカルソート
