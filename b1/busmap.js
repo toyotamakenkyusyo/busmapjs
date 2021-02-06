@@ -4,28 +4,29 @@ const busmapjs = {}; // ここに関数を追加する
 
 
 //道路中心線に沿ったshapesを作成
-busmapjs.make_rdcl_shapes = async function(a_ArrayBuffer) { //JSON化GTFSを入力
+busmapjs.create_rdcl_shapes = async function(a_file) { //GTFSのFileオブジェクトを入力
 	const c_source = "rdcl";
 	//const c_source = "bvmap";
 	//const c_local = true;
 	const c_local = false;
-	console.time("make_rdcl_shapes");
-	const c_text_files = busmapjs.zip_to_text_files(a_ArrayBuffer);
+	console.time("create_rdcl_shapes");
+	const c_array_buffer = await busmapjs.file_to_array_buffer(a_file);
+	const c_text_files = busmapjs.zip_to_text_files(c_array_buffer);
 	const c_gtfs = {};
 	for (const c_file_name in c_text_files) {
 		c_gtfs[c_file_name.replace(".txt", "")] = busmapjs.csv_to_json(c_text_files[c_file_name]);
 	}
 	busmapjs.number_lat_lon_sequence_of_gtfs(c_gtfs); // 緯度経度と順番を数値型に変換
-	c_gtfs["shapes"] = busmapjs.make_shapes(c_gtfs); // shapesがない場合に作る
+	c_gtfs["shapes"] = busmapjs.create_shapes(c_gtfs); // shapesがない場合に作る
 	console.log(c_gtfs);
 	const c_zoom_level = 16; //地理院タイルに合わせて16にしておく
-	const c_shape_graph = busmapjs.make_shape_graph(c_gtfs);
-	const c_tiles =  busmapjs.make_tiles(c_shape_graph["nodes"]);
+	const c_shape_graph = busmapjs.create_shape_graph(c_gtfs);
+	const c_tiles =  busmapjs.create_tiles(c_shape_graph["nodes"]);
 	console.log(c_tiles);
 	const c_rdcl_tiles = await busmapjs.get_rdcl_tiles(c_tiles, c_source, c_local); //道路中心線のダウンロード
-	const c_rdcl_paths = busmapjs.make_rdcl_paths(c_rdcl_tiles);
+	const c_rdcl_paths = busmapjs.create_rdcl_paths(c_rdcl_tiles);
 	//ここで追加修正を行う
-	const c_rdcl_graph = busmapjs.make_rdcl_graph(c_rdcl_paths); //細分化してグラフを作成
+	const c_rdcl_graph = busmapjs.create_rdcl_graph(c_rdcl_paths); //細分化してグラフを作成
 	if (c_source === "bvmap") {
 		busmapjs.add_border_link(c_rdcl_graph); //境界で欠けるリンクを補う（地理院地図Vector）
 	}
@@ -39,7 +40,7 @@ busmapjs.make_rdcl_shapes = async function(a_ArrayBuffer) { //JSON化GTFSを入�
 	
 	
 	//SVG出力
-	document.getElementById("div_svg").innerHTML += busmapjs.make_svg_g_rdcl_graph(c_rdcl_graph, c_shape_graph);
+	document.getElementById("div_svg").innerHTML += busmapjs.create_svg_g_rdcl_graph(c_rdcl_graph, c_shape_graph);
 	//CSV出力
 	c_text_files["shapes.txt"] = busmapjs.rdcl_node_orders_to_shapes(c_rdcl_node_orders, c_rdcl_graph);
 	c_text_files["trips.txt"] = busmapjs.json_to_csv(c_gtfs["trips"]);
@@ -52,7 +53,7 @@ busmapjs.make_rdcl_shapes = async function(a_ArrayBuffer) { //JSON化GTFSを入�
 		document.getElementById("output_zip").href = window.URL.createObjectURL(c_blob);
 	}
 	
-	console.timeEnd("make_rdcl_shapes");
+	console.timeEnd("create_rdcl_shapes");
 }
 
 
@@ -185,7 +186,7 @@ busmapjs.number_lat_lon_sequence_of_gtfs = function(a_gtfs) {
 
 
 
-busmapjs.make_shapes = function(a_gtfs) {
+busmapjs.create_shapes = function(a_gtfs) {
 	
 	//目次作成
 	const c_index = {"stops": {}, "trips": {}};
@@ -411,7 +412,7 @@ busmapjs.make_tile_list = function(a_data, a_zoom_level) {
 
 //shape pointがある周辺1タイルを集める
 //stopの周辺は集めない
-busmapjs.make_tiles = function(a_nodes) {
+busmapjs.create_tiles = function(a_nodes) {
 	const c_tiles = {};
 	for (const c_node_id in a_nodes) {
 		const c_xy = "x_" + String(Math.floor(a_nodes[c_node_id]["x"])) + "_y_" + String(Math.floor(a_nodes[c_node_id]["y"]));
@@ -434,7 +435,7 @@ busmapjs.make_tiles = function(a_nodes) {
 	return c_tiles;
 }
 
-busmapjs.make_shape_graph = function(a_gtfs) {
+busmapjs.create_shape_graph = function(a_gtfs) {
 	const c_shape_graph = {"nodes": {}, "links": {}, "paths" : {}};
 	const c_shape_pt_arrays = {};
 	for (const c_shape of a_gtfs["shapes"]) {
@@ -562,7 +563,7 @@ busmapjs.get_rdcl_tiles = async function(a_tile_list, a_source, a_local) {
 	return c_rdcl_tiles;
 }
 
-busmapjs.make_rdcl_paths = function(a_rdcl_tiles) {
+busmapjs.create_rdcl_paths = function(a_rdcl_tiles) {
 	const c_rdcl_paths = {};
 	for (const c_xy in a_rdcl_tiles) {
 		const c_x = Number(c_xy.replace("x_", "").split("_y_")[0]);
@@ -636,7 +637,7 @@ busmapjs.make_rdcl_paths = function(a_rdcl_tiles) {
 	return c_rdcl_paths;
 }
 
-busmapjs.make_rdcl_graph = function(a_rdcl_paths) {
+busmapjs.create_rdcl_graph = function(a_rdcl_paths) {
 	const c_zoom_level = 16;
 	const c_rdcl_graph = {"nodes": {}, "links": {}};
 	//指定したリンクを除外する
@@ -1187,7 +1188,7 @@ busmapjs.f_search_next_node = function(a_index_distance, a_previous_point, a_nod
 
 
 
-busmapjs.make_svg_g_rdcl_graph = function(a_rdcl_graph, a_shape_graph) {
+busmapjs.create_svg_g_rdcl_graph = function(a_rdcl_graph, a_shape_graph) {
 	const c_scale = 1024;
 	//SVG出力
 	//端を探す
@@ -1306,9 +1307,27 @@ busmapjs.rdcl_node_orders_to_shapes = function(a_rdcl_node_orders, a_rdcl_graph)
 	return l_csv_shapes;
 }
 
+//FileオブジェクトをArrayBufferに変換
+//Promiseを使用しているため、使用時はasync/awaitをつける
+busmapjs.file_to_array_buffer = function (a_file) {
+	const c_array_buffer = new Promise(f_promise);
+	function f_promise(a_resolve, a_reject) {
+		const c_reader = new FileReader();
+		c_reader.addEventListener("load", f_load, false);
+		function f_load() {
+			a_resolve(c_reader.result);
+		}
+		c_reader.readAsArrayBuffer(a_file);
+	}
+	return c_array_buffer;
+}
+
+
+
 //路線時刻表作成
-busmapjs.make_route_timetable = async function(a_ArrayBuffer) { //JSON化GTFSを入力
-	const c_text_files = busmapjs.zip_to_text_files(a_ArrayBuffer);
+busmapjs.make_route_timetable = async function(a_file) { //GTFSのFileオブジェクトを入力
+	const c_array_buffer = await busmapjs.file_to_array_buffer(a_file);
+	const c_text_files = busmapjs.zip_to_text_files(c_array_buffer);
 	const c_gtfs = {};
 	for (const c_file_name in c_text_files) {
 		c_gtfs[c_file_name.replace(".txt", "")] = busmapjs.csv_to_json(c_text_files[c_file_name]);
@@ -1316,7 +1335,7 @@ busmapjs.make_route_timetable = async function(a_ArrayBuffer) { //JSON化GTFSを
 	busmapjs.number_lat_lon_sequence_of_gtfs(c_gtfs); // 緯度経度と順番を数値型に変換
 	busmapjs.color_gtfs(c_gtfs);
 	busmapjs.set_stop_type(c_gtfs);
-	const c_bmd = busmapjs.make_bmd_from_gtfs(c_gtfs);
+	const c_bmd = busmapjs.create_bmd_from_gtfs(c_gtfs);
 	//indexを作成
 	const c_index = {"ur_stops": {}, "parent_stations": {}};
 	for (const c_stop of c_bmd["ur_stops"]) {
@@ -1348,6 +1367,7 @@ busmapjs.make_route_timetable = async function(a_ArrayBuffer) { //JSON化GTFSを
 		c_walk_array.push({"node_array": c_node_array, "temp_name": c_ur_route["temp_name"]});
 	}
 	console.log("ソート前");
+	console.log(c_bmd);
 	const c_stop_array = busmapjs.sort_nodes(c_walk_array);
 	console.log("ソート後");
 
@@ -1580,7 +1600,7 @@ busmapjs.set_stop_type = function(a_data) {
 
 
 
-busmapjs.make_bmd_from_gtfs = function(a_data_i1) {
+busmapjs.create_bmd_from_gtfs = function(a_data_i1) {
 	const c_bmd_i1 = {"ur_stops": [], "parent_stations": [], "trips": [], "ur_routes": [], "calendar": []};
 	//[1]calendar
 	for (let i2 = 0; i2 < a_data_i1["calendar"].length; i2++) {

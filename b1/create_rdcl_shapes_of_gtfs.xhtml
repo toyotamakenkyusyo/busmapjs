@@ -20,17 +20,10 @@
 		//<![CDATA[
 
 
-document.getElementById("gtfs_input").addEventListener("change", f_gtfs_input, false);
+document.getElementById("gtfs_input").addEventListener("change", f_start, false);
 
-function f_gtfs_input(a) {
-	const c_reader = new FileReader();
-	c_reader.addEventListener("load", f_load, false);
-	c_reader.readAsArrayBuffer(a.target.files[0]);
-	function f_load(a) {
-		const c_ArrayBuffer = a.target.result;
-		busmapjs.make_rdcl_shapes(c_ArrayBuffer);
-	}
-
+async function f_start(a) {
+	busmapjs.create_rdcl_shapes(a.target.files[0]);
 }
 
 
