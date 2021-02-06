@@ -11,7 +11,8 @@ busmapjs.create_rdcl_shapes = async function(a_file) { //GTFSのFileオブジェ
 	const c_local = false;
 	console.time("create_rdcl_shapes");
 	const c_array_buffer = await busmapjs.file_to_array_buffer(a_file);
-	const c_text_files = busmapjs.zip_to_text_files(c_array_buffer);
+	const c_Uint8Array = new Uint8Array(c_array_buffer);
+	const c_text_files = busmapjs.zip_to_text_files(c_Uint8Array);
 	const c_gtfs = {};
 	for (const c_file_name in c_text_files) {
 		c_gtfs[c_file_name.replace(".txt", "")] = busmapjs.csv_to_json(c_text_files[c_file_name]);
@@ -45,7 +46,8 @@ busmapjs.create_rdcl_shapes = async function(a_file) { //GTFSのFileオブジェ
 	c_text_files["shapes.txt"] = busmapjs.rdcl_node_orders_to_shapes(c_rdcl_node_orders, c_rdcl_graph);
 	c_text_files["trips.txt"] = busmapjs.json_to_csv(c_gtfs["trips"]);
 	//Zip出力
-	const c_ArrayBuffer_out = busmapjs.text_files_to_zip(c_text_files);
+	const c_Uint8Array_out = busmapjs.text_files_to_zip(c_text_files);
+	const c_ArrayBuffer_out = c_Uint8Array_out.buffer; 
 	const c_blob = new Blob([c_ArrayBuffer_out], {"type": "application/zip"});
 	if (window.navigator.msSaveBlob) { 
 		window.navigator.msSaveBlob(c_blob, "rdcl_gtfs"); 
@@ -63,9 +65,8 @@ busmapjs.create_rdcl_shapes = async function(a_file) { //GTFSのFileオブジェ
 
 //ZIPの解凍
 //https://cdn.jsdelivr.net/npm/zlibjs@0.3.1/bin/unzip.min.jsが必要
-busmapjs.zip_to_text_files = function(a_ArrayBuffer) {
-	const c_Uint8Array = new Uint8Array(a_ArrayBuffer);
-	const c_unzip = new Zlib.Unzip(c_Uint8Array);
+busmapjs.zip_to_text_files = function(a_Uint8Array) {
+	const c_unzip = new Zlib.Unzip(a_Uint8Array);
 	const c_filenames = c_unzip.getFilenames();
 	const c_text_files = {};
 	for (let i1 = 0; i1 < c_filenames.length; i1++) {
@@ -84,8 +85,7 @@ busmapjs.text_files_to_zip = function(a_text_files) {
 		}
 	}
 	const c_Uint8Array = c_zip.compress();
-	const c_ArrayBuffer = c_Uint8Array.buffer; 
-	return c_ArrayBuffer;
+	return c_Uint8Array;
 }
 
 
@@ -1327,7 +1327,8 @@ busmapjs.file_to_array_buffer = function (a_file) {
 //路線時刻表作成
 busmapjs.make_route_timetable = async function(a_file) { //GTFSのFileオブジェクトを入力
 	const c_array_buffer = await busmapjs.file_to_array_buffer(a_file);
-	const c_text_files = busmapjs.zip_to_text_files(c_array_buffer);
+	const c_Uint8Array = new Uint8Array(c_array_buffer);
+	const c_text_files = busmapjs.zip_to_text_files(c_Uint8Array);
 	const c_gtfs = {};
 	for (const c_file_name in c_text_files) {
 		c_gtfs[c_file_name.replace(".txt", "")] = busmapjs.csv_to_json(c_text_files[c_file_name]);
