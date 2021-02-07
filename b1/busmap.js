@@ -10,16 +10,17 @@ busmapjs.create_rdcl_shapes = async function(a_file) { //GTFSのFileオブジェ
 	//const c_local = true;
 	const c_local = false;
 	console.time("create_rdcl_shapes");
-	const c_array_buffer = await busmapjs.file_to_array_buffer(a_file);
+	const c_array_buffer = await busmapjs.convert_file_to_array_buffer(a_file);
 	const c_Uint8Array = new Uint8Array(c_array_buffer);
-	const c_text_files = busmapjs.zip_to_text_files(c_Uint8Array);
+	const c_text_files = busmapjs.convert_zip_to_text_files(c_Uint8Array);
 	const c_gtfs = {};
 	for (const c_file_name in c_text_files) {
-		c_gtfs[c_file_name.replace(".txt", "")] = busmapjs.csv_to_json(c_text_files[c_file_name]);
+		c_gtfs[c_file_name.replace(".txt", "")] = busmapjs.convert_csv_to_json(c_text_files[c_file_name]);
 	}
 	busmapjs.number_lat_lon_sequence_of_gtfs(c_gtfs); // 緯度経度と順番を数値型に変換
-	c_gtfs["shapes"] = busmapjs.create_shapes(c_gtfs); // shapesがない場合に作る
+	busmapjs.create_shapes(c_gtfs); // shapesがない場合に作る
 	console.log(c_gtfs);
+	
 	const c_zoom_level = 16; //地理院タイルに合わせて16にしておく
 	const c_shape_graph = busmapjs.create_shape_graph(c_gtfs);
 	const c_tiles =  busmapjs.create_tiles(c_shape_graph["nodes"]);
@@ -38,15 +39,16 @@ busmapjs.create_rdcl_shapes = async function(a_file) { //GTFSのFileオブジェ
 	console.log(c_shape_graph);
 	const c_rdcl_node_orders = busmapjs.search_rdcl(c_rdcl_graph, c_shape_graph);
 	console.log(c_rdcl_node_orders);
-	
+	c_gtfs["shapes"] = busmapjs.rdcl_node_orders_to_shapes(c_rdcl_node_orders, c_rdcl_graph);
 	
 	//SVG出力
 	document.getElementById("div_svg").innerHTML += busmapjs.create_svg_g_rdcl_graph(c_rdcl_graph, c_shape_graph);
+	
 	//CSV出力
-	c_text_files["shapes.txt"] = busmapjs.rdcl_node_orders_to_shapes(c_rdcl_node_orders, c_rdcl_graph);
-	c_text_files["trips.txt"] = busmapjs.json_to_csv(c_gtfs["trips"]);
-	//Zip出力
-	const c_Uint8Array_out = busmapjs.text_files_to_zip(c_text_files);
+	c_text_files["shapes.txt"] = busmapjs.convert_json_to_csv(c_gtfs["shapes"]);
+	c_text_files["trips.txt"] = busmapjs.convert_json_to_csv(c_gtfs["trips"]);
+	//ZIP出力
+	const c_Uint8Array_out = busmapjs.convert_text_files_to_zip(c_text_files);
 	const c_ArrayBuffer_out = c_Uint8Array_out.buffer; 
 	const c_blob = new Blob([c_ArrayBuffer_out], {"type": "application/zip"});
 	if (window.navigator.msSaveBlob) { 
@@ -61,11 +63,25 @@ busmapjs.create_rdcl_shapes = async function(a_file) { //GTFSのFileオブジェ
 
 
 
+//FileオブジェクトをArrayBufferに変換
+//Promiseを使用しているため、使用時はasync/awaitをつける
+busmapjs.convert_file_to_array_buffer = function (a_file) {
+	const c_array_buffer = new Promise(f_promise);
+	function f_promise(a_resolve, a_reject) {
+		const c_reader = new FileReader();
+		c_reader.addEventListener("load", f_load, false);
+		function f_load() {
+			a_resolve(c_reader.result);
+		}
+		c_reader.readAsArrayBuffer(a_file);
+	}
+	return c_array_buffer;
+}
 
 
 //ZIPの解凍
 //https://cdn.jsdelivr.net/npm/zlibjs@0.3.1/bin/unzip.min.jsが必要
-busmapjs.zip_to_text_files = function(a_Uint8Array) {
+busmapjs.convert_zip_to_text_files = function(a_Uint8Array) {
 	const c_unzip = new Zlib.Unzip(a_Uint8Array);
 	const c_filenames = c_unzip.getFilenames();
 	const c_text_files = {};
@@ -77,7 +93,7 @@ busmapjs.zip_to_text_files = function(a_Uint8Array) {
 
 //ZIPの圧縮
 //https://cdn.jsdelivr.net/npm/zlibjs@0.3.1/bin/zip.min.jsが必要
-busmapjs.text_files_to_zip = function(a_text_files) {
+busmapjs.convert_text_files_to_zip = function(a_text_files) {
 	const c_zip = new Zlib.Zip();
 	for (let i1 in a_text_files) {
 		if (a_text_files[i1] !== "" && a_text_files[i1] !== null && a_text_files[i1] !== undefined) {
@@ -89,7 +105,7 @@ busmapjs.text_files_to_zip = function(a_text_files) {
 }
 
 
-busmapjs.csv_to_json = function(a_csv) {
+busmapjs.convert_csv_to_json = function(a_csv) {
 	//CSVを2次元配列にする
 	let l_1 = 0;
 	let l_2 = 0;
@@ -121,7 +137,7 @@ busmapjs.csv_to_json = function(a_csv) {
 }
 
 
-busmapjs.json_to_csv = function(a_json) {
+busmapjs.convert_json_to_csv = function(a_json) {
 	//JSONからGTFSのCSVを出力する
 	let l_csv = "";
 	//1行目
@@ -348,32 +364,32 @@ busmapjs.create_shapes = function(a_gtfs) {
 			});
 		}
 	}
-	return c_new_shapes;
+	a_gtfs["shapes"] = c_new_shapes;
 }
 
 
 //緯度経度WGS84（EPSG:4326）とウェブメルカトルのタイル番号（左手系）の変換
 //EPSG:3857（メートル単位）（右手系）はa_zoom_level === "m"とする
 
-busmapjs.lon_to_x = function(a_lon, a_zoom_level) {
+busmapjs.convert_lon_to_x = function(a_lon, a_zoom_level) {
 	if (a_zoom_level === "m") {
 		return a_lon / 180 * 6378137 * Math.PI;
 	}
 	return (a_lon / 180 + 1) * 0.5 * (2 ** a_zoom_level);
 }
-busmapjs.lat_to_y = function(a_lat, a_zoom_level) {
+busmapjs.convert_lat_to_y = function(a_lat, a_zoom_level) {
 	if (a_zoom_level === "m") {
 		return  Math.atanh(Math.sin(a_lat * Math.PI / 180)) * 6378137;
 	}
 	return (1 - Math.atanh(Math.sin(a_lat * Math.PI / 180)) / Math.PI) * 0.5 * (2 ** a_zoom_level);
 }
-busmapjs.x_to_lon = function(a_x, a_zoom_level) {
+busmapjs.convert_x_to_lon = function(a_x, a_zoom_level) {
 	if (a_zoom_level === "m") {
 		return a_x / Math.PI / 6378137 * 180;
 	}
 	return (a_x / (2 ** a_zoom_level) / 0.5- 1) * 180;
 }
-busmapjs.y_to_lat = function(a_y, a_zoom_level) {
+busmapjs.convert_y_to_lat = function(a_y, a_zoom_level) {
 	if (a_zoom_level === "m") {
 		return Math.asin(Math.tanh(a_y / 6378137)) * 180 / Math.PI;
 	}
@@ -471,8 +487,8 @@ busmapjs.create_shape_graph = function(a_gtfs) {
 	}
 	//緯度経度をタイル番号に変換しておく
 	for (const c_node_id in c_shape_graph["nodes"]) {
-		c_shape_graph["nodes"][c_node_id]["x"] = busmapjs.lon_to_x(c_shape_graph["nodes"][c_node_id]["lon"], 16);
-		c_shape_graph["nodes"][c_node_id]["y"] = busmapjs.lat_to_y(c_shape_graph["nodes"][c_node_id]["lat"], 16);
+		c_shape_graph["nodes"][c_node_id]["x"] = busmapjs.convert_lon_to_x(c_shape_graph["nodes"][c_node_id]["lon"], 16);
+		c_shape_graph["nodes"][c_node_id]["y"] = busmapjs.convert_lat_to_y(c_shape_graph["nodes"][c_node_id]["lat"], 16);
 	}
 	return c_shape_graph;
 }
@@ -568,10 +584,10 @@ busmapjs.create_rdcl_paths = function(a_rdcl_tiles) {
 	for (const c_xy in a_rdcl_tiles) {
 		const c_x = Number(c_xy.replace("x_", "").split("_y_")[0]);
 		const c_y = Number(c_xy.replace("x_", "").split("_y_")[1]);
-		const c_lon_min = busmapjs.x_to_lon(c_x, 16) - 0.00001;
-		const c_lon_max = busmapjs.x_to_lon(c_x + 1, 16) + 0.00001;
-		const c_lat_min = busmapjs.y_to_lat(c_y, 16) - 0.00001;
-		const c_lat_max = busmapjs.y_to_lat(c_y + 1, 16) + 0.00001;
+		const c_lon_min = busmapjs.convert_x_to_lon(c_x, 16) - 0.00001;
+		const c_lon_max = busmapjs.convert_x_to_lon(c_x + 1, 16) + 0.00001;
+		const c_lat_min = busmapjs.convert_y_to_lat(c_y, 16) - 0.00001;
+		const c_lat_max = busmapjs.convert_y_to_lat(c_y + 1, 16) + 0.00001;
 		const c_features = a_rdcl_tiles[c_xy]["geojson"]["features"];
 		for (let i2 = 0; i2 < c_features.length; i2++) {
 			let l_rid = c_features[i2]["properties"]["rID"];
@@ -682,8 +698,8 @@ busmapjs.create_rdcl_graph = function(a_rdcl_paths) {
 			c_node_array.push({
 				"lon": c_lon,
 				"lat": c_lat,
-				"x": busmapjs.lon_to_x(c_lon, c_zoom_level),
-				"y": busmapjs.lat_to_y(c_lat, c_zoom_level),
+				"x": busmapjs.convert_lon_to_x(c_lon, c_zoom_level),
+				"y": busmapjs.convert_lat_to_y(c_lat, c_zoom_level),
 				"id": String(c_lon) + "_" + String(c_lat)
 			});
 		}
@@ -1287,51 +1303,34 @@ busmapjs.create_svg_g_rdcl_graph = function(a_rdcl_graph, a_shape_graph) {
 }
 
 
-//CSV作成
+//shapes.txtに整理
 busmapjs.rdcl_node_orders_to_shapes = function(a_rdcl_node_orders, a_rdcl_graph) {
-	let l_csv_shapes = "";
-	l_csv_shapes += "shape_id,shape_pt_lat,shape_pt_lon,shape_pt_sequence";
+	const c_new_shapes = [];
 	for (const c_shape_id in a_rdcl_node_orders) {
-		let l_shape_id = c_shape_id;
-		//"をエスケープし、カンマと"があれば"で囲む
-		if (l_shape_id.indexOf("\"") !== -1 || l_shape_id.indexOf(",") !== -1) { //どちらかある
-			_shape_id.replace(/"/g, "\"\"");
-			l_shape_id = "\"" + l_shape_id + "\"";
-		}
 		for (let i1 = 0; i1 < a_rdcl_node_orders[c_shape_id].length; i1++) {
-			const c_lat = String(a_rdcl_graph["nodes"][a_rdcl_node_orders[c_shape_id][i1]]["lat"]);
-			const c_lon = String(a_rdcl_graph["nodes"][a_rdcl_node_orders[c_shape_id][i1]]["lon"]);
-			l_csv_shapes += "\r\n" + l_shape_id + "," + c_lat + "," + c_lon + "," + String(i1 + 1);
+			c_new_shapes.push({
+				"shape_id": c_shape_id,
+				"shape_pt_lat": a_rdcl_graph["nodes"][a_rdcl_node_orders[c_shape_id][i1]]["lat"],
+				"shape_pt_lon": a_rdcl_graph["nodes"][a_rdcl_node_orders[c_shape_id][i1]]["lon"],
+				"shape_pt_sequence": i1
+			});
 		}
 	}
-	return l_csv_shapes;
+	return c_new_shapes;
 }
 
-//FileオブジェクトをArrayBufferに変換
-//Promiseを使用しているため、使用時はasync/awaitをつける
-busmapjs.file_to_array_buffer = function (a_file) {
-	const c_array_buffer = new Promise(f_promise);
-	function f_promise(a_resolve, a_reject) {
-		const c_reader = new FileReader();
-		c_reader.addEventListener("load", f_load, false);
-		function f_load() {
-			a_resolve(c_reader.result);
-		}
-		c_reader.readAsArrayBuffer(a_file);
-	}
-	return c_array_buffer;
-}
+
 
 
 
 //路線時刻表作成
 busmapjs.make_route_timetable = async function(a_file) { //GTFSのFileオブジェクトを入力
-	const c_array_buffer = await busmapjs.file_to_array_buffer(a_file);
+	const c_array_buffer = await busmapjs.convert_file_to_array_buffer(a_file);
 	const c_Uint8Array = new Uint8Array(c_array_buffer);
-	const c_text_files = busmapjs.zip_to_text_files(c_Uint8Array);
+	const c_text_files = busmapjs.convert_zip_to_text_files(c_Uint8Array);
 	const c_gtfs = {};
 	for (const c_file_name in c_text_files) {
-		c_gtfs[c_file_name.replace(".txt", "")] = busmapjs.csv_to_json(c_text_files[c_file_name]);
+		c_gtfs[c_file_name.replace(".txt", "")] = busmapjs.convert_csv_to_json(c_text_files[c_file_name]);
 	}
 	busmapjs.number_lat_lon_sequence_of_gtfs(c_gtfs); // 緯度経度と順番を数値型に変換
 	busmapjs.color_gtfs(c_gtfs);
