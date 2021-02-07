@@ -23,7 +23,12 @@
 document.getElementById("gtfs_input").addEventListener("change", f_start, false);
 
 async function f_start(a) {
-	busmapjs.create_rdcl_shapes(a.target.files[0]);
+	const c_settings = {
+		"file": a.target.files[0],
+		"local": false, 
+		"source": "rdcl" //または"bvmap"
+	};
+	busmapjs.create_rdcl_shapes(c_settings);
 }
 
 

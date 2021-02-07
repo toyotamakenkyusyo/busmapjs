@@ -4,13 +4,13 @@ const busmapjs = {}; // ここに関数を追加する
 
 
 //道路中心線に沿ったshapesを作成
-busmapjs.create_rdcl_shapes = async function(a_file) { //GTFSのFileオブジェクトを入力
-	const c_source = "rdcl";
-	//const c_source = "bvmap";
-	//const c_local = true;
-	const c_local = false;
+//a_settings: {}; //入力の設定
+//a_settings["file"]: {}; //Fileオブジェクト（GTFSのZIPファイル）
+//a_settings["source"]: "rdcl" | "bvmap"; //国土地理院ベクトルタイル道路中心線、地理院地図Vector
+//a_settings["local"]: boolean; //trueの場合作者のローカルサーバーを使用、falseの場合国土地理院等のサーバーからダウンロード
+busmapjs.create_rdcl_shapes = async function(a_settings) {
 	console.time("create_rdcl_shapes");
-	const c_array_buffer = await busmapjs.convert_file_to_array_buffer(a_file);
+	const c_array_buffer = await busmapjs.convert_file_to_array_buffer(a_settings["file"]);
 	const c_Uint8Array = new Uint8Array(c_array_buffer);
 	const c_text_files = busmapjs.convert_zip_to_text_files(c_Uint8Array);
 	const c_gtfs = {};
@@ -18,18 +18,25 @@ busmapjs.create_rdcl_shapes = async function(a_file) { //GTFSのFileオブジェ
 		c_gtfs[c_file_name.replace(".txt", "")] = busmapjs.convert_csv_to_json(c_text_files[c_file_name]);
 	}
 	busmapjs.number_lat_lon_sequence_of_gtfs(c_gtfs); // 緯度経度と順番を数値型に変換
-	busmapjs.create_shapes(c_gtfs); // shapesがない場合に作る
+	busmapjs.create_undefined_shapes(c_gtfs); // shapesがない場合に作る
 	console.log(c_gtfs);
 	
 	const c_zoom_level = 16; //地理院タイルに合わせて16にしておく
 	const c_shape_graph = busmapjs.create_shape_graph(c_gtfs);
-	const c_tiles =  busmapjs.create_tiles(c_shape_graph["nodes"]);
+	//緯度経度をタイル番号に変換しておく
+	for (const c_node_id in c_shape_graph["nodes"]) {
+		c_shape_graph["nodes"][c_node_id]["x"] = busmapjs.convert_lon_to_x(c_shape_graph["nodes"][c_node_id]["lon"], c_zoom_level);
+		c_shape_graph["nodes"][c_node_id]["y"] = busmapjs.convert_lat_to_y(c_shape_graph["nodes"][c_node_id]["lat"], c_zoom_level);
+	}
+	
+	
+	const c_tiles = busmapjs.check_tiles_around_nodes(c_shape_graph["nodes"]);
 	console.log(c_tiles);
-	const c_rdcl_tiles = await busmapjs.get_rdcl_tiles(c_tiles, c_source, c_local); //道路中心線のダウンロード
+	const c_rdcl_tiles = await busmapjs.get_rdcl_tiles(c_tiles, a_settings["source"], a_settings["local"], c_zoom_level); //道路中心線のダウンロード
 	const c_rdcl_paths = busmapjs.create_rdcl_paths(c_rdcl_tiles);
 	//ここで追加修正を行う
 	const c_rdcl_graph = busmapjs.create_rdcl_graph(c_rdcl_paths); //細分化してグラフを作成
-	if (c_source === "bvmap") {
+	if (a_settings["source"] === "bvmap") {
 		busmapjs.add_border_link(c_rdcl_graph); //境界で欠けるリンクを補う（地理院地図Vector）
 	}
 	busmapjs.join_graph(c_rdcl_graph, c_shape_graph); //グラフに元のshapesを紐づけ
@@ -202,8 +209,7 @@ busmapjs.number_lat_lon_sequence_of_gtfs = function(a_gtfs) {
 
 
 
-busmapjs.create_shapes = function(a_gtfs) {
-	
+busmapjs.create_undefined_shapes = function(a_gtfs) {
 	//目次作成
 	const c_index = {"stops": {}, "trips": {}};
 	for (const c_stop of a_gtfs["stops"]) {
@@ -397,53 +403,23 @@ busmapjs.convert_y_to_lat = function(a_y, a_zoom_level) {
 }
 
 
-
-//stopとshape pointがある周辺1タイルを集める
-//置き換えたので不使用
-/*
-busmapjs.make_tile_list = function(a_data, a_zoom_level) {
-	const c_tile_list = {};
-	for (const c_stop of a_data["stops"]) {
-		const c_x = Math.floor(busmapjs.lon_to_x(c_stop["stop_lon"], a_zoom_level));
-		const c_y = Math.floor(busmapjs.lat_to_y(c_stop["stop_lat"], a_zoom_level));
-		c_tile_list["x_" + String(c_x) + "_y_" + String(c_y)] = {"x_16": c_x, "y_16": c_y};
-	}
-	for (const c_shape of a_data["shapes"]) {
-		const c_x = Math.floor(busmapjs.lon_to_x(c_shape["shape_pt_lon"], a_zoom_level));
-		const c_y = Math.floor(busmapjs.lat_to_y(c_shape["shape_pt_lat"], a_zoom_level));
-		c_tile_list["x_" + String(c_x) + "_y_" + String(c_y)] = {"x_16": c_x, "y_16": c_y};
-	}
-	for (const c_xy in c_tile_list) {
-		const c_x_16 = c_tile_list[c_xy]["x_16"];
-		const c_y_16 = c_tile_list[c_xy]["y_16"];
-		for (let i1 = -1; i1 <= 1; i1++) {
-			for (let i2 = -1; i2 <= 1; i2++) {
-				c_tile_list["x_" + String(c_x_16 + i1) + "_y_" + String(c_y_16 + i2)] = {"x_16": c_x_16 + i1, "y_16": c_y_16 + i2};
-			}
-		}
-	}
-	return c_tile_list;
-}
-*/
-
-//shape pointがある周辺1タイルを集める
-//stopの周辺は集めない
-busmapjs.create_tiles = function(a_nodes) {
+//nodeの周辺1タイルを集める
+busmapjs.check_tiles_around_nodes = function(a_nodes) {
 	const c_tiles = {};
 	for (const c_node_id in a_nodes) {
 		const c_xy = "x_" + String(Math.floor(a_nodes[c_node_id]["x"])) + "_y_" + String(Math.floor(a_nodes[c_node_id]["y"]));
 		if (c_tiles[c_xy] === undefined) {
-			c_tiles[c_xy] = {"x_16": Math.floor(a_nodes[c_node_id]["x"]), "y_16": Math.floor(a_nodes[c_node_id]["y"])};
+			c_tiles[c_xy] = {"x": Math.floor(a_nodes[c_node_id]["x"]), "y": Math.floor(a_nodes[c_node_id]["y"])};
 		}
 	}
 	for (const c_xy in c_tiles) {
-		const c_x_16 = c_tiles[c_xy]["x_16"];
-		const c_y_16 = c_tiles[c_xy]["y_16"];
+		const c_x = c_tiles[c_xy]["x"];
+		const c_y = c_tiles[c_xy]["y"];
 		for (let i1 = -1; i1 <= 1; i1++) {
 			for (let i2 = -1; i2 <= 1; i2++) {
-				const c_xy_2 = "x_" + String(c_x_16 + i1) + "_y_" + String(c_y_16 + i2);
+				const c_xy_2 = "x_" + String(c_x + i1) + "_y_" + String(c_y + i2);
 				if (c_tiles[c_xy_2] === undefined) {
-					c_tiles[c_xy_2] = {"x_16": c_x_16 + i1, "y_16": c_y_16 + i2};
+					c_tiles[c_xy_2] = {"x": c_x + i1, "y": c_y + i2};
 				}
 			}
 		}
@@ -485,11 +461,6 @@ busmapjs.create_shape_graph = function(a_gtfs) {
 			}
 		}
 	}
-	//緯度経度をタイル番号に変換しておく
-	for (const c_node_id in c_shape_graph["nodes"]) {
-		c_shape_graph["nodes"][c_node_id]["x"] = busmapjs.convert_lon_to_x(c_shape_graph["nodes"][c_node_id]["lon"], 16);
-		c_shape_graph["nodes"][c_node_id]["y"] = busmapjs.convert_lat_to_y(c_shape_graph["nodes"][c_node_id]["lat"], 16);
-	}
 	return c_shape_graph;
 }
 
@@ -508,7 +479,7 @@ busmapjs.sort_array_key = function(a_array, a_key) {
 
 
 //タイルのダウンロード
-busmapjs.get_rdcl_tiles = async function(a_tile_list, a_source, a_local) {
+busmapjs.get_rdcl_tiles = async function(a_tile_list, a_source, a_local, a_zoom_level) {
 	const c_rdcl_tiles = {};
 	const c_number = Object.keys(a_tile_list).length;
 	let l_count = 0;
@@ -516,7 +487,7 @@ busmapjs.get_rdcl_tiles = async function(a_tile_list, a_source, a_local) {
 	if (a_local === true) {
 		l_base_url += "http://localhost/" + a_source + ".php?dir={x}&url={y}.";
 	} else {
-		l_base_url += "https://cyberjapandata.gsi.go.jp/xyz/experimental_" + a_source + "/16/{x}/{y}.";
+		l_base_url += "https://cyberjapandata.gsi.go.jp/xyz/experimental_" + a_source + "/{z}/{x}/{y}.";
 	}
 	if (a_source === "rdcl") {
 		l_base_url += "geojson";
@@ -525,7 +496,7 @@ busmapjs.get_rdcl_tiles = async function(a_tile_list, a_source, a_local) {
 	}
 	for (const c_xy in a_tile_list) {
 		c_rdcl_tiles[c_xy] = {};
-		const c_url = l_base_url.replace("{x}", String(a_tile_list[c_xy]["x_16"])).replace("{y}", String(a_tile_list[c_xy]["y_16"]));
+		const c_url = l_base_url.replace("{z}", String(a_zoom_level)).replace("{x}", String(a_tile_list[c_xy]["x"])).replace("{y}", String(a_tile_list[c_xy]["y"]));
 		try {
 			if (a_source === "rdcl") {
 				c_rdcl_tiles[c_xy]["geojson"] = await ((await (fetch(c_url))).json());
@@ -535,7 +506,7 @@ busmapjs.get_rdcl_tiles = async function(a_tile_list, a_source, a_local) {
 				const c_features = [];
 				const c_rnkWidth = ["3m未満", "3m-5.5m未満", "5.5m-13m未満","13m-19.5m未満", "19.5m以上", "3m未満", "3m未満"]; //後ろ2つは仮
 				for (let i2 = 0; i2 < c_data["layers"]["road"].length; i2++) {
-					const c_feature = c_data["layers"]["road"].feature(i2).toGeoJSON(a_tile_list[c_xy]["x_16"], a_tile_list[c_xy]["y_16"], 16);
+					const c_feature = c_data["layers"]["road"].feature(i2).toGeoJSON(a_tile_list[c_xy]["x"], a_tile_list[c_xy]["y"], a_zoom_level);
 					if (c_feature["properties"]["ftCode"] < 2700 || 2799 < c_feature["properties"]["ftCode"]) {
 						continue; //道路縁と中央分離帯は外す
 					}
@@ -608,48 +579,6 @@ busmapjs.create_rdcl_paths = function(a_rdcl_tiles) {
 			c_rdcl_paths[l_rid] = c_features[i2];
 		}
 	}
-	//不足分を追加
-	if (false) { //地理院地図Vector用
-
-		
-		//宇野バス　柳川付近
-		if (a_rdcl_tiles["x_57148_y_26032"] !== undefined) {
-			const c_feature = {"type":"Feature","geometry":{"type":"LineString","coordinates":[[133.9288330078125,34.66563918211369],[133.9288330078125,34.66564028515245]]},"properties":{"orgGILvl":"1000","ftCode":2701,"rdCtg":1,"lvOrder":0,"rnkWidth":"19.5m以上","Width":50,"tollSect":0,"medSect":"1","motorway":9,"rID":"133.9288330078125_34.66563918211369_133.9288330078125_34.66564028515245_133.9288330078125_34.66563918211369_133.9288330078125_34.66564028515245"}};
-			c_rdcl_paths[c_feature["properties"]["rID"]] = c_feature;
-		}
-		//宇野バス　百間川橋
-		if (a_rdcl_tiles["x_57153_y_26031"] !== undefined) {
-			const c_feature = {"type":"Feature","geometry":{"type":"LineString","coordinates":[[133.956298828125,34.67162405411817],[133.956298828125,34.67162515707723]]},"properties":{"orgGILvl":"2500","ftCode":2703,"rdCtg":0,"lvOrder":1,"rnkWidth":"13m-19.5m未満","tollSect":0,"medSect":"0","motorway":9,"rID":"133.956298828125_34.67162405411817_133.956298828125_34.67162515707723_133.956298828125_34.67162405411817_133.956298828125_34.67162515707723"}};
-			c_rdcl_paths[c_feature["properties"]["rID"]] = c_feature;
-		}
-		//宇野バス　四御神線と東岡山線の交差点の東側
-		if (a_rdcl_tiles["x_57155_y_26028"] !== undefined) {
-			const c_feature = {"type":"Feature","geometry":{"type":"LineString","coordinates":[[133.96728515625,34.68421447760258],[133.96728515625,34.68421558039394]]},"properties":{"orgGILvl":"2500","ftCode":2701,"rdCtg":1,"lvOrder":0,"rnkWidth":"5.5m-13m未満","tollSect":0,"medSect":"0","motorway":9,"rID":"133.96728515625_34.68421447760258_133.96728515625_34.68421558039394_133.96728515625_34.68421447760258_133.96728515625_34.68421558039394"}};
-			c_rdcl_paths[c_feature["properties"]["rID"]] = c_feature;
-		}
-		//宇野バス　山陽団地西
-		if (a_rdcl_tiles["x_57162_y_26013"] !== undefined) {
-			const c_feature = {"type":"Feature","geometry":{"type":"LineString","coordinates":[[134.00207072496414,34.7506398050501],[134.00207206606865,34.7506398050501]]},"properties":{"orgGILvl":"25000","ftCode":2701,"rdCtg":2,"lvOrder":0,"rnkWidth":"5.5m-13m未満","tollSect":0,"medSect":"0","motorway":9,"rID":"134.00207072496414_34.7506398050501_134.00207206606865_34.7506398050501_134.00207072496414_34.7506398050501_134.00207206606865_34.7506398050501"}};
-			c_rdcl_paths[c_feature["properties"]["rID"]] = c_feature;
-		}
-		//宇野バス　片上方面　東から1番目
-		if (a_rdcl_tiles["x_57179_y_26021"] !== undefined) {
-			const c_feature = {"type":"Feature","geometry":{"type":"LineString","coordinates":[[134.09912109375,34.71800813284618],[134.09912109375,34.718009235187225]]},"properties":{"orgGILvl":"25000","ftCode":2701,"rdCtg":0,"lvOrder":0,"rnkWidth":"5.5m-13m未満","tollSect":0,"medSect":"0","motorway":9,"rID":"134.09912109375_34.71800813284618_134.09912109375_34.718009235187225_134.09912109375_34.71800813284618_134.09912109375_34.718009235187225"}};
-			c_rdcl_paths[c_feature["properties"]["rID"]] = c_feature;
-		}
-		//宇野バス　片上方面　東から2番目
-		if (a_rdcl_tiles["x_57180_y_26019"] !== undefined) {
-			const c_feature = {"type":"Feature","geometry":{"type":"LineString","coordinates":[[134.10320475697517,34.723554927042215],[134.10320341587067,34.723554927042215]]},"properties":{"orgGILvl":"25000","ftCode":2701,"rdCtg":0,"lvOrder":0,"rnkWidth":"5.5m-13m未満","tollSect":0,"medSect":"0","motorway":9,"rID":"134.10320475697517_34.723554927042215_134.10320341587067_34.723554927042215_134.10320475697517_34.723554927042215_134.10320341587067_34.723554927042215"}};
-			c_rdcl_paths[c_feature["properties"]["rID"]] = c_feature;
-		}
-		//宇野バス　片上方面　東から3番目
-		if (a_rdcl_tiles["x_57185_y_26018"] !== undefined) {
-			const c_feature = {"type":"Feature","geometry":{"type":"LineString","coordinates":[[134.132080078125,34.73213673334472],[134.132080078125,34.7321378354974]]},"properties":{"orgGILvl":"2500","ftCode":2701,"rdCtg":0,"lvOrder":0,"rnkWidth":"5.5m-13m未満","tollSect":0,"medSect":"0","motorway":9,"rID":"134.132080078125_34.73213673334472_134.132080078125_34.7321378354974_134.132080078125_34.73213673334472_134.132080078125_34.7321378354974"}};
-			c_rdcl_paths[c_feature["properties"]["rID"]] = c_feature;
-		}
-	}
-	
-	
 	return c_rdcl_paths;
 }
 
@@ -659,7 +588,6 @@ busmapjs.create_rdcl_graph = function(a_rdcl_paths) {
 	//指定したリンクを除外する
 	//宇野バスrdcl用
 	const c_not_use_link = {
-	
 		"134.166666667_34.7404451__134.166545287_34.740546372": true, //片上方面
 		"134.166683375_34.74043116__134.166666667_34.7404451": true, //片上方面
 		"134.04163825_34.735196917__134.041648512_34.735029242": true, //瀬戸駅
@@ -901,79 +829,8 @@ busmapjs.distance_between_point_and_segment= function(a_px, a_py, a_sx, a_sy, a_
 
 busmapjs.join_graph = function(a_rdcl_graph, a_shape_graph) {
 	//rdcl_graphのlinkをz=16タイル分割した目次を作る
-	//除外するものはここではじく
-	
-	//宇野バスrdcl用
-	const c_not_use = {
-		"133.930499722_34.665755556__133.930411139_34.665655194": true, //岡山駅近く
-		"133.930520813_34.665801661__133.930499722_34.665755556": true,
-		"133.930536009_34.665849599__133.930520813_34.665801661": true,
-		"133.930541389_34.665886111__133.930536009_34.665849599": true,
-		"133.9308345_34.665789972__133.930499722_34.665755556": true,
-		"133.930563194_34.66614425__133.930541389_34.665886111": true,
-		"133.930563194_34.66614425__133.930785778_34.665862028": true,
-		"133.930785778_34.665862028__133.9308345_34.665789972": true,
-		"133.9308345_34.665789972__133.930499722_34.665755556": true,
-		"133.931050444_34.665810861__133.9308345_34.665789972": true,
-		"133.9308345_34.665789972__133.930760639_34.665485417": true,
-		"133.930737472_34.665649194__133.930722417_34.665696472": true
-	};
-	/*
-	const c_not_use = {
-		"133.92995551228523_34.66165491040162__133.92996355891228_34.661990249623784": true, // bvmap 宇野バス 表町バスセンター
-		"133.93000110983849_34.66165491040162__133.92995551228523_34.66165491040162": true, // bvmap 宇野バス 表町バスセンター
-		"133.92999172210693_34.6607371329594__133.93000110983849_34.66165491040162": true, // bvmap 宇野バス 表町バスセンター
-		"133.9841951429844_34.67830551055721__133.98415356874466_34.67839374011646": true, // bvmap 宇野バス 国道2・250号線
-		"133.98422464728355_34.678241544068__133.98415356874466_34.67839374011646": true, // bvmap 宇野バス 国道2・250号線
-		"133.9759674668312_34.69815258714563__133.97704973816872_34.697892371792406": true, // bvmap 宇野バス 四御神線
-		"133.96247997879982_34.69773028808679__133.9627106487751_34.69773028808679": true, // bvmap 宇野バス 四御神線
-		"133.9627106487751_34.69773028808679__133.96275088191032_34.69772698025275": true, // bvmap 宇野バス 四御神線
-		"133.96269723773003_34.69804232650263__133.9627106487751_34.69773028808679": true, // bvmap 宇野バス 四御神線
-		"133.92827108502388_34.67780480602808__133.92817452549934_34.67781142328829": true, // bvmap 宇野バス 美作線
-		"133.92819195985794_34.67769672403641__133.92817452549934_34.67781142328829": true, // bvmap 宇野バス 美作線
-		"133.92817452549934_34.67781142328829__133.92810344696045_34.677815834794814": true, // bvmap 宇野バス 美作線
-		"133.9947670698166_34.73308017065855__133.9947509765625_34.73310662201682": true, // bvmap 宇野バス 美作線
-		"133.9947509765625_34.73310662201682__133.99472281336784_34.73315180973425": true, // bvmap 宇野バス 美作線
-		"134.00181725621223_34.737079740308786__134.00180652737617_34.73709847578162": true, // bvmap 宇野バス 美作線（山陽団地の南側）
-		"134.00180652737617_34.73709847578162__134.0017729997635_34.737161294688974": true, // bvmap 宇野バス 美作線（山陽団地の南側）
-		"134.0017729997635_34.737161294688974__134.00172874331474_34.73727480943553": true, // bvmap 宇野バス 美作線（山陽団地の南側）
-		"134.00181725621223_34.737079740308786__134.00180652737617_34.73709847578162": true, // bvmap 宇野バス 美作線（山陽団地の南側）
-		"134.00180652737617_34.73709847578162__134.00176227092743_34.7371866426556": true, // bvmap 宇野バス 美作線（山陽団地の南側）
-		"134.01721581816673_34.74617476175321__134.01729628443718_34.7461262752594": true, // bvmap 宇野バス 美作線（山陽団地の東側）
-		"134.01712998747826_34.746267326798716__134.01721581816673_34.74617476175321": true, // bvmap 宇野バス 美作線（山陽団地の東側）
-		"134.01717826724052_34.74621443249971__134.01721581816673_34.74617476175321": true, // bvmap 宇野バス 美作線（山陽団地の東側）
-		"134.0051418542862_34.743258909724545__134.00520354509354_34.74435319278881": true, // bvmap 宇野バス 山陽団地中
-		"134.005558937788_34.75010758279723__134.00558844208717_34.7506398050501": true, // bvmap 宇野バス 山陽団地中
-		"134.00359824299812_34.75243038268751__134.00440022349358_34.75255379337766": true, // bvmap 宇野バス 山陽団地西
-		"134.0057373046875_34.75130755731138__134.00578558444977_34.751299844032246": true, // bvmap 宇野バス 山陽団地中
-		"134.00565281510353_34.75132078007391__134.0057373046875_34.75130755731138": true, // bvmap 宇野バス 山陽団地中
-		"134.0277099609375_34.74523037196852__134.0281940996647_34.74557969826961": true, // bvmap 宇野バス ネオ瀬戸線
-		"134.0277099609375_34.74523037196852__134.0278172492981_34.745307510395534": true, // bvmap 宇野バス ネオ瀬戸線
-		"134.04297977685928_34.738116797444604__134.04284298419952_34.73802973363722": true, // bvmap 宇野バス ネオ瀬戸線（瀬戸駅の北）
-		"134.04284298419952_34.73802973363722__134.04279068112373_34.73799336518417": true, // bvmap 宇野バス ネオ瀬戸線（瀬戸駅の北）
-		"134.0429851412773_34.73783025798575__134.0430562198162_34.737962507090245": true, // bvmap 宇野バス ネオ瀬戸線（瀬戸駅の北）
-		"134.0430562198162_34.737962507090245__134.04314741492271_34.738144349263294": true, // bvmap 宇野バス ネオ瀬戸線（瀬戸駅の北）
-		"134.04293954372406_34.737761929198854__134.0429851412773_34.73783025798575": true, // bvmap 宇野バス ネオ瀬戸線（瀬戸駅の北）
-		//瀬戸駅ロータリーを要確認
-		"134.02076303958893_34.87866997479975__134.02052834630013_34.878609464055": true, // bvmap 宇野バス 林野線
-		"134.10102143883705_34.92314321744567__134.10105228424072_34.922944189721434": true, // bvmap 宇野バス 林野線
-		"134.14653047919273_35.00322419914197__134.14593502879143_35.00424472269788": true, // bvmap 宇野バス 林野線
-		"134.05781909823418_34.88752166671394__134.05794113874435_34.8875117660252": true, // bvmap 宇野バス 
-		"134.05794113874435_34.8875117660252__134.05801355838776_34.88748976449037": true, // bvmap 宇野バス 
-		"134.041665494442_34.73525907291946__134.04167622327805_34.73527119614005": true, // bvmap 宇野バス 瀬戸駅
-		"134.04167622327805_34.73527119614005__134.0417768061161_34.73533401643654": true, // bvmap 宇野バス 瀬戸駅
-		"134.04160648584366_34.735165393427536__134.04164269566536_34.735233724361535": true, // bvmap 宇野バス 瀬戸駅
-		"134.04164269566536_34.735233724361535__134.041665494442_34.73525907291946": true*//*, // bvmap 宇野バス 瀬戸駅
-		"": true, // bvmap 宇野バス 
-		"": true*//*
-	};
-	*/
-	
 	const c_link_index = {};
 	for (const c_link_id in a_rdcl_graph["links"]) {
-		if (c_not_use[c_link_id] === true) {
-			continue;
-		}
 		const c_link = a_rdcl_graph["links"][c_link_id];
 		const c_x = Math.floor((c_link["sx"] + c_link["ex"]) / 2);
 		const c_y = Math.floor((c_link["sy"] + c_link["ey"]) / 2);
