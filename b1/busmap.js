@@ -1,6 +1,42 @@
 "use strict";
 const busmapjs = {}; // ここに関数を追加する
 
+//作りかけ
+/*
+busmapjs.create_busmap = async function(a_settings) {
+	//初期設定
+	//Leaflet関係
+	const c_arrayBuffer = await ((await (fetch(c_url))).arrayBuffer());
+	//データ入力
+	if (a_settings["data_type"] === "gtfs") {
+		const c_url = a_settings["data_type"];
+		const c_array_buffer = await ((await (fetch(c_url))).arrayBuffer());
+		const c_Uint8Array = new Uint8Array(c_array_buffer);
+		const c_text_files = busmapjs.convert_zip_to_text_files(c_Uint8Array);
+		const c_gtfs = {};
+		for (const c_file_name in c_text_files) {
+			c_gtfs[c_file_name.replace(".txt", "")] = busmapjs.convert_csv_to_json(c_text_files[c_file_name]);
+		}
+		busmapjs.number_lat_lon_sequence_of_gtfs(c_gtfs); // 緯度経度と順番を数値型に変換
+		busmapjs.set_stop_type(c_gtfs); //pickup_typeとdrop_off_typeを補う（ur_routesを作るため）
+		busmapjs.set_location_type(c_gtfs); //location_typeを補う
+		busmapjs.add_undefined_parent_stations(c_gtfs); //parent_stationを補う（stop_nameで統合）
+		busmapjs.add_undefined_shapes(c_gtfs); // shapesがない場合に作る
+		// shapesの簡素化
+		busmapjs.add_route_sort_order(c_gtfs); //route_sort_orderを補う（ur_routesを作るため）
+		
+		
+		busmapjs.add_route_color(c_gtfs); //扱いを要検討（bmd化後に補完？）
+		//f_set_route_sort_order(l_data); //route_sort_orderを補う（ur_routesを作るため）
+		//f_make_ur_routes(l_data); //ur_routesを作る
+		//f_count_trip_number(l_data);//便数を数える
+	}
+	const c_bmd = busmapjs.create_bmd_from_gtfs(c_gtfs);
+	
+	
+	
+}
+*/
 
 
 //道路中心線に沿ったshapesを作成
@@ -18,7 +54,7 @@ busmapjs.create_rdcl_shapes = async function(a_settings) {
 		c_gtfs[c_file_name.replace(".txt", "")] = busmapjs.convert_csv_to_json(c_text_files[c_file_name]);
 	}
 	busmapjs.number_lat_lon_sequence_of_gtfs(c_gtfs); // 緯度経度と順番を数値型に変換
-	busmapjs.create_undefined_shapes(c_gtfs); // shapesがない場合に作る
+	busmapjs.add_undefined_shapes(c_gtfs); // shapesがない場合に作る
 	console.log(c_gtfs);
 	
 	const c_zoom_level = 16; //地理院タイルに合わせて16にしておく
@@ -66,6 +102,70 @@ busmapjs.create_rdcl_shapes = async function(a_settings) {
 	
 	console.timeEnd("create_rdcl_shapes");
 }
+
+
+
+
+
+
+//停留所の整列（運行パターン比較図の作成）
+//a_settings: {}; //入力の設定
+//a_settings["file"]: {}; //Fileオブジェクト（GTFSのZIPファイル）
+busmapjs.create_stop_order_table = async function(a_settings) { //GTFSのFileオブジェクトを入力
+	const c_array_buffer = await busmapjs.convert_file_to_array_buffer(a_settings["file"]);
+	const c_Uint8Array = new Uint8Array(c_array_buffer);
+	const c_text_files = busmapjs.convert_zip_to_text_files(c_Uint8Array);
+	const c_gtfs = {};
+	for (const c_file_name in c_text_files) {
+		c_gtfs[c_file_name.replace(".txt", "")] = busmapjs.convert_csv_to_json(c_text_files[c_file_name]);
+	}
+	busmapjs.number_lat_lon_sequence_of_gtfs(c_gtfs); // 緯度経度と順番を数値型に変換
+	busmapjs.set_stop_type(c_gtfs); //pickup_typeとdrop_off_typeを補う（ur_routesを作るため）
+	const c_bmd = busmapjs.create_bmd_from_gtfs(c_gtfs);
+	//indexを作成
+	const c_index = {"ur_stops": {}, "parent_stations": {}};
+	for (const c_stop of c_bmd["ur_stops"]) {
+		c_index["ur_stops"][c_stop["stop_id"]] = c_stop;
+	}
+	for (const c_stop of c_bmd["parent_stations"]) {
+		c_index["parent_stations"][c_stop["stop_id"]] = c_stop;
+	}
+	//ur_routeに仮の名称を付ける
+	for (const c_ur_route of c_bmd["ur_routes"]) {
+		let l_trip_headsign;
+		for (const c_trip of c_bmd["trips"]) {
+			if (c_trip["ur_route_id"] === c_ur_route["ur_route_id"]) {
+				l_trip_headsign = c_trip["trip_headsign"];
+				break;
+			}
+		}
+		c_ur_route["temp_name"] = c_index["ur_stops"][c_ur_route["stop_array"][0]["stop_id"]]["parent_station"] + "→" + l_trip_headsign;
+	}
+	const c_walk_array = [];
+	for (const c_ur_route of c_bmd["ur_routes"]) {
+		if (c_ur_route["route_id"] !== "ネオポリス線_A") {
+			continue;
+		}
+		const c_node_array = [];
+		for (const c_stop of c_ur_route["stop_array"]) {
+			c_node_array.push(c_index["ur_stops"][c_stop["stop_id"]]["parent_station"]);
+		}
+		c_walk_array.push({"node_array": c_node_array, "temp_name": c_ur_route["temp_name"]});
+	}
+	console.log("ソート前");
+	console.log(c_bmd);
+	const c_node_order = busmapjs.sort_nodes(c_walk_array);
+	console.log("ソート後");
+	
+	document.getElementById("div2").innerHTML += busmapjs.create_node_order_table(c_walk_array, c_node_order);
+	document.getElementById("div2").appendChild(busmapjs.create_node_order_svg(c_walk_array, c_node_order));
+	
+}
+
+
+
+
+
 
 
 
@@ -209,7 +309,7 @@ busmapjs.number_lat_lon_sequence_of_gtfs = function(a_gtfs) {
 
 
 
-busmapjs.create_undefined_shapes = function(a_gtfs) {
+busmapjs.add_undefined_shapes = function(a_gtfs) {
 	//目次作成
 	const c_index = {"stops": {}, "trips": {}};
 	for (const c_stop of a_gtfs["stops"]) {
@@ -1180,127 +1280,79 @@ busmapjs.rdcl_node_orders_to_shapes = function(a_rdcl_node_orders, a_rdcl_graph)
 
 
 
-//路線時刻表作成
-busmapjs.make_route_timetable = async function(a_file) { //GTFSのFileオブジェクトを入力
-	const c_array_buffer = await busmapjs.convert_file_to_array_buffer(a_file);
-	const c_Uint8Array = new Uint8Array(c_array_buffer);
-	const c_text_files = busmapjs.convert_zip_to_text_files(c_Uint8Array);
-	const c_gtfs = {};
-	for (const c_file_name in c_text_files) {
-		c_gtfs[c_file_name.replace(".txt", "")] = busmapjs.convert_csv_to_json(c_text_files[c_file_name]);
-	}
-	busmapjs.number_lat_lon_sequence_of_gtfs(c_gtfs); // 緯度経度と順番を数値型に変換
-	busmapjs.color_gtfs(c_gtfs);
-	busmapjs.set_stop_type(c_gtfs);
-	const c_bmd = busmapjs.create_bmd_from_gtfs(c_gtfs);
-	//indexを作成
-	const c_index = {"ur_stops": {}, "parent_stations": {}};
-	for (const c_stop of c_bmd["ur_stops"]) {
-		c_index["ur_stops"][c_stop["stop_id"]] = c_stop;
-	}
-	for (const c_stop of c_bmd["parent_stations"]) {
-		c_index["parent_stations"][c_stop["stop_id"]] = c_stop;
-	}
-	//ur_routeに仮の名称を付ける
-	for (const c_ur_route of c_bmd["ur_routes"]) {
-		let l_trip_headsign;
-		for (const c_trip of c_bmd["trips"]) {
-			if (c_trip["ur_route_id"] === c_ur_route["ur_route_id"]) {
-				l_trip_headsign = c_trip["trip_headsign"];
-				break;
-			}
-		}
-		c_ur_route["temp_name"] = c_index["ur_stops"][c_ur_route["stop_array"][0]["stop_id"]]["parent_station"] + "→" + l_trip_headsign;
-	}
-	const c_walk_array = [];
-	for (const c_ur_route of c_bmd["ur_routes"]) {
-		if (c_ur_route["route_id"] !== "四御神線_A") {
-			//continue;
-		}
-		const c_node_array = [];
-		for (const c_stop of c_ur_route["stop_array"]) {
-			c_node_array.push(c_index["ur_stops"][c_stop["stop_id"]]["parent_station"]);
-		}
-		c_walk_array.push({"node_array": c_node_array, "temp_name": c_ur_route["temp_name"]});
-	}
-	console.log("ソート前");
-	console.log(c_bmd);
-	const c_stop_array = busmapjs.sort_nodes(c_walk_array);
-	console.log("ソート後");
-
-	//以下コピー
-	const c_stop_array_index/*: {
-		[key: string]: number; //節点idとそれが何番目か
-	}*/ = {};
-	for (let i1 = 0; i1 < c_stop_array.length; i1++) {
-		c_stop_array_index[c_stop_array[i1]] = i1;
-	}
 
 
-	const c_stop_patterns/*: number[][]*/ = [];
-	for (let i1 = 0; i1 < c_walk_array.length; i1++) {
-		c_stop_patterns.push([]);
-		for (let i2 = 0; i2 < c_stop_array.length; i2++) {
-			c_stop_patterns[i1].push(""); //初期化
+busmapjs.create_node_order_table = function(a_walk_array, a_node_order) {
+	const c_node_order_index = {};
+	//c_node_order_index: [key: string]: number; //節点idとそれが何番目か
+	for (let i1 = 0; i1 < a_node_order.length; i1++) {
+		c_node_order_index[a_node_order[i1]] = i1;
+	}
+	const c_node_order_table = [];
+	//c_node_order_table: string[][];
+	for (let i1 = 0; i1 < a_walk_array.length; i1++) {
+		c_node_order_table.push([]);
+		for (let i2 = 0; i2 < a_node_order.length; i2++) {
+			c_node_order_table[i1].push(""); //初期化
 		}
 		
-		const c_number_array/*: number[]*/ = []; //何番目の停留所か
-		for (let i2 = 0; i2 < c_walk_array[i1]["node_array"].length; i2++) {
-			c_number_array.push(c_stop_array_index[c_walk_array[i1]["node_array"][i2]]);
+		const c_number_array = []; //何番目の停留所か
+		for (let i2 = 0; i2 < a_walk_array[i1]["node_array"].length; i2++) {
+			c_number_array.push(c_node_order_index[a_walk_array[i1]["node_array"][i2]]);
 		}
 		
 		let l_count = 0; //左側の余白数
 		for (let i2 = 0; i2 < c_number_array.length; i2++) {
 			for (let i3 = 0; i3 < l_count; i3++) {
-				c_stop_patterns[i1][c_number_array[i2]] += "　";
+				c_node_order_table[i1][c_number_array[i2]] += "　";
 			}
 			
 			if (i2 === 0) {
 				if (c_number_array[i2] < c_number_array[i2 + 1]) {
-					c_stop_patterns[i1][c_number_array[i2]] += "▽";
+					c_node_order_table[i1][c_number_array[i2]] += "▽";
 				} else {
-					c_stop_patterns[i1][c_number_array[i2]] += "△";
+					c_node_order_table[i1][c_number_array[i2]] += "△";
 				}
 			} else if (i2 === c_number_array.length - 1) {
 				if (c_number_array[i2 - 1] < c_number_array[i2]) {
-					c_stop_patterns[i1][c_number_array[i2]] += "▽";
+					c_node_order_table[i1][c_number_array[i2]] += "▽";
 				} else {
-					c_stop_patterns[i1][c_number_array[i2]] += "△";
+					c_node_order_table[i1][c_number_array[i2]] += "△";
 				}
 			} else {
 				if (c_number_array[i2 - 1] < c_number_array[i2] && c_number_array[i2] < c_number_array[i2 + 1]) {
-					c_stop_patterns[i1][c_number_array[i2]] += "▼";
+					c_node_order_table[i1][c_number_array[i2]] += "▼";
 				} else if (c_number_array[i2 - 1] > c_number_array[i2] && c_number_array[i2] > c_number_array[i2 + 1]) {
-					c_stop_patterns[i1][c_number_array[i2]] += "▲";
+					c_node_order_table[i1][c_number_array[i2]] += "▲";
 				} else if (c_number_array[i2 - 1] < c_number_array[i2] && c_number_array[i2] > c_number_array[i2 + 1]) {
-					c_stop_patterns[i1][c_number_array[i2]] += "▼▲";
+					c_node_order_table[i1][c_number_array[i2]] += "▼▲";
 					l_count += 1;
 				} else if (c_number_array[i2 - 1] > c_number_array[i2] && c_number_array[i2] < c_number_array[i2 + 1]) {
-					c_stop_patterns[i1][c_number_array[i2]] += "▲▼";
+					c_node_order_table[i1][c_number_array[i2]] += "▲▼";
 					l_count += 1;
 				}
 			}
 		}
 	}
-
-	console.log(-1 < null);
-	console.log(0 < null);
-	console.log(1 < null);
-	console.log(-2 < null);
-
-	console.log(c_stop_patterns);
-
-	let l_table/*: string*/ = "";
-	for (let i1 = 0; i1 < c_stop_array.length; i1 ++) {
-		l_table += "<tr><td>" + c_stop_array[i1] + "</td>";
-		for (let i2 = 0; i2 < c_stop_patterns.length; i2++) {
-			l_table += "<td>" + c_stop_patterns[i2][i1] + "</td>";
+	
+	let l_table = "<table border=\"1\"><tbody>";
+	for (let i1 = 0; i1 < a_node_order.length; i1 ++) {
+		l_table += "<tr><td>" + a_node_order[i1] + "</td>";
+		for (let i2 = 0; i2 < c_node_order_table.length; i2++) {
+			l_table += "<td>" + c_node_order_table[i2][i1] + "</td>";
 		}
 		l_table += "</tr>";
 	}
-	document.getElementById("div2").innerHTML += "<table border=\"1\"><tbody>" + l_table + "</tbody></table>";
+	l_table += "</tbody></table>";
+	return l_table;
+}
 
-
+busmapjs.create_node_order_svg = function(a_walk_array, a_node_order) {
+	const c_node_order_index = {};
+	//c_node_order_index: [key: string]: number; //節点idとそれが何番目か
+	for (let i1 = 0; i1 < a_node_order.length; i1++) {
+		c_node_order_index[a_node_order[i1]] = i1;
+	}
 
 	const c_svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
 	c_svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
@@ -1309,7 +1361,7 @@ busmapjs.make_route_timetable = async function(a_file) { //GTFSのFileオブジ�
 	c_svg.setAttribute("width", "256");
 	c_svg.setAttribute("height", "256");
 	c_svg.setAttribute("viewBox", "0 -16 256 256");
-	document.getElementById("div2").appendChild(c_svg);
+	
 
 
 	const c_g_polyline = document.createElementNS("http://www.w3.org/2000/svg", "g");
@@ -1317,12 +1369,12 @@ busmapjs.make_route_timetable = async function(a_file) { //GTFSのFileオブジ�
 	const c_g_marker = document.createElementNS("http://www.w3.org/2000/svg", "g");
 	c_svg.appendChild(c_g_marker);
 
-	let l_left/*: number*/ = 0;
-	for (let i1 = 0; i1 < c_walk_array.length; i1++) {
+	let l_left = 0;
+	for (let i1 = 0; i1 < a_walk_array.length; i1++) {
 		l_left += 1;
-		const c_number_array/*: number[]*/ = []; //何番目の停留所か
-		for (let i2 = 0; i2 < c_walk_array[i1]["node_array"].length; i2++) {
-			c_number_array.push(c_stop_array_index[c_walk_array[i1]["node_array"][i2]]);
+		const c_number_array = []; //何番目の停留所か
+		for (let i2 = 0; i2 < a_walk_array[i1]["node_array"].length; i2++) {
+			c_number_array.push(c_node_order_index[a_walk_array[i1]["node_array"][i2]]);
 		}
 		
 		const c_polyline = document.createElementNS("http://www.w3.org/2000/svg", "path");
@@ -1330,12 +1382,12 @@ busmapjs.make_route_timetable = async function(a_file) { //GTFSのFileオブジ�
 		c_polyline.setAttribute("stroke-width", "4");
 		c_polyline.setAttribute("stroke", "#808080");
 		c_polyline.setAttribute("fill", "none");
-		let l_d/*: string*/ = "";
+		let l_d = "";
 		
 		for (let i2 = 0; i2 < c_number_array.length; i2++) {
-			let l_end/*: boolean*/ = false; //端のときtrue
-			let l_rotate/*: boolean*/ = null; //180度回転（上向き）のときtrue
-			let l_two/*: boolean*/ = false; //2つめがあるときtrue
+			let l_end = false; //端のときtrue
+			let l_rotate = null; //180度回転（上向き）のときtrue
+			let l_two = false; //2つめがあるときtrue
 			if (i2 === 0) {
 				l_end = true;
 				if (c_number_array[i2] < c_number_array[i2 + 1]) {
@@ -1372,7 +1424,7 @@ busmapjs.make_route_timetable = async function(a_file) { //GTFSのFileオブジ�
 				c_first.setAttribute("fill", "#FFFFFF");
 			}
 			c_first.setAttribute("d", "M0,4 L4,-4 L-4,-4 Z");
-			let l_translate/*: string*/ = "translate(" + String(l_left * 20) + "," + String(c_number_array[i2] * 20) + ")";
+			let l_translate = "translate(" + String(l_left * 20) + "," + String(c_number_array[i2] * 20) + ")";
 			if (l_rotate === true) {
 				l_translate += " rotate(180)";
 			}
@@ -1403,22 +1455,18 @@ busmapjs.make_route_timetable = async function(a_file) { //GTFSのFileオブジ�
 		c_polyline.setAttribute("d", l_d);
 	}
 
-	for (let i1 = 0; i1 < c_stop_array.length; i1++) {
+	for (let i1 = 0; i1 < a_node_order.length; i1++) {
 		const c_text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-		c_text.textContent = c_stop_array[i1];
+		c_text.textContent = a_node_order[i1];
 		c_text.setAttribute("x", (l_left + 1) * 20);
 		c_text.setAttribute("y", i1 * 20 + 6);
 		c_g_marker.appendChild(c_text);
 	}
-
-
-
+	return c_svg;
 }
 
-
-
 //colorが未設定のところを補充する。
-busmapjs.color_gtfs = function(a_data) {
+busmapjs.add_route_color = function(a_data) {
 	for (let i1 = 0; i1 < a_data["routes"].length; i1++) {
 		if ((a_data["routes"][i1]["route_color"] === "") || (a_data["routes"][i1]["route_color"] === undefined)) {
 			a_data["routes"][i1]["route_color"] = Math.round((Math.random() * 15)).toString(16) + "F" + Math.round((Math.random() * 15)).toString(16) + "F" + Math.round((Math.random() * 15)).toString(16) + "F"; //本来はFFFFFF
@@ -1454,7 +1502,62 @@ busmapjs.set_stop_type = function(a_data) {
 	}
 }
 
+//location_typeの空欄を埋める
+busmapjs.set_location_type = function(a_gtfs) {
+	for (let i1 = 0; i1 < a_gtfs["stops"].length; i1++) {
+		if (a_gtfs["stops"][i1]["location_type"] === "" || a_gtfs["stops"][i1]["location_type"] === undefined) {
+			a_gtfs["stops"][i1]["location_type"] = "0";
+		}
+	}
+}
 
+//parent_stationがない場合に補完する
+//先にlocation_typeの空欄を埋めておく
+//stop_nameで一致判定する（緯度経度は判定に使わない）
+//parent_stationのstop_idは"parent_" + stop_name
+busmapjs.add_undefined_parent_stations = function(a_gtfs) {
+	const c_new_parent_station = {};
+	for (let i1 = 0; i1 < a_gtfs["stops"].length; i1++) {
+		if (a_gtfs["stops"][i1]["location_type"] === "0" && (a_gtfs["stops"][i1]["parent_station"] === "" || a_gtfs["stops"][i1]["parent_station"] === undefined)) { //parent_stationの指定がない停車地
+			a_gtfs["stops"][i1]["parent_station"] = "parent_" + a_gtfs["stops"][i1]["stop_name"];
+			if (c_new_parent_station[a_gtfs["stops"][i1]["stop_name"]] === undefined) {
+				c_new_parent_station[a_gtfs["stops"][i1]["stop_name"]] = {"stop_lat": 0, "stop_lon": 0, "children_number": 0};
+			}
+			c_new_parent_station[a_gtfs["stops"][i1]["stop_name"]]["stop_lat"] += a_gtfs["stops"][i1]["stop_lat"];
+			c_new_parent_station[a_gtfs["stops"][i1]["stop_name"]]["stop_lon"] += a_gtfs["stops"][i1]["stop_lon"];
+			c_new_parent_station[a_gtfs["stops"][i1]["stop_name"]]["children_number"] += 1;
+		}
+	}
+	for (const c_stop_name in c_new_parent_station) {
+		a_gtfs["stops"].push({
+			"stop_id": "parent_" + c_stop_name,
+			"stop_name": c_stop_name,
+			"stop_lat": c_new_parent_station[c_stop_name]["stop_lat"] / c_new_parent_station[c_stop_name]["children_number"],
+			"stop_lon": c_new_parent_station[c_stop_name]["stop_lon"] / c_new_parent_station[c_stop_name]["children_number"],
+			"parent_station": "",
+			"location_type": "1"
+		});
+	}
+}
+
+//route_sort_orderがない場合に補う
+//行の上から順に、すでにあるものより後の番号
+busmapjs.add_route_sort_order = function(a_gtfs) {
+	let l_order = 0;
+	for (let i1 = 0; i1 < a_gtfs["routes"].length; i1++) {
+		if (a_gtfs["routes"][i1]["route_sort_order"] !== "" && a_gtfs["routes"][i1]["route_sort_order"] !== undefined) {
+			if (l_order < a_gtfs["routes"][i1]["route_sort_order"]) {
+				l_order = a_gtfs["routes"][i1]["route_sort_order"];
+			}
+		}
+	}
+	for (let i1 = 0; i1 < a_gtfs["routes"].length; i1++) {
+		if (a_gtfs["routes"][i1]["route_sort_order"] === "" || a_gtfs["routes"][i1]["route_sort_order"] === undefined) {
+			l_order += 1;
+			l_min_order = a_gtfs["routes"][i1]["route_sort_order"] = l_order;
+		}
+	}
+}
 
 
 busmapjs.create_bmd_from_gtfs = function(a_data_i1) {
@@ -2233,3 +2336,7 @@ busmapjs.sort_nodes = function(a_walk_array) {
 	return c_node_array_2;
 
 }
+
+
+
+
