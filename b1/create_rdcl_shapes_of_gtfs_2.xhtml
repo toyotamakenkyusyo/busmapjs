@@ -581,6 +581,11 @@ function f_set_from_gtfs() {
 		const c_end_lon = c_layers[i1].getLatLngs()[1]["lng"];
 		const c_start_node_ids_temp = f_search_nearest_link(l_rdcl_link_index, c_start_lon, c_start_lat);
 		const c_end_node_ids_temp = f_search_nearest_link(l_rdcl_link_index, c_end_lon, c_end_lat);
+		if (c_start_node_ids_temp === null || c_end_node_ids_temp === null) {
+			document.getElementById("div_status").innerHTML = "対応する道路中心線が見つからない所があります。";
+			f_unlock();
+			return;
+		}
 		const c_start_node_ids = [];
 		const c_end_node_ids = [];
 		if (c_start_node_ids_temp.length === 1) {
@@ -846,6 +851,11 @@ function f_output_gtfs() {
 		if (c_segment_index[c_link_id] === undefined) {
 			const c_start_node_ids = f_search_nearest_link(c_link_index, c_lon_1, c_lat_1);
 			const c_end_node_ids = f_search_nearest_link(c_link_index, c_lon_2, c_lat_2);
+			if (c_start_node_ids === null || c_end_node_ids === null) {
+				document.getElementById("div_status").innerHTML = "対応する道路中心線が見つからない所があります。";
+				f_unlock();
+				return;
+			}
 			const c_link_ids = f_search_link(c_graph, c_start_node_ids, c_end_node_ids);
 			c_segment_index[c_link_id] = {"link_ids": c_link_ids};
 		}
