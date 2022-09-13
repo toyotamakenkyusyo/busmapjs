@@ -1,0 +1,974 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<meta charset="UTF-8" />
+		<script src="https://cdn.jsdelivr.net/npm/zlibjs@0.3.1/bin/zip.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/zlibjs@0.3.1/bin/unzip.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/leaflet@1.8.0/dist/leaflet.js"></script>
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.8.0/dist/leaflet.css" />
+		<script src="https://cdn.jsdelivr.net/npm/leaflet-draw@1.0.4/dist/leaflet.draw.min.js"></script>
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
+		<script src="https://cdn.jsdelivr.net/npm/leaflet-draw@1.0.4/docs/examples/libs/leaflet.geometryutil.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/leaflet-draw@1.0.4/docs/examples/libs/leaflet.snap.js"></script>
+		<script src="https://toyotamakenkyusyo.github.io/busmapjs/b1/busmap.js"></script>
+		<title>豐多摩研究所 GTFSのshapes.txt作成ツール</title>
+	</head>
+	<body>
+		<h1>豐多摩研究所 GTFSのshapes.txt作成ツール</h1>
+		<p>豐多摩研究所 トップページ <a href="https://ss1.xrea.com/toyotama.g1.xrea.com/index.xhtml">https://ss1.xrea.com/toyotama.g1.xrea.com/index.xhtml</a></p>
+		<p>GitHub busmapjs <a href="https://github.com/toyotamakenkyusyo/busmapjs">https://github.com/toyotamakenkyusyo/busmapjs</a></p>
+		<h2>概要</h2>
+		<p>GTFSのshapes.txtを道路中心線に沿って作成するツールです。元となるGTFSはshapes.txtがなくても、あっても対応しています。道路中心線は日本国内のバス向けに国土地理院ベクトルタイル道路中心線のダウンロード機能をつけていますが、これと同じようなGeoJSON形式で任意のファイルを読み込めます。また、道路中心線の追加・編集機能もあります。入力したGTFSを元に半自動的に通る道路中心線を指定する機能があります。</p>
+		<h2>作者連絡先</h2>
+		<p>メールアドレス keiobe2016（アットマーク）yahoo.co.jp</p>
+		<p>質問、要望、意見、批判、コメント等はお気軽にお寄せいただけると幸いです。</p>
+		<h2>使い方</h2>
+		<p>
+			(1)「元にするGTFSを読み込み」する。（shapes.txtはあってもなくてもよい。trips.txtのshape_idだけあってもよい。）<br />
+			(2)道路中心線データを読み込む。<br />
+			(2.1)初めてのときは、「入力GTFSを元にダウンロード・読み込み」すると、国土地理院ベクトルタイル道路中心線を読み込むことができる。<br />
+			(2.2)前回作った道路中心線のGeoJSONファイルを保存している場合は、「GeoJSONファイルを読み込み」できる。<br />
+			(3)地図上でバスが通る道路をクリックして指定（赤い太線の状態）にする。<br />
+			(3.1)「リンク間一括指定」モード・「リンク間一括指定解除」モードだと、2つの道路リンクを順にクリックすることで、その間を繋ぐ道路リンクを一括で指定または指定解除できる。<br />
+			(3.2)「個別一方通行指定」モードを用いると、一方通行を指定できる。線の表示が「　｜｜■　｜｜■　｜｜■」の場合、右向きの一方通行となる。<br />
+			(3.3)初めてのときは、「入力GTFSを元自動で通る道路を指定（初回）」すると、バス停間（shapes.txtがある場合はその付近）の道路中心線を自動で指定できる。<br />
+			(3.4)通る道路が指定できたら、次回以降のために「通る道路を指定したGeoJSONファイルを保存」しておくことができる。<br />
+			(4)道路中心線のデータがない場合、追加することができる。<br />
+			(4.1)地図の中の左上の上から3つ目のボタン（Draw a polyline）をクリックすると、地図上をクリックして線を引けるようになる。ダブルクリック（またはfinishボタンをクリック）すると、線を引き終わる。<br />
+			(4.2)地図の中の左上の上から4つ目のボタン（Delete layers）をクリックすると、追加した線をクリックして、削除できる。Saveボタンをクリックすると、確定する。（間違えて消したくない線をクリックした場合、Cencelボタンで元に戻せはずだが、変形できなくなる問題がある。）<br />
+			(4.3)追加した線は、白い正方形をドラッグすることで、変形できる。（クリックすると、その点を削除できる。）<br />
+			(4.4)追加した線を変形するときは、他の道路中心線や追加した線の端点や折れ曲がり点に吸着（スナップ）させて、繋げたい部分を繋げておく必要がある。線の途中にも吸着するが、それは繋がっているとみなされない。（最初に線を追加するときは吸着できないため、後で変形して繋げておく。）<br />
+			(5)通る道路が指定できたら、「shapes.txtをつけたGTFSを出力」する。<br />
+			(5.1)作成したshapes.txtに間違いがないか確認したいときは、「元にするGTFSを読み込み」により、shapes.txtの線を表示できる。また、別サイトの「GTFS Test Viewer」（<a href="https://tshimada291.sakura.ne.jp/transport/gtfs-viewer/test-vw/gtfs-map-localfile.html">https://tshimada291.sakura.ne.jp/transport/gtfs-viewer/test-vw/gtfs-map-localfile.html</a>）も便利である。<br />
+		
+		</p>
+		<h2>状況表示</h2>
+		<div id="div_status"></div>
+		<h2>ファイル入出力</h2>
+		<div id="div">
+			<table border="1">
+				<tr>
+					<td>分類</td>
+					<td>状況</td>
+					<td>操作</td>
+				</tr>
+				<tr>
+					<td>入力GTFS</td>
+					<td><div id="input_gtfs_status"></div></td>
+					<td>元にするGTFSを読み込み：<input type="file" id="input_gtfs" accept="application/zip" /></td>
+				</tr>
+				<tr>
+					<td rowspan="4">道路中心線</td>
+					<td rowspan="4"><div id="rdcl_status"></div></td>
+					<td><button type="button" id="download_rdcl">入力GTFSを元にダウンロード・読み込み（初回）</button>（地理院地図ベクトルタイル道路中心線を使用）</td>
+				</tr>
+				<tr>
+					<td>GeoJSONファイルを読み込み：<input type="file" id="input_rdcl" accept="application/geo+json" /></td>
+				</tr>
+				<tr>
+					<td><button type="button" id="set_from_gtfs">入力GTFSを元に自動で通る道路を指定（初回）</button></td>
+				</tr>
+				<tr>
+					<td><button type="button" id="output_rdcl">通る道路を指定したGeoJSONファイルを保存</button></td>
+				</tr>
+				<tr>
+					<td>出力GTFS</td>
+					<td></td>
+					<td><button type="button" id="output_gtfs">shapes.txtをつけたGTFSを出力</button></td>
+				</tr>
+			</table>
+		</div>
+		<h2>地図上で使用する道路中心線の指定</h2>
+		<div><input type="radio" name="radio_mode" value="個別指定" checked="checked" />：個別指定　<input type="radio" name="radio_mode" value="リンク間一括指定" />：リンク間一括指定　<input type="radio" name="radio_mode" value="リンク間一括指定解除" />：リンク間一括指定解除　<input type="radio" name="radio_mode" value="個別一方通行指定" />：個別一方通行指定</div>
+		<div id="div_leaflet" style="width: auto; height: 768px;"></div>
+		<script>
+		//<![CDATA[
+
+// 見つからない場合のエラー出力、1リンク内の場合は？
+// 同じ道路を2回通る用のリンク：addedリンクは距離を短く、最寄り停留所紐づけ距離を長くする？→一回近似でやって、shapes.txtありでやり直す
+
+const map = L.map("div_leaflet", {preferCanvas: true}); //高速化のためCanvasを使う
+
+
+// 読み込んだGTFS
+let l_gtfs_text_files;
+let l_gtfs;
+
+// GTFS表示
+const c_stops = L.layerGroup([]).addTo(map);
+const c_shapes = L.layerGroup([]).addTo(map);
+
+// 道路中心線
+const c_rdcl = L.geoJSON([]).on("click", f_change_style).addTo(map);
+const c_rdcl_points = L.layerGroup([]).addTo(map);
+
+
+// 背景地図
+const c_std = L.tileLayer("https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png", {"attribution": "<a href=\"https://maps.gsi.go.jp/development/ichiran.html\" target=\"_blank\">地理院タイル</a>, The bathymetric contours are derived from those contained within the GEBCO Digital Atlas, published by the BODC on behalf of IOC and IHO (2003) (https://www.gebco.net), 海上保安庁許可第292502号（水路業務法第25条に基づく類似刊行物）, Shoreline data is derived from: United States. National Imagery and Mapping Agency. \"Vector Map Level 0 (VMAP0).\" Bethesda, MD: Denver, CO: The Agency; USGS Information Services, 1997.", "maxNativeZoom": 18, "maxZoom": 22});
+const c_pale = L.tileLayer("https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png", {"attribution": "<a href=\"https://maps.gsi.go.jp/development/ichiran.html\" target=\"_blank\">地理院タイル</a>, Shoreline data is derived from: United States. National Imagery and Mapping Agency. \"Vector Map Level 0 (VMAP0).\" Bethesda, MD: Denver, CO: The Agency; USGS Information Services, 1997.", "maxNativeZoom": 18, "maxZoom": 22});
+const c_seamlessphoto = L.tileLayer("https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg", {"attribution": "<a href=\"https://maps.gsi.go.jp/development/ichiran.html\" target=\"_blank\">地理院タイル</a>, Landsat8画像（GSI,TSIC,GEO Grid/AIST）, Landsat8画像（courtesy of the U.S. Geological Survey）, 海底地形（GEBCO）, Images on 世界衛星モザイク画像 obtained from site https://lpdaac.usgs.gov/data_access maintained by the NASA Land Processes Distributed Active Archive Center (LP DAAC), USGS/Earth Resources Observation and Science (EROS) Center, Sioux Falls, South Dakota, (Year). Source of image data product.", "maxNativeZoom": 18, "maxZoom": 22});
+
+// 表示切替
+const c_control = L.control.layers({"地理院地図標準地図": c_std, "地理院地図淡色地図": c_pale, "地理院地図写真": c_seamlessphoto}, {"stops": c_stops, "shapes": c_shapes, "道路中心線": c_rdcl, "道路中心線の点": c_rdcl_points}).addTo(map);
+
+
+// 表示範囲
+map.setMinZoom(5);
+map.setMaxZoom(22);
+
+// 初期表示位置
+c_pale.addTo(map);
+map.setView([35,135], 5);
+
+
+
+
+let l_rdcl_link_index = {}; // 中間探索用の各セグメントからのindex
+let l_rdcl_node_index = {}; // 中間探索用の各ノードからのindex
+let l_rdcl_graph = {}; // 中間探索用のグラフ
+let l_clicked_link_id = null; // 前にクリックしたリンクの記録
+
+
+// 追加道路の初期化
+const c_added_rdcl = L.geoJSON([]).on("click", f_change_style).addTo(map);
+
+
+// 追加道路の作成
+const c_draw_control_draw = {"polygon": false, "rectangle": false, "circle": false, "marker": false, "circlemarker": false};
+const c_draw_control = new L.Control.Draw({"draw": c_draw_control_draw, "edit": {"featureGroup": c_added_rdcl, "edit": false}}).addTo(map);
+
+map.on(L.Draw.Event.CREATED, function (a) {
+	a.layer.feature = {"type": "Feature", "properties": {"added": true, "bus_direction": 2}, "geometry":{"type": "LineString", "coordinates":[]}};
+	a.layer.setStyle(f_set_style(a.layer.feature));
+	a.layer.addTo(c_added_rdcl);
+	
+	a.layer.snapediting = new L.Handler.PolylineSnap(map, a.layer);
+	a.layer.snapediting.addGuideLayer(c_rdcl);
+	a.layer.snapediting.addGuideLayer(c_added_rdcl);
+	a.layer.snapediting.enable();
+});
+
+
+
+document.getElementById("input_gtfs").onchange = f_read_gtfs;
+async function f_read_gtfs(a) {
+	f_lock();
+	document.getElementById("div_status").innerHTML = "GTFS読み込み開始";
+	const c_array_buffer = await busmapjs.convert_file_to_array_buffer(a.target.files[0]);
+	const c_Uint8Array = new Uint8Array(c_array_buffer);
+	const c_text_files = busmapjs.convert_zip_to_text_files(c_Uint8Array);
+	l_gtfs_text_files = c_text_files;
+	l_gtfs = {};
+	for (const c_filename in c_text_files) {
+		try {
+			l_gtfs[c_filename.replace(".txt", "")] = busmapjs.convert_csv_to_json(c_text_files[c_filename]);
+		} catch (e) {
+			console.log(e);
+			l_gtfs[c_filename.replace(".txt", "")] = [];
+		}
+	}
+	busmapjs.number_lat_lon_sequence_of_gtfs(l_gtfs); // 緯度経度と順番を数値型に変換
+	busmapjs.add_undefined_shapes(l_gtfs); // shapesがない場合に作る
+	
+	
+	
+	
+	// stopsを地図上で表示
+	c_stops.clearLayers();
+	for (let i1 = 0; i1 < l_gtfs["stops"].length; i1++) {
+		L.marker([l_gtfs["stops"][i1]["stop_lat"], l_gtfs["stops"][i1]["stop_lon"]], {"title": l_gtfs["stops"][i1]["stop_name"]}).bindPopup("stop_id: " + l_gtfs["stops"][i1]["stop_id"] + "<br />stop_name: " + l_gtfs["stops"][i1]["stop_name"]).addTo(c_stops);
+	}
+	
+	// shapesを地図上で表示
+	// 上で整列済の前提で作成
+	c_shapes.clearLayers();
+	const c_segment_index = {};
+	for (let i1 = 1; i1 < l_gtfs["shapes"].length; i1++) { // 最初の1行は外す
+		if (l_gtfs["shapes"][i1 - 1]["shape_id"] !== l_gtfs["shapes"][i1]["shape_id"]) {
+			continue;
+		}
+		const c_p1 = String(l_gtfs["shapes"][i1 - 1]["shape_pt_lon"]) + "_" + String(l_gtfs["shapes"][i1 - 1]["shape_pt_lat"]);
+		const c_p2 = String(l_gtfs["shapes"][i1]["shape_pt_lon"]) + "_" + String(l_gtfs["shapes"][i1]["shape_pt_lat"]);
+		if (c_segment_index[c_p1 + "__" + c_p2] === undefined && c_segment_index[c_p2 + "__" + c_p1] === undefined) {
+			L.polyline([[l_gtfs["shapes"][i1 - 1]["shape_pt_lat"],l_gtfs["shapes"][i1 - 1]["shape_pt_lon"]], [l_gtfs["shapes"][i1]["shape_pt_lat"],l_gtfs["shapes"][i1]["shape_pt_lon"]]],{"color": "#00FF00", "weight": 2}).addTo(c_shapes);
+			c_segment_index[c_p1 + "__" + c_p2] = true;
+		}
+	}
+	
+	// 地図を移動
+	map.setView([l_gtfs["stops"][0]["stop_lat"],l_gtfs["stops"][0]["stop_lon"]], 15);
+	document.getElementById("input_gtfs_status").innerHTML = "読み込み済";
+	document.getElementById("div_status").innerHTML = "GTFS読み込み終了";
+	f_unlock();
+}
+
+
+
+
+// GTFSの範囲のタイルをダウンロードする
+document.getElementById("download_rdcl").onclick = f_download_rdcl;
+async function f_download_rdcl() {
+	if (l_gtfs === undefined) {
+		document.getElementById("div_status").innerHTML = "GTFSが読み込まれていません";
+		return;
+	}
+	f_lock();
+	document.getElementById("div_status").innerHTML = "道路中心線ダウンロード・読み込み開始（時間がかかることがあります）";
+	const c_url = "https://cyberjapandata.gsi.go.jp/xyz/experimental_rdcl/{z}/{x}/{y}.geojson";
+	const c_zoom_level = 16;
+	const c_tiles = {};
+	const c_text_files = {};
+	for (let i1 = 0; i1 < l_gtfs["stops"].length; i1++) {
+		f_add_tile(c_tiles, l_gtfs["stops"][i1]["stop_lon"], l_gtfs["stops"][i1]["stop_lat"], c_zoom_level);
+	}
+	if (l_gtfs["shapes"] !== undefined) {
+		for (let i1 = 0; i1 < l_gtfs["shapes"].length; i1++) {
+			f_add_tile(c_tiles, l_gtfs["shapes"][i1]["shape_pt_lon"], l_gtfs["shapes"][i1]["shape_pt_lat"], c_zoom_level);
+		}
+	}
+	function f_add_tile(a_tiles, a_lon, a_lat, a_zoom_level) {
+		const c_x = Math.floor(busmapjs.convert_lon_to_x(a_lon, a_zoom_level));
+		const c_y = Math.floor(busmapjs.convert_lat_to_y(a_lat, a_zoom_level));
+		for (let i2 = c_x - 1; i2 <= c_x + 1; i2++) {
+			for (let i3 = c_y - 1; i3 <= c_y + 1; i3++) {
+				a_tiles[String(i2) + "_" + String(i3)] = true;
+			}
+		}
+	}
+	let l_total = 0;
+	for (const c_xy in c_tiles) {
+		l_total += 1;
+	}
+	let l_count_2 = 0;
+	for (const c_xy in c_tiles) {
+		l_count_2 += 1;
+		document.getElementById("div_status").innerHTML = "道路中心線ダウンロード・読み込み中（" + String(l_total) + "個中" + String(l_count_2) + "番目）";
+		const c_x = c_xy.split("_")[0];
+		const c_y = c_xy.split("_")[1];
+		const c_z = String(c_zoom_level);
+		const c_url_xyz = c_url.replace("{z}", c_z).replace("{x}", c_x).replace("{y}", c_y);
+		c_text_files[c_z + "/" + c_x + "/" + c_y] = await ((await (fetch(c_url_xyz))).text());
+	}
+	console.log(c_text_files);
+	const c_geojson = {"type": "FeatureCollection", "features": []};
+	let l_max_count = 0;
+	for (const c_filename in c_text_files) {
+		l_max_count += 1;
+	}
+	let l_count = 0;
+	for (const c_filename in c_text_files) {
+		l_count += 1;
+		try {
+			const c_json = JSON.parse(c_text_files[c_filename]);
+			for (let i2 = 0; i2 < c_json["features"].length; i2++) {
+				c_json["features"][i2]["properties"]["bus_direction"] = 0;
+				c_geojson["features"].push(c_json["features"][i2]);
+			}
+			document.getElementById("div_status").innerHTML = "道路中心線ダウンロード中：" + String(l_max_count) + "個中" + String(l_count) + "番目まで終了";
+		} catch(e) {
+			document.getElementById("div_status").innerHTML = "道路中心線ダウンロード中：" + String(l_max_count) + "個中" + String(l_count) + "番目失敗";
+		}
+
+	}
+	f_add_rdcl(c_geojson);
+	document.getElementById("div_status").innerHTML = "道路中心線ダウンロード・読み込み終了";
+	f_unlock();
+}
+
+
+
+document.getElementById("input_rdcl").onchange = f_read_rdcl;
+async function f_read_rdcl(a) {
+	f_lock();
+	document.getElementById("div_status").innerHTML = "道路中心線読み込み開始（時間がかかることがあります）";
+	const c_text = await busmapjs.convert_file_to_text(a.target.files[0]);
+	const c_geojson = JSON.parse(c_text);
+	for (let i2 = 0; i2 < c_geojson["features"].length; i2++) {
+		if (c_geojson["features"][i2]["properties"]["bus_direction"] === undefined) {
+			c_geojson["features"][i2]["properties"]["bus_direction"] = 0;
+		}
+	}
+	const c_rdcl_geojson = {"type":"FeatureCollection", "features": []};
+	const c_added_rdcl_geojson = {"type":"FeatureCollection", "features": []};
+	for (let i2 = 0; i2 < c_geojson["features"].length; i2++) {
+		if (c_geojson["features"][i2]["geometry"]["type"] !== "LineString") {
+			continue;
+		}
+		if (c_geojson["features"][i2]["properties"]["added"] === undefined || c_geojson["features"][i2]["properties"]["added"] === false) {
+			c_rdcl_geojson["features"].push(c_geojson["features"][i2]);
+		} else if (c_geojson["features"][i2]["properties"]["added"] === true) {
+			c_added_rdcl_geojson["features"].push(c_geojson["features"][i2]);
+		}
+	}
+	f_add_rdcl(c_rdcl_geojson);
+	f_add_added_rdcl(c_added_rdcl_geojson);
+	document.getElementById("div_status").innerHTML = "道路中心線読み込み終了";
+	f_unlock();
+}
+
+
+
+function f_add_rdcl(a_geojson) {
+	c_rdcl.clearLayers();
+	const c_layers = L.geoJSON(a_geojson).getLayers();
+	for (let i1 = 0; i1 < c_layers.length; i1++) {
+		c_layers[i1].addTo(c_rdcl);
+		c_layers[i1].setStyle(f_set_style(c_layers[i1].feature));
+	}
+	
+	// rdcl pointsを追加
+	const c_rnkWidths = ["3m未満", "3m-5.5m未満", "5.5m-13m未満", "13m-19.5m未満", "19.5m以上"];
+	const c_rnkWidth_index = {};
+	for (let i1 = 0; i1 < c_rnkWidths.length; i1++) {
+		c_rnkWidth_index[c_rnkWidths[i1]] = i1;
+	}
+	const c_node_index = {};
+	for (let i1 = 0; i1 < a_geojson["features"].length; i1++) {
+		const c_start_node_id = String(a_geojson["features"][i1].geometry.coordinates[0][0]) + "_" + String(a_geojson["features"][i1].geometry.coordinates[0][1]);
+		const c_end_node_id = String(a_geojson["features"][i1].geometry.coordinates[a_geojson["features"][i1].geometry.coordinates.length - 1][0]) + "_" + String(a_geojson["features"][i1].geometry.coordinates[a_geojson["features"][i1].geometry.coordinates.length - 1][1]);
+		for (let i2 = 0; i2 < a_geojson["features"][i1]["geometry"]["coordinates"].length; i2++) {
+			const c_x = a_geojson["features"][i1]["geometry"]["coordinates"][i2][0];
+			const c_y = a_geojson["features"][i1]["geometry"]["coordinates"][i2][1];
+			const c_node_id = String(c_x) + "_" + String(c_y);
+			const c_rnkWidth_order = c_rnkWidth_index[a_geojson["features"][i1]["properties"]["rnkWidth"]];
+			if (c_node_index[c_node_id] === undefined) {
+				if (i2 === 0 || i2 === a_geojson["features"][i1]["geometry"]["coordinates"].length - 1) {
+					c_node_index[c_node_id] = {"x": c_x, "y": c_y, "node_ids": [c_node_id], "rnkWidth_order": 0};
+				} else {
+					c_node_index[c_node_id] = {"x": c_x, "y": c_y, "node_ids": [c_start_node_id, c_end_node_id], "rnkWidth_order": 0};
+				}
+			}
+			if (c_rnkWidth_order !== null) {
+				c_node_index[c_node_id]["rnkWidth_order"] = Math.max(c_rnkWidth_order, c_node_index[c_node_id]["rnkWidth_order"]);
+				c_node_index[c_node_id]["rnkWidth"] = c_rnkWidths[c_node_index[c_node_id]["rnkWidth_order"]];
+			}
+		}
+	}
+	
+	c_rdcl_points.clearLayers();
+	for (const c_key in c_node_index) {
+		L.circleMarker([c_node_index[c_key]["y"], c_node_index[c_key]["x"]], {"radius": 2, "color": "#000000", fillColor: "#FFFFFF", fillOpacity: 1, "weight": 1}).addTo(c_rdcl_points);
+	}
+	
+	
+	// 各セグメントからのindex作成
+	// 緯度経度30秒ごとに区切り、端数は切り捨てる、10秒単位にする
+	l_rdcl_link_index = {};
+	for (let i1 = 0; i1 < c_layers.length; i1++) {
+		const c_id = c_rdcl.getLayerId(c_layers[i1]);
+		const c_feature = c_layers[i1].feature;
+		const c_start_node_id = String(c_feature.geometry.coordinates[0][0]) + "_" + String(c_feature.geometry.coordinates[0][1]);
+		const c_end_node_id = String(c_feature.geometry.coordinates[c_feature.geometry.coordinates.length - 1][0]) + "_" + String(c_feature.geometry.coordinates[c_feature.geometry.coordinates.length - 1][1]);
+		let l_weight = 1;
+		if (c_feature.properties.rnkWidth !== undefined) {
+			if (c_feature.properties.rnkWidth === "3m未満" || c_feature.properties.rnkWidth === "3m-5.5m未満") {
+				l_weight = 2;
+			}
+		}
+		for (let i2 = 1; i2 < c_feature.geometry.coordinates.length; i2++) {
+			const c_lon_1 = c_feature.geometry.coordinates[i2 - 1][0];
+			const c_lat_1 = c_feature.geometry.coordinates[i2 - 1][1];
+			const c_lon_2 = c_feature.geometry.coordinates[i2][0];
+			const c_lat_2 = c_feature.geometry.coordinates[i2][1];
+			const c_key = String(Math.floor((c_lon_1 + c_lon_2) / 2 * 120) * 3) + "_" + String(Math.floor((c_lat_1 + c_lat_2) / 2 * 120) * 3);
+			if (l_rdcl_link_index[c_key] === undefined) {
+				l_rdcl_link_index[c_key] = [];
+			}
+			let l_start = false;
+			let l_end = false;
+			if (i2 === 1) {
+				l_start = 1;
+			}
+			if (i2 === c_feature.geometry.coordinates.length - 1) {
+				l_end = 1;
+			}
+			l_rdcl_link_index[c_key].push({"lon_1": c_lon_1, "lat_1": c_lat_1, "lon_2": c_lon_2, "lat_2": c_lat_2, "id": c_id, "start": l_start, "end": l_end, "start_node_id": c_start_node_id, "end_node_id": c_end_node_id, "weight": l_weight});
+		}
+	}
+	
+	// 各ノードからのindex作成
+	l_rdcl_node_index = {};
+	for (const c_key in c_node_index) {
+		let l_weight = 1;
+		if (c_node_index[c_key]["rnkWidth"] !== undefined) {
+			if (c_node_index[c_key]["rnkWidth"] === "3m未満" || c_node_index[c_key]["rnkWidth"] === "3m-5.5m未満") {
+				l_weight = 2;
+			}
+		}
+		const c_lon = c_node_index[c_key]["x"];
+		const c_lat = c_node_index[c_key]["y"];
+		const c_key_2 = String(Math.floor(c_lon * 120) * 3) + "_" + String(Math.floor(c_lat * 120) * 3);
+		if (l_rdcl_node_index[c_key_2] === undefined) {
+			l_rdcl_node_index[c_key_2] = [];
+		}
+		l_rdcl_node_index[c_key_2].push({"lon": c_lon, "lat": c_lat, "node_ids": c_node_index[c_key]["node_ids"], "weight": l_weight});
+	}
+	
+	// グラフ作成
+	l_rdcl_graph = {};
+	for (let i1 = 0; i1 < c_layers.length; i1++) {
+		const c_link_id = c_rdcl.getLayerId(c_layers[i1]);
+		const c_feature = c_layers[i1].feature;
+		let l_link_length = 0;
+		for (i2 = 1; i2 < c_feature.geometry.coordinates.length; i2++) {
+			const c_lon_1 = c_feature.geometry.coordinates[i2 - 1][0] * Math.PI / 180;
+			const c_lat_1 = c_feature.geometry.coordinates[i2 - 1][1] * Math.PI / 180;
+			const c_lon_2 = c_feature.geometry.coordinates[i2][0] * Math.PI / 180;
+			const c_lat_2 = c_feature.geometry.coordinates[i2][1] * Math.PI / 180;
+			l_link_length += 6378137 * Math.acos(Math.sin(c_lat_1) * Math.sin(c_lat_2) + Math.cos(c_lat_1) * Math.cos(c_lat_2) * Math.cos(c_lon_1 - c_lon_2)); // 2点間の距離（m）
+		}
+		if (c_feature.properties.rnkWidth !== undefined) {
+			if (c_feature.properties.rnkWidth === "3m未満" || c_feature.properties.rnkWidth === "3m-5.5m未満") {
+				l_link_length *= 2;
+			}
+		}
+		const c_lon_1 = c_feature.geometry.coordinates[0][0];
+		const c_lat_1 = c_feature.geometry.coordinates[0][1];
+		const c_lon_2 = c_feature.geometry.coordinates[c_feature.geometry.coordinates.length - 1][0];
+		const c_lat_2 = c_feature.geometry.coordinates[c_feature.geometry.coordinates.length - 1][1];
+		const c_node_1 = String(c_lon_1) + "_" + String(c_lat_1);
+		const c_node_2 = String(c_lon_2) + "_" + String(c_lat_2);
+		if (l_rdcl_graph[c_node_1] === undefined) {
+			l_rdcl_graph[c_node_1] = {"next": {}, "distance": null, "pre_node_id": null, "pre_link_id": null};
+		}
+		if (l_rdcl_graph[c_node_2] === undefined) {
+			l_rdcl_graph[c_node_2] = {"next": {}, "distance": null, "pre_node_id": null, "pre_link_id": null};
+		}
+		l_rdcl_graph[c_node_1]["next"][c_node_2] = {"link_id": c_link_id, "link_length": l_link_length};
+		l_rdcl_graph[c_node_2]["next"][c_node_1] = {"link_id": c_link_id, "link_length": l_link_length};
+	}
+	
+	document.getElementById("rdcl_status").innerHTML = "読み込み済";
+}
+
+function f_add_added_rdcl(a_geojson) {
+	c_added_rdcl.clearLayers(); // 追加道路の初期化
+	const c_layers = L.geoJSON(a_geojson).getLayers();
+	for (let i1 = 0; i1 < c_layers.length; i1++) {
+		c_layers[i1].addTo(c_added_rdcl);
+		c_layers[i1].setStyle(f_set_style(c_layers[i1].feature));
+		
+		c_layers[i1].snapediting = new L.Handler.PolylineSnap(map, c_layers[i1]);
+		c_layers[i1].snapediting.addGuideLayer(c_rdcl);
+		c_layers[i1].snapediting.addGuideLayer(c_added_rdcl);
+		c_layers[i1].snapediting.enable();
+	}
+}
+
+
+function f_set_style(a_feature) {
+	let l_color = "#0000FF";
+	let l_weight = 4;
+	let l_dashArray = null;
+	if (a_feature.properties.bus_direction === 2) {
+		l_color = "#FF0000";
+		l_weight = 8;
+	} else if (a_feature.properties.bus_direction === 1) {
+		l_color = "#FF0000";
+		l_weight = 8;
+		l_dashArray = "0 8 2 2 2 2 8 0";
+	} else if (a_feature.properties.bus_direction === -1) {
+		l_color = "#FF0000";
+		l_weight = 8;
+		l_dashArray = "8 2 2 2 2 8";
+	}
+	return {"color": l_color, "weight": l_weight, "lineCap": "butt", "dashArray": l_dashArray};
+}
+
+function f_change_style(a) {
+	if (document.getElementsByName("radio_mode").item(0).checked === true || (a.layer.feature.properties.added === true && document.getElementsByName("radio_mode").item(3).checked === false)) {
+		l_clicked_link_id = null;
+		if (a.layer.feature.properties.bus_direction === 0) {
+			a.layer.feature.properties.bus_direction = 2;
+		} else if (a.layer.feature.properties.bus_direction === 2) {
+			a.layer.feature.properties.bus_direction = 0;
+		} else if (a.layer.feature.properties.bus_direction === 1) {
+			a.layer.feature.properties.bus_direction = 0;
+		} else if (a.layer.feature.properties.bus_direction === -1) {
+			a.layer.feature.properties.bus_direction = 0;
+		}
+		a.layer.setStyle(f_set_style(a.layer.feature));
+	} else if (document.getElementsByName("radio_mode").item(3).checked === true) {
+		l_clicked_link_id = null;
+		if (a.layer.feature.properties.bus_direction === 0) {
+			a.layer.feature.properties.bus_direction = 1;
+		} else if (a.layer.feature.properties.bus_direction === 2) {
+			a.layer.feature.properties.bus_direction = 1;
+		} else if (a.layer.feature.properties.bus_direction === 1) {
+			a.layer.feature.properties.bus_direction = -1;
+		} else if (a.layer.feature.properties.bus_direction === -1) {
+			a.layer.feature.properties.bus_direction = 1;
+		}
+		a.layer.setStyle(f_set_style(a.layer.feature));
+	} else {
+		if (l_clicked_link_id === null) {
+			l_clicked_link_id = c_rdcl.getLayerId(a.layer);
+		} else {
+			let l_bus_direction = 2;
+			if (document.getElementsByName("radio_mode").item(2).checked === true) {
+				l_bus_direction = 0;
+			}
+			const c_coordinates_1 = c_rdcl.getLayer(l_clicked_link_id).feature.geometry.coordinates;
+			const c_coordinates_2 = a.layer.feature.geometry.coordinates;
+			const c_link_ids = f_search_link(l_rdcl_graph, [String(c_coordinates_1[0][0]) + "_" + String(c_coordinates_1[0][1]), String(c_coordinates_1[c_coordinates_1.length - 1][0]) + "_" + String(c_coordinates_1[c_coordinates_1.length - 1][1])], [String(c_coordinates_2[0][0]) + "_" + String(c_coordinates_2[0][1]), String(c_coordinates_2[c_coordinates_2.length - 1][0]) + "_" + String(c_coordinates_2[c_coordinates_2.length - 1][1])]);
+			// 間のリンクを指定
+			for (let i1 = 0; i1 < c_link_ids.length; i1++) {
+				const c_layer = c_rdcl.getLayer(c_link_ids[i1]);
+				c_layer.feature.properties.bus_direction = l_bus_direction;
+				c_layer.setStyle(f_set_style(c_layer.feature));
+			}
+			l_clicked_link_id = null;
+		}
+	}
+}
+
+
+document.getElementById("output_rdcl").onclick = f_write_rdcl;
+function f_write_rdcl() {
+	f_lock();
+	document.getElementById("div_status").innerHTML = "出力ファイル準備開始";
+	const c_rdcl_geojson = c_rdcl.toGeoJSON(false);
+	const c_added_rdcl_geojson = c_added_rdcl.toGeoJSON(false);
+	for (let i1 = 0; i1 < c_added_rdcl_geojson["features"].length; i1++) {
+		c_rdcl_geojson["features"].push(c_added_rdcl_geojson["features"][i1]);
+	}
+	const c_text = JSON.stringify(c_rdcl_geojson);
+	const c_blob = new Blob([c_text],{type:"text/plain"});
+	const c_a = document.createElement("a");
+	c_a.href = URL.createObjectURL(c_blob);
+	c_a.download = "rdcl.geojson";
+	document.getElementById("div_status").innerHTML = "出力ファイル準備終了";
+	c_a.click();
+	f_unlock();
+}
+
+
+//Fileオブジェクトをtextに変換
+//Promiseを使用しているため、使用時はasync/awaitをつける
+busmapjs.convert_file_to_text = function (a_file) {
+	const c_text = new Promise(f_promise);
+	function f_promise(a_resolve, a_reject) {
+		const c_reader = new FileReader();
+		c_reader.addEventListener("load", f_load, false);
+		function f_load() {
+			a_resolve(c_reader.result);
+		}
+		c_reader.readAsText(a_file);
+	}
+	return c_text;
+}
+
+
+
+// GTFSのshapes.txtを元にリンクを一括指定
+document.getElementById("set_from_gtfs").onclick = f_set_from_gtfs;
+function f_set_from_gtfs() {
+	if (l_gtfs === undefined) {
+		document.getElementById("div_status").innerHTML = "GTFSが読み込まれていません";
+		return;
+	}
+	f_lock();
+	document.getElementById("div_status").innerHTML = "指定開始（時間がかかることがあります）";
+	const c_layers = c_shapes.getLayers();
+	let i1 = 0;
+	f_next();
+	
+	function f_next() {
+		const c_start_lat = c_layers[i1].getLatLngs()[0]["lat"];
+		const c_start_lon = c_layers[i1].getLatLngs()[0]["lng"];
+		const c_end_lat = c_layers[i1].getLatLngs()[1]["lat"];
+		const c_end_lon = c_layers[i1].getLatLngs()[1]["lng"];
+		const c_start_node_ids_temp = f_search_nearest_link(l_rdcl_link_index, c_start_lon, c_start_lat);
+		const c_end_node_ids_temp = f_search_nearest_link(l_rdcl_link_index, c_end_lon, c_end_lat);
+		const c_start_node_ids = [];
+		const c_end_node_ids = [];
+		if (c_start_node_ids_temp.length === 1) {
+			c_start_node_ids.push(c_start_node_ids_temp[0]);
+		} else {
+			const c_lon_0 = Number(c_start_node_ids_temp[0].split("_")[0]);
+			const c_lat_0 = Number(c_start_node_ids_temp[0].split("_")[1]);
+			const c_distance_0 = 6378137 * Math.acos(Math.sin(c_lat_0) * Math.sin(c_start_lat) + Math.cos(c_lat_0) * Math.cos(c_start_lat) * Math.cos(c_lon_0 - c_start_lon));
+			const c_lon_1 = Number(c_start_node_ids_temp[1].split("_")[0]);
+			const c_lat_1 = Number(c_start_node_ids_temp[1].split("_")[1]);
+			const c_distance_1 = 6378137 * Math.acos(Math.sin(c_lat_1) * Math.sin(c_start_lat) + Math.cos(c_lat_1) * Math.cos(c_start_lat) * Math.cos(c_lon_1 - c_start_lon));
+			if (c_distance_0 < c_distance_1) {
+				c_start_node_ids.push(c_start_node_ids_temp[0]);
+			} else {
+				c_start_node_ids.push(c_start_node_ids_temp[1]);
+			}
+		}
+		if (c_end_node_ids_temp.length === 1) {
+			c_end_node_ids.push(c_end_node_ids_temp[0]);
+		} else {
+			const c_lon_0 = Number(c_end_node_ids_temp[0].split("_")[0]);
+			const c_lat_0 = Number(c_end_node_ids_temp[0].split("_")[1]);
+			const c_distance_0 = 6378137 * Math.acos(Math.sin(c_lat_0) * Math.sin(c_end_lat) + Math.cos(c_lat_0) * Math.cos(c_end_lat) * Math.cos(c_lon_0 - c_end_lon));
+			const c_lon_1 = Number(c_end_node_ids_temp[1].split("_")[0]);
+			const c_lat_1 = Number(c_end_node_ids_temp[1].split("_")[1]);
+			const c_distance_1 = 6378137 * Math.acos(Math.sin(c_lat_1) * Math.sin(c_end_lat) + Math.cos(c_lat_1) * Math.cos(c_end_lat) * Math.cos(c_lon_1 - c_end_lon));
+			if (c_distance_0 < c_distance_1) {
+				c_end_node_ids.push(c_end_node_ids_temp[0]);
+			} else {
+				c_end_node_ids.push(c_end_node_ids_temp[1]);
+			}
+		}
+		
+		//const c_start_node_ids = f_search_nearest_node(l_rdcl_node_index, c_lon, c_lat);
+		//const c_end_node_ids = f_search_nearest_node(l_rdcl_node_index, c_lon, c_lat);
+		
+		const c_link_ids = f_search_link(l_rdcl_graph, c_start_node_ids, c_end_node_ids);
+		// 間のリンクを指定
+		for (let i1 = 0; i1 < c_link_ids.length; i1++) {
+			const c_layer = c_rdcl.getLayer(c_link_ids[i1]);
+			c_layer.feature.properties.bus_direction = 2;
+			c_layer.setStyle(f_set_style(c_layer.feature));
+		}
+		if (i1 === c_layers.length - 1) {
+			document.getElementById("div_status").innerHTML = "指定終了";
+			f_unlock();
+			return;
+		}
+		i1 += 1;
+		if (i1 === 1) {
+			document.getElementById("div_status").innerHTML = "指定開始（時間がかかることがあります）";
+			window.setTimeout(f_next,　0);
+		} else if (i1 % 1000 === 0 || i1 === c_layers.length - 1) {
+			document.getElementById("div_status").innerHTML = "指定中（" + String(c_layers.length) + "個中" + String(i1) + "番目まで終了）（時間がかかることがあります）";
+			window.setTimeout(f_next,　0);
+		} else {
+			f_next();
+		}
+		
+	}
+}
+
+
+// 2点／リンク間を探索
+function f_search_link(a_graph, a_start_node_ids, a_end_node_ids) {
+	// 一方通行の1リンク内の場合
+	if (a_start_node_ids.length === 2 && a_end_node_ids.length === 2) {
+		if ((a_start_node_ids[0] === a_end_node_ids[0] && a_start_node_ids[1] === a_end_node_ids[1]) || (a_start_node_ids[0] === a_end_node_ids[1] && a_start_node_ids[1] === a_end_node_ids[0])) {
+			if (a_graph[a_start_node_ids[0]]["next"][a_start_node_ids[1]] === undefined || a_graph[a_start_node_ids[1]]["next"][a_start_node_ids[0]] === undefined) {
+				return [];
+			}
+		}
+	}
+	// 初期化
+	for (const c_node_id in a_graph) {
+		a_graph[c_node_id]["distance"] = Number.MAX_SAFE_INTEGER; // 十分大きい数
+		a_graph[c_node_id]["pre_node_id"] = null;
+		a_graph[c_node_id]["pre_link_id"] = null;
+	}
+	// 起点・終点付近が一方通行でないか確認する
+	const c_start_node_ids_2 = [];
+	const c_end_node_ids_2 = [];
+	if (a_start_node_ids.length > 1) {
+		if (a_graph[a_start_node_ids[0]]["next"][a_start_node_ids[1]] !== undefined) {
+			c_start_node_ids_2.push(a_start_node_ids[1]);
+		}
+		if (a_graph[a_start_node_ids[1]]["next"][a_start_node_ids[0]] !== undefined) {
+			c_start_node_ids_2.push(a_start_node_ids[0]);
+		}
+	} else {
+		c_start_node_ids_2.push(a_start_node_ids[0]);
+	}
+	if (a_end_node_ids.length > 1) {
+		if (a_graph[a_end_node_ids[0]]["next"][a_end_node_ids[1]] !== undefined) {
+			c_end_node_ids_2.push(a_end_node_ids[0]);
+		}
+		if (a_graph[a_end_node_ids[1]]["next"][a_end_node_ids[0]] !== undefined) {
+			c_end_node_ids_2.push(a_end_node_ids[1]);
+		}
+	} else {
+		c_end_node_ids_2.push(a_end_node_ids[0]);
+	}
+	
+	
+	const c_distance_array = [[]]; // リンクに要変換
+	for (let i1 = 0; i1 < c_start_node_ids_2.length; i1++) {
+		c_distance_array[0].push(c_start_node_ids_2[i1]);
+		a_graph[c_start_node_ids_2[i1]]["distance"] = 0;
+	}
+	let i1 = 0; // 始点からの距離
+	let l_exist = false;
+	let l_last_node_id = null;
+	while (i1 < Number.MAX_SAFE_INTEGER) {
+		if (c_distance_array.length <= i1) { // 全て探索済
+			break;
+		}
+		for (let i2 = 0; i2 < c_end_node_ids_2.length; i2++) {
+			if (a_graph[c_end_node_ids_2[i2]]["distance"] <= i1) { // 目標到達
+				l_exist = true;
+				l_last_node_id = c_end_node_ids_2[i2];
+			}
+		}
+		if (l_exist === true) {
+			break;
+		}
+		if (c_distance_array[i1] === undefined) {
+			i1 += 1;
+			continue;
+		}
+		for (let i2 = 0; i2 < c_distance_array[i1].length; i2++) {
+			const c_pre_node_id = c_distance_array[i1][i2];
+			if (a_graph[c_pre_node_id]["distance"] < i1) { // 探索済
+				continue;
+			}
+			for (const c_node_id in a_graph[c_pre_node_id]["next"]) {
+				const c_distance = a_graph[c_pre_node_id]["distance"] + Math.ceil(a_graph[c_pre_node_id]["next"][c_node_id]["link_length"] / 10); // 10m単位に丸める
+				if (c_distance < a_graph[c_node_id]["distance"]) {
+					a_graph[c_node_id]["distance"] = c_distance;
+					a_graph[c_node_id]["pre_node_id"] = c_pre_node_id;
+					a_graph[c_node_id]["pre_link_id"] = a_graph[c_pre_node_id]["next"][c_node_id]["link_id"];
+					if (c_distance_array[c_distance] === undefined) {
+						c_distance_array[c_distance] = [];
+					}
+					c_distance_array[c_distance].push(c_node_id);
+				}
+			}
+		}
+		i1 += 1;
+	}
+	// 結果の整理
+	const c_link_ids = [];
+	if (l_exist === true) {
+		const c_temp_link_ids = [];
+		if (a_end_node_ids.length === 2) {
+			if (l_last_node_id === a_end_node_ids[0]) {
+				c_temp_link_ids.push(a_graph[a_end_node_ids[0]]["next"][a_end_node_ids[1]]["link_id"]);
+			} else if (l_last_node_id === a_end_node_ids[1]) {
+				c_temp_link_ids.push(a_graph[a_end_node_ids[1]]["next"][a_end_node_ids[0]]["link_id"]);
+			}
+		}
+		let l_pre_node_id = l_last_node_id;
+		while (l_pre_node_id !== null) {
+			const c_link_id = a_graph[l_pre_node_id]["pre_link_id"];
+			if (c_link_id !== null) {
+				c_temp_link_ids.push(c_link_id);
+				l_pre_node_id = a_graph[l_pre_node_id]["pre_node_id"];
+			} else {
+				break;
+			}
+		}
+		if (a_start_node_ids.length === 2) {
+			if (l_pre_node_id === a_start_node_ids[0]) {
+				c_temp_link_ids.push(a_graph[a_start_node_ids[1]]["next"][a_start_node_ids[0]]["link_id"]);
+			} else if (l_pre_node_id === a_start_node_ids[1]) {
+				c_temp_link_ids.push(a_graph[a_start_node_ids[0]]["next"][a_start_node_ids[1]]["link_id"]);
+			}
+		}
+		for (let i1 = 0; i1 < c_temp_link_ids.length; i1++) {
+			c_link_ids.push(c_temp_link_ids[c_temp_link_ids.length - 1 - i1]);
+		}
+	}
+	return c_link_ids;
+}
+
+
+// GTFS出力
+document.getElementById("output_gtfs").onclick = f_output_gtfs;
+function f_output_gtfs() {
+	if (l_gtfs === undefined) {
+		document.getElementById("div_status").innerHTML = "GTFSが読み込まれていません";
+		return;
+	}
+	f_lock();
+	document.getElementById("div_status").innerHTML = "出力ファイル準備開始";
+	const c_geojson = c_rdcl.toGeoJSON(false);
+	const c_added_rdcl_geojson = c_added_rdcl.toGeoJSON(false);
+	for (let i1 = 0; i1 < c_added_rdcl_geojson["features"].length; i1++) {
+		c_geojson["features"].push(c_added_rdcl_geojson["features"][i1]);
+	}
+	// 最寄り探索用リンク、探索用グラフ作成
+	const c_link_index = {};
+	const c_graph = {};
+	for (let i1 = 0; i1 < c_geojson["features"].length; i1++) {
+		const c_feature = c_geojson["features"][i1];
+		if (c_feature.properties.bus_direction === 0) {
+			continue;
+		}
+		let l_weight = 1;
+		if (c_feature.properties.rnkWidth !== undefined) {
+			if (c_feature.properties.rnkWidth === "3m未満" || c_feature.properties.rnkWidth === "3m-5.5m未満") {
+				l_weight = 2;
+			}
+		}
+		for (i2 = 1; i2 < c_feature.geometry.coordinates.length; i2++) {
+			const c_lon_1 = c_feature.geometry.coordinates[i2 - 1][0];
+			const c_lat_1 = c_feature.geometry.coordinates[i2 - 1][1];
+			const c_lon_2 = c_feature.geometry.coordinates[i2][0];
+			const c_lat_2 = c_feature.geometry.coordinates[i2][1];
+			const c_lon_1_rad = c_lon_1 * Math.PI / 180;
+			const c_lat_1_rad = c_lat_1 * Math.PI / 180;
+			const c_lon_2_rad = c_lon_2 * Math.PI / 180;
+			const c_lat_2_rad = c_lat_2 * Math.PI / 180;
+			const c_start_node_id = String(c_lon_1) + "_" + String(c_lat_1);
+			const c_end_node_id = String(c_lon_2) + "_" + String(c_lat_2);
+			const c_link_id_1 = c_start_node_id + "__" + c_end_node_id;
+			const c_link_id_2 = c_end_node_id + "__" + c_start_node_id;
+			const c_link_length = l_weight * 6378137 * Math.acos(Math.sin(c_lat_1_rad) * Math.sin(c_lat_2_rad) + Math.cos(c_lat_1_rad) * Math.cos(c_lat_2_rad) * Math.cos(c_lon_1_rad - c_lon_2_rad)); // 2点間の距離（m）
+			// link_index
+			const c_key = String(Math.floor((c_lon_1 + c_lon_2) / 2 * 120) * 3) + "_" + String(Math.floor((c_lat_1 + c_lat_2) / 2 * 120) * 3);
+			if (c_link_index[c_key] === undefined) {
+				c_link_index[c_key] = [];
+			}
+			c_link_index[c_key].push({"start_node_id": c_start_node_id, "end_node_id": c_end_node_id, "lon_1": c_lon_1, "lat_1": c_lat_1, "lon_2": c_lon_2, "lat_2": c_lat_2, "weight": l_weight, "start": true, "end": true});
+			// graph
+			if (c_graph[c_start_node_id] === undefined) {
+				c_graph[c_start_node_id] = {"next": {}, "distance": null, "pre_node_id": null, "pre_link_id": null};
+			}
+			if (c_graph[c_end_node_id] === undefined) {
+				c_graph[c_end_node_id] = {"next": {}, "distance": null, "pre_node_id": null, "pre_link_id": null};
+			}
+			if (c_feature.properties.bus_direction !== -1) {
+				c_graph[c_start_node_id]["next"][c_end_node_id] = {"link_id": c_link_id_1, "link_length": c_link_length};
+			}
+			if (c_feature.properties.bus_direction !== 1) {
+				c_graph[c_end_node_id]["next"][c_start_node_id] = {"link_id": c_link_id_2, "link_length": c_link_length};
+			}
+		}
+	}
+	
+	// shapesの区間ごとに対応づけ
+	const c_segment_index = {};
+	let l_link_ids = [];
+	const c_new_shapes = [];
+	for (let i1 = 1; i1 < l_gtfs["shapes"].length; i1++) { // 最初の1行は外す
+		if (l_gtfs["shapes"][i1 - 1]["shape_id"] !== l_gtfs["shapes"][i1]["shape_id"]) {
+			continue;
+		}
+		const c_lon_1 = l_gtfs["shapes"][i1 - 1]["shape_pt_lon"];
+		const c_lat_1 = l_gtfs["shapes"][i1 - 1]["shape_pt_lat"];
+		const c_lon_2 = l_gtfs["shapes"][i1]["shape_pt_lon"];
+		const c_lat_2 = l_gtfs["shapes"][i1]["shape_pt_lat"];
+		const c_link_id = String(c_lon_1) + "_" + String(c_lat_1) + "__" + String(c_lon_2) + "_" + String(c_lat_2);
+		if (c_segment_index[c_link_id] === undefined) {
+			const c_start_node_ids = f_search_nearest_link(c_link_index, c_lon_1, c_lat_1);
+			const c_end_node_ids = f_search_nearest_link(c_link_index, c_lon_2, c_lat_2);
+			const c_link_ids = f_search_link(c_graph, c_start_node_ids, c_end_node_ids);
+			c_segment_index[c_link_id] = {"link_ids": c_link_ids};
+		}
+		for (let i2 = 0; i2 < c_segment_index[c_link_id]["link_ids"].length; i2++) {
+			if (l_link_ids.length !== 0) {
+				if (l_link_ids[l_link_ids.length - 1] === c_segment_index[c_link_id]["link_ids"][i2]) {
+					continue;
+				}
+			}
+			l_link_ids.push(c_segment_index[c_link_id]["link_ids"][i2]);
+		}
+		if (i1 === l_gtfs["shapes"].length - 1 || l_gtfs["shapes"][i1]["shape_id"] !== l_gtfs["shapes"][i1 + 1]["shape_id"]) {
+			console.log(l_link_ids);
+			c_new_shapes.push({
+				"shape_id":l_gtfs["shapes"][i1]["shape_id"],
+				"shape_pt_lat": Number(l_link_ids[0].split("__")[0].split("_")[1]),
+				"shape_pt_lon": Number(l_link_ids[0].split("__")[0].split("_")[0]),
+				"shape_pt_sequence": 1
+			});
+			for (let i2 = 0; i2 < l_link_ids.length; i2++) {
+				c_new_shapes.push({
+					"shape_id":l_gtfs["shapes"][i1]["shape_id"],
+					"shape_pt_lat": Number(l_link_ids[i2].split("__")[1].split("_")[1]),
+					"shape_pt_lon": Number(l_link_ids[i2].split("__")[1].split("_")[0]),
+					"shape_pt_sequence": i2 + 2
+				});
+			}
+			l_link_ids = [];
+		}
+	}
+	//CSV出力
+	l_gtfs_text_files["shapes.txt"] = busmapjs.convert_json_to_csv(c_new_shapes);
+	l_gtfs_text_files["trips.txt"] = busmapjs.convert_json_to_csv(l_gtfs["trips"]);
+	//ZIP出力
+	const c_Uint8Array = busmapjs.convert_text_files_to_zip(l_gtfs_text_files);
+	const c_ArrayBuffer = c_Uint8Array.buffer; 
+	const c_blob = new Blob([c_ArrayBuffer], {"type": "application/zip"});
+	const c_a = document.createElement("a");
+	c_a.href = URL.createObjectURL(c_blob);
+	c_a.download = "gtfs_rdcl_shapes.zip";
+	document.getElementById("div_status").innerHTML = "出力ファイル準備終了";
+	c_a.click();
+	f_unlock();
+}
+
+function f_search_nearest_link(a_link_index, a_lon, a_lat) {
+	let l_min = Number.MAX_SAFE_INTEGER; // 十分大きい数
+	let l_node_ids = null;
+	for (let i1 = -1; i1 <= 1; i1++) {
+		for (let i2 = -1; i2 <= 1; i2++) {
+			const c_key = String(Math.floor(a_lon * 120) * 3 + i1 * 3) + "_" + String(Math.floor(a_lat * 120) * 3 + i2 * 3);
+			if (a_link_index[c_key] !== undefined) {
+				for (let i3 = 0; i3 < a_link_index[c_key].length; i3++) {
+					const c_px = busmapjs.convert_lon_to_x(a_lon, "m");
+					const c_py = busmapjs.convert_lat_to_y(a_lat, "m");
+					const c_sx = busmapjs.convert_lon_to_x(a_link_index[c_key][i3]["lon_1"], "m");
+					const c_sy = busmapjs.convert_lat_to_y(a_link_index[c_key][i3]["lat_1"], "m");
+					const c_ex = busmapjs.convert_lon_to_x(a_link_index[c_key][i3]["lon_2"], "m");
+					const c_ey = busmapjs.convert_lat_to_y(a_link_index[c_key][i3]["lat_2"], "m");
+					const c_result = busmapjs.distance_between_point_and_segment(c_px, c_py, c_sx, c_sy, c_ex, c_ey);
+					c_result["distance"] *= a_link_index[c_key][i3]["weight"];
+					if (c_result["distance"] < l_min) {
+						l_min = c_result["distance"];
+						l_node_ids = [];
+						if (c_result["start"] !== false || a_link_index[c_key][i3]["end"] !== true) {
+							l_node_ids.push(a_link_index[c_key][i3]["start_node_id"]);
+						}
+						if (c_result["end"] !== false || a_link_index[c_key][i3]["start"] !== true) {
+							l_node_ids.push(a_link_index[c_key][i3]["end_node_id"]);
+						}
+					}
+				}
+			}
+		}
+	}
+	// 2点の場合は、そのリンクの両端
+	// 1点の場合は、リンクの端点のどちらかであれば、その1点
+	// 1点でそれ以外の場合は、リンクの両端
+	return l_node_ids;
+}
+
+function f_search_nearest_node(a_node_index, a_lon, a_lat) {
+	let l_min = Number.MAX_SAFE_INTEGER; // 十分大きい数
+	let l_node_ids = null;
+	for (let i1 = -1; i1 <= 1; i1++) {
+		for (let i2 = -1; i2 <= 1; i2++) {
+			const c_key = String(Math.floor(a_lon * 120) * 3 + i1 * 3) + "_" + String(Math.floor(a_lat * 120) * 3 + i2 * 3);
+			if (a_node_index[c_key] !== undefined) {
+				for (let i3 = 0; i3 < a_node_index[c_key].length; i3++) {
+					const c_px = busmapjs.convert_lon_to_x(a_lon, "m");
+					const c_py = busmapjs.convert_lat_to_y(a_lat, "m");
+					const c_p2x = busmapjs.convert_lon_to_x(a_node_index[c_key][i3]["lon"], "m");
+					const c_p2y = busmapjs.convert_lat_to_y(a_node_index[c_key][i3]["lat"], "m");
+					const c_distance = ((c_px - c_p2x) ** 2 + (c_py - c_p2y) ** 2) ** 0.5 * a_node_index[c_key][i3]["weight"];
+					if (c_distance < l_min) {
+						l_min = c_distance;
+						l_node_ids = a_node_index[c_key][i3]["node_ids"];
+					}
+				}
+			}
+		}
+	}
+	return l_node_ids;
+}
+
+function f_lock() {
+	document.getElementById("input_gtfs").disabled = true;
+	document.getElementById("download_rdcl").disabled = true;
+	document.getElementById("input_rdcl").disabled = true;
+	document.getElementById("set_from_gtfs").disabled = true;
+	document.getElementById("output_rdcl").disabled = true;
+	document.getElementById("output_gtfs").disabled = true;
+}
+
+function f_unlock() {
+	document.getElementById("input_gtfs").disabled = false;
+	document.getElementById("download_rdcl").disabled = false;
+	document.getElementById("input_rdcl").disabled = false;
+	document.getElementById("set_from_gtfs").disabled = false;
+	document.getElementById("output_rdcl").disabled = false;
+	document.getElementById("output_gtfs").disabled = false;
+}
+		//]]>
+		</script>
+	</body>
+</html>
