@@ -572,6 +572,8 @@ function f_set_from_gtfs() {
 	f_lock();
 	document.getElementById("div_status").innerHTML = "指定開始（時間がかかることがあります）";
 	const c_layers = c_shapes.getLayers();
+	const c_change_link_ids = {};
+	
 	let i1 = 0;
 	f_next();
 	
@@ -626,12 +628,16 @@ function f_set_from_gtfs() {
 		const c_link_ids = f_search_link(l_rdcl_graph, c_start_node_ids, c_end_node_ids);
 		// 間のリンクを指定
 		for (let i1 = 0; i1 < c_link_ids.length; i1++) {
-			const c_layer = c_rdcl.getLayer(c_link_ids[i1]);
-			c_layer.feature.properties.bus_direction = 2;
-			c_layer.setStyle(f_set_style(c_layer.feature));
+			c_change_link_ids[c_link_ids[i1]] = true;
 		}
 		if (i1 === c_layers.length - 1) {
-			document.getElementById("div_status").innerHTML = "指定終了";
+			document.getElementById("div_status").innerHTML = "指定終了、表示反映中";
+			for (const c_link_id in c_change_link_ids) {
+				const c_layer = c_rdcl.getLayer(c_link_id);
+				c_layer.feature.properties.bus_direction = 2;
+				c_layer.setStyle(f_set_style(c_layer.feature));
+			}
+			document.getElementById("div_status").innerHTML = "指定終了、表示反映終了";
 			f_unlock();
 			return;
 		}
