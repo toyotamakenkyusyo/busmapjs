@@ -911,9 +911,9 @@ function f_output_gtfs() {
 function f_search_nearest_link(a_link_index, a_lon, a_lat) {
 	let l_min = Number.MAX_SAFE_INTEGER; // 十分大きい数
 	let l_node_ids = null;
-	for (let i1 = -1; i1 <= 1; i1++) {
-		for (let i2 = -1; i2 <= 1; i2++) {
-			const c_key = String(Math.floor(a_lon * 120) * 3 + i1 * 3) + "_" + String(Math.floor(a_lat * 120) * 3 + i2 * 3);
+	for (let i1 = 0; i1 <= 1; i1++) {
+		for (let i2 = 0; i2 <= 1; i2++) {
+			const c_key = String(Math.floor(a_lon * 120 - 0.5) * 3 + i1 * 3) + "_" + String(Math.floor(a_lat * 120 - 0.5) * 3 + i2 * 3);
 			if (a_link_index[c_key] !== undefined) {
 				for (let i3 = 0; i3 < a_link_index[c_key].length; i3++) {
 					const c_px = busmapjs.convert_lon_to_x(a_lon, "m");
@@ -947,9 +947,9 @@ function f_search_nearest_link(a_link_index, a_lon, a_lat) {
 function f_search_nearest_node(a_node_index, a_lon, a_lat) {
 	let l_min = Number.MAX_SAFE_INTEGER; // 十分大きい数
 	let l_node_ids = null;
-	for (let i1 = -1; i1 <= 1; i1++) {
-		for (let i2 = -1; i2 <= 1; i2++) {
-			const c_key = String(Math.floor(a_lon * 120) * 3 + i1 * 3) + "_" + String(Math.floor(a_lat * 120) * 3 + i2 * 3);
+	for (let i1 = 0; i1 <= 1; i1++) {
+		for (let i2 = 0; i2 <= 1; i2++) {
+			const c_key = String(Math.floor(a_lon * 120 - 0.5) * 3 + i1 * 3) + "_" + String(Math.floor(a_lat * 120 - 0.5) * 3 + i2 * 3);
 			if (a_node_index[c_key] !== undefined) {
 				for (let i3 = 0; i3 < a_node_index[c_key].length; i3++) {
 					const c_px = busmapjs.convert_lon_to_x(a_lon, "m");
