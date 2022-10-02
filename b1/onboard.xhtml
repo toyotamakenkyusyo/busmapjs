@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<meta charset="UTF-8" />
+		<script src="https://cdn.jsdelivr.net/npm/leaflet@1.8.0/dist/leaflet.js"></script>
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.8.0/dist/leaflet.css" />
+		<script src="https://cdn.jsdelivr.net/npm/protobufjs@6.8.8/dist/protobuf.min.js"></script>
+		<script>
+			//<![CDATA[
+const module = {};
+function require(a1) {
+	if (a1 === "protobufjs/minimal") {
+		return protobuf;
+	}
+}
+			//]]>
+		</script>
+		<script src="https://cdn.jsdelivr.net/npm/gtfs-realtime-bindings@0.0.5/gtfs-realtime.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/zlibjs@0.3.1/bin/zip.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/zlibjs@0.3.1/bin/unzip.min.js"></script>
+		<script src="https://toyotamakenkyusyo.github.io/busmapjs/b1/busmap.js"></script>
+		<title>乗車船中の経路・時刻の表示</title>
+	</head>
+	<body>
+		<h1>乗車船中の経路・時刻の表示</h1>
+		<div id="div1"></div>
+		<div id="div2"></div>
+		<div id="div_leaflet" style="width: auto; height: 768px;"></div>
+		<script>
+		//<![CDATA[
+
+const map = L.map("div_leaflet");
+const c_stops = L.layerGroup([]).addTo(map);
+
+// 背景地図
+const c_std = L.tileLayer("https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png", {"attribution": "<a href=\"https://maps.gsi.go.jp/development/ichiran.html\" target=\"_blank\">地理院タイル</a>, The bathymetric contours are derived from those contained within the GEBCO Digital Atlas, published by the BODC on behalf of IOC and IHO (2003) (https://www.gebco.net), 海上保安庁許可第292502号（水路業務法第25条に基づく類似刊行物）, Shoreline data is derived from: United States. National Imagery and Mapping Agency. \"Vector Map Level 0 (VMAP0).\" Bethesda, MD: Denver, CO: The Agency; USGS Information Services, 1997.", "maxNativeZoom": 18, "maxZoom": 22});
+const c_blank = L.tileLayer("https://cyberjapandata.gsi.go.jp/xyz/blank/{z}/{x}/{y}.png", {"attribution": "<a href=\"https://maps.gsi.go.jp/development/ichiran.html\" target=\"_blank\">地理院タイル</a>", "maxNativeZoom": 14, "maxZoom": 22});
+const c_pale = L.tileLayer("https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png", {"attribution": "<a href=\"https://maps.gsi.go.jp/development/ichiran.html\" target=\"_blank\">地理院タイル</a>, Shoreline data is derived from: United States. National Imagery and Mapping Agency. \"Vector Map Level 0 (VMAP0).\" Bethesda, MD: Denver, CO: The Agency; USGS Information Services, 1997.", "maxNativeZoom": 18, "maxZoom": 22});
+const c_seamlessphoto = L.tileLayer("https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg", {"attribution": "<a href=\"https://maps.gsi.go.jp/development/ichiran.html\" target=\"_blank\">地理院タイル</a>, Landsat8画像（GSI,TSIC,GEO Grid/AIST）, Landsat8画像（courtesy of the U.S. Geological Survey）, 海底地形（GEBCO）, Images on 世界衛星モザイク画像 obtained from site https://lpdaac.usgs.gov/data_access maintained by the NASA Land Processes Distributed Active Archive Center (LP DAAC), USGS/Earth Resources Observation and Science (EROS) Center, Sioux Falls, South Dakota, (Year). Source of image data product.", "maxNativeZoom": 18, "maxZoom": 22});
+
+// 表示切替
+const c_control = L.control.layers({"地理院地図標準地図": c_std, "地理院地図淡色地図": c_pale, "地理院地図白地図": c_blank, "地理院地図写真": c_seamlessphoto}).addTo(map);
+
+// 初期表示位置
+c_pale.addTo(map);
+map.setView([35,135], 5);
+const c_marker = L.marker([35, 135], {"title": "現在位置"}).addTo(map);
+const c_polyline = L.polyline([[35, 135], [40, 140]], {"title": "移動の軌跡"}).addTo(map);
+
+const c_vehicle_marker = L.marker([35, 135], {"title": "乗り物の位置"}).addTo(map);
+const c_shape_polyline = L.polyline([[35, 135], [40, 140]], {"title": "運行経路"}).addTo(map);
+
+
+// GTFSの読み込み
+let l_gtfs = null;
+f_read_gtfs();
+async function f_read_gtfs() {
+	const c_cors_url = "https://ss1.xrea.com/toyotama.g1.xrea.com/bus/busmapjs/get.php?url="; //クロスオリジンを回避するphpをかませる、例として作者のサーバにあるものを指定
+	const c_url = c_cors_url + "http://api.gtfs-archives.t-brain.jp/unobus.co.jp/gtfs/statics/latest";
+	const c_array_buffer = await ((await (fetch(c_url))).arrayBuffer());
+	const c_Uint8Array = new Uint8Array(c_array_buffer);
+	const c_text_files = busmapjs.convert_zip_to_text_files(c_Uint8Array);
+	l_gtfs_text_files = c_text_files;
+	l_gtfs = {};
+	for (const c_filename in c_text_files) {
+		try {
+			l_gtfs[c_filename.replace(".txt", "")] = busmapjs.convert_csv_to_json(c_text_files[c_filename]);
+		} catch (e) {
+			console.log(e);
+			l_gtfs[c_filename.replace(".txt", "")] = [];
+		}
+	}
+	busmapjs.number_lat_lon_sequence_of_gtfs(l_gtfs); // 緯度経度と順番を数値型に変換
+	busmapjs.add_undefined_shapes(l_gtfs); // shapesがない場合に作る
+}
+
+
+
+// 位置と時刻の記録
+const c_waypoint = [];
+function f_1(a) {
+	c_waypoint.push({"coordinates": [a.coords.longitude, a.coords.latitude], "timestamp": a.timestamp});
+	if (c_waypoint.length === 1) {
+		f_search_trip();
+	}
+	const c_latlngs = [];
+	for (let i1 = 0; i1 < c_waypoint.length; i1++) {
+		c_latlngs.push([c_waypoint[i1]["coordinates"][1], c_waypoint[i1]["coordinates"][0]]);
+	}
+	c_polyline.setLatLngs(c_latlngs);
+	c_marker.setLatLng(c_latlngs[c_latlngs.length - 1]);
+}
+function f_2(a) {
+	
+}
+navigator.geolocation.watchPosition(f_1, f_2, {"enableHighAccuracy": true, "timeout": 1000, "maximumAge": 0});
+setInterval(f_search_trip, 15000);
+
+// 最寄り便を探す
+async function f_search_trip() {
+	const c_gtfs_rt_vp = await f_get_gtfs_rt("http://www3.unobus.co.jp/GTFS/GTFS_RT-VP.bin");
+	const c_gtfs_rt_tu = await f_get_gtfs_rt("http://www3.unobus.co.jp/GTFS/GTFS_RT.bin");
+	// document.getElementById("div2").innerHTML = JSON.stringify(c_gtfs_rt_tu); //JSONをテキストに変換してXHTMLに書き込み
+	// document.getElementById("div2").innerHTML += JSON.stringify(c_gtfs_rt_vp); //JSONをテキストに変換してXHTMLに書き込み
+	// 最寄り便の探索
+	let l_min_distance = 6378137 * 10000;
+	let l_argmin_tripId = null;
+	let l_argmin_lon = null;
+	let l_argmin_lat = null;
+	let l_argmin_currentStopSequence = null;
+	let l_argmin_currentStatus = null;
+	let l_argmin_occupancyStatus = null;
+	for (const c_entity of c_gtfs_rt_vp["entity"]) {
+		for (let i2 = 0; i2 < c_waypoint.length; i2++) {
+			if (Number(c_entity["vehicle"]["timestamp"]) < Number(c_waypoint[i2]["timestamp"]) || i2 === c_waypoint.length - 1) {
+				const c_lon_1 = c_waypoint[i2]["coordinates"][0];
+				const c_lat_1 = c_waypoint[i2]["coordinates"][1];
+				const c_lon_2 = c_entity["vehicle"]["position"]["longitude"];
+				const c_lat_2 = c_entity["vehicle"]["position"]["latitude"];
+				const c_distance = 6378137 * Math.acos(Math.sin(c_lat_1) * Math.sin(c_lat_2) + Math.cos(c_lat_1) * Math.cos(c_lat_2) * Math.cos(c_lon_1 - c_lon_2)); // 2点間の距離（m）
+				if (c_distance < l_min_distance) {
+					l_min_distance = c_distance;
+					l_argmin_tripId = c_entity["vehicle"]["trip"]["tripId"];
+					l_argmin_lon = c_entity["vehicle"]["position"]["longitude"];
+					l_argmin_lat = c_entity["vehicle"]["position"]["latitude"];
+					l_argmin_currentStopSequence = c_entity["vehicle"]["currentStopSequence"];
+					l_argmin_currentStatus = c_entity["vehicle"]["currentStatus"];
+					l_argmin_occupancyStatus = c_entity["vehicle"]["occupancyStatus"];
+				}
+				break;
+			}
+		}
+	}
+	let l_stopSequence = null;
+	let l_departure_delay = null;
+	for (const c_entity of c_gtfs_rt_tu["entity"]) {
+		if (c_entity["tripUpdate"]["trip"]["tripId"] === l_argmin_tripId) {
+			l_stopSequence = c_entity["tripUpdate"]["stopTimeUpdate"][0]["stopSequence"];
+			l_departure_delay = c_entity["tripUpdate"]["stopTimeUpdate"][0]["departure"]["delay"];
+		}
+	}
+	c_vehicle_marker.setLatLng([l_argmin_lat, l_argmin_lon]);
+	console.log(l_argmin_tripId);
+	
+	// 最寄り便の表示
+	const c_trip_data = {"trip": null, "route": null, "stop_times": [], "shapes": []};
+	for (const c_trip of l_gtfs["trips"]) {
+		if (l_argmin_tripId === c_trip["trip_id"]) {
+			c_trip_data["trip"] = c_trip;
+		}
+	}
+	for (const c_route of l_gtfs["routes"]) {
+		if (c_trip_data["trip"]["route_id"] === c_route["route_id"]) {
+			c_trip_data["route"] = c_route;
+		}
+	}
+	for (const c_stop_time of l_gtfs["stop_times"]) {
+		if (l_argmin_tripId === c_stop_time["trip_id"]) {
+			c_trip_data["stop_times"].push(c_stop_time);
+		}
+	}
+	for (const c_shape of l_gtfs["shapes"]) {
+		if (c_trip_data["trip"]["shape_id"] === c_shape["shape_id"]) {
+			c_trip_data["shapes"].push(c_shape);
+		}
+	}
+	// 表示
+	let l_headsign = c_trip_data["trip"]["trip_headsign"];
+	for (const c_stop_time of c_trip_data["stop_times"]) {
+		if (c_stop_time["stop_sequence"] === l_argmin_currentStopSequence) {
+			if (c_stop_time["stop_headsign"] !== undefined && c_stop_time["stop_headsign"] !== "") {
+				l_headsign = c_stop_time["stop_headsign"];
+			}
+			break;
+		}
+	}
+	
+	
+	document.getElementById("div1").innerHTML = "経路略称：" + c_trip_data["route"]["route_short_name"] + "<br />経路名：" + c_trip_data["route"]["route_long_name"] + "<br />行先：" + l_headsign + "<br />遅れ: " + String(l_departure_delay) + "秒";
+	const c_latlngs = [];
+	for (let i1 = 0; i1 < c_trip_data["shapes"].length; i1++) {
+		c_latlngs.push([c_trip_data["shapes"][i1]["shape_pt_lat"], c_trip_data["shapes"][i1]["shape_pt_lon"]]);
+	}
+	c_shape_polyline.setLatLngs(c_latlngs);
+	
+	
+	c_stops.clearLayers();
+	for (let i1 = 0; i1 < c_trip_data["stop_times"].length; i1++) {
+		if (c_trip_data["stop_times"][i1]["stop_sequence"] < l_argmin_currentStopSequence) {
+			continue;
+		}
+		for (const c_stop of l_gtfs["stops"]) {
+			if (c_stop["stop_id"] === c_trip_data["stop_times"][i1]["stop_id"]) {
+				L.marker([c_stop["stop_lat"], c_stop["stop_lon"]], {"title": c_stop["stop_name"] + " " + c_trip_data["stop_times"][i1]["arrival_time"] + "着予定"}).addTo(c_stops);
+				break;
+			}
+		}
+	}
+	console.log(c_trip_data);
+}
+
+
+async function f_get_gtfs_rt(a_url) {
+	const c_array_buffer = await ((await (fetch(a_url))).arrayBuffer());
+	const c_Uint8Array = new Uint8Array(c_array_buffer);
+	return module.exports.transit_realtime.FeedMessage.decode(c_Uint8Array);
+}
+
+		//]]>
+		</script>
+	</body>
+</html>
