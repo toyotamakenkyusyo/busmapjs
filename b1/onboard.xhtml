@@ -99,8 +99,9 @@ setInterval(f_search_trip, 15000);
 
 // 最寄り便を探す
 async function f_search_trip() {
-	const c_gtfs_rt_vp = await f_get_gtfs_rt("http://www3.unobus.co.jp/GTFS/GTFS_RT-VP.bin");
-	const c_gtfs_rt_tu = await f_get_gtfs_rt("http://www3.unobus.co.jp/GTFS/GTFS_RT.bin");
+	const c_cors_url = "https://ss1.xrea.com/toyotama.g1.xrea.com/bus/busmapjs/get.php?url="; //クロスオリジンを回避するphpをかませる、例として作者のサーバにあるものを指定
+	const c_gtfs_rt_vp = await f_get_gtfs_rt(c_cors_url + "http://www3.unobus.co.jp/GTFS/GTFS_RT-VP.bin");
+	const c_gtfs_rt_tu = await f_get_gtfs_rt(c_cors_url + "http://www3.unobus.co.jp/GTFS/GTFS_RT.bin");
 	// document.getElementById("div2").innerHTML = JSON.stringify(c_gtfs_rt_tu); //JSONをテキストに変換してXHTMLに書き込み
 	// document.getElementById("div2").innerHTML += JSON.stringify(c_gtfs_rt_vp); //JSONをテキストに変換してXHTMLに書き込み
 	// 最寄り便の探索
