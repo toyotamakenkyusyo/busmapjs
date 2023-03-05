@@ -18,6 +18,8 @@
 		<h1>豐多摩研究所 GTFSのshapes.txt作成ツール</h1>
 		<p>豐多摩研究所 トップページ <a href="https://ss1.xrea.com/toyotama.g1.xrea.com/index.xhtml">https://ss1.xrea.com/toyotama.g1.xrea.com/index.xhtml</a></p>
 		<p>GitHub busmapjs <a href="https://github.com/toyotamakenkyusyo/busmapjs">https://github.com/toyotamakenkyusyo/busmapjs</a></p>
+		<h2>更新履歴</h2>
+		<p>2023年2月23日　横道に入ってUターンするのを、100m以下の場合に除去するように修正</p>
 		<h2>概要</h2>
 		<p>GTFSのshapes.txtを道路中心線に沿って作成するツールです。元となるGTFSはshapes.txtがなくても、あっても対応しています。道路中心線は日本国内のバス向けに国土地理院ベクトルタイル道路中心線のダウンロード機能をつけていますが、これと同じようなGeoJSON形式で任意のファイルを読み込めます。また、道路中心線の追加・編集機能もあります。入力したGTFSを元に半自動的に通る道路中心線を指定する機能があります。</p>
 		<h2>作者連絡先</h2>
@@ -73,9 +75,12 @@
 					<td><button type="button" id="output_rdcl">通る道路を指定したGeoJSONファイルを保存</button></td>
 				</tr>
 				<tr>
-					<td>出力GTFS</td>
-					<td></td>
+					<td rowspan="2">出力GTFS</td>
+					<td rowspan="2"></td>
 					<td><button type="button" id="output_gtfs">shapes.txtをつけたGTFSを出力</button></td>
+				</tr>
+				<tr>
+					<td>道路の途中でUターンして戻ってくる部分がある場合、この距離以下は除去（空欄の場合は除去しない）：<input type="text" id="delete_length" value="100" />（m）</td>
 				</tr>
 			</table>
 		</div>
@@ -774,6 +779,7 @@ function f_search_link(a_graph, a_start_node_ids, a_end_node_ids) {
 			c_link_ids.push(c_temp_link_ids[c_temp_link_ids.length - 1 - i1]);
 		}
 	}
+	
 	return c_link_ids;
 }
 
@@ -787,6 +793,9 @@ function f_output_gtfs() {
 	}
 	f_lock();
 	document.getElementById("div_status").innerHTML = "出力ファイル準備開始";
+	const c_delete_length = document.getElementById("delete_length").value;
+	const c_delete_length_number = Number(c_delete_length);
+	
 	const c_geojson = c_rdcl.toGeoJSON(false);
 	const c_added_rdcl_geojson = c_added_rdcl.toGeoJSON(false);
 	for (let i1 = 0; i1 < c_added_rdcl_geojson["features"].length; i1++) {
@@ -863,8 +872,34 @@ function f_output_gtfs() {
 				f_unlock();
 				return;
 			}
-			const c_link_ids = f_search_link(c_graph, c_start_node_ids, c_end_node_ids);
-			c_segment_index[c_link_id] = {"link_ids": c_link_ids};
+			let l_temp_link_ids = f_search_link(c_graph, c_start_node_ids, c_end_node_ids);
+			// 同じ区間内で、起終点が両方2個で、一方通行でない場合（一方通行ならl_temp_link_ids.length === 0）
+			if (l_temp_link_ids.length === 2 && l_temp_link_ids[0].split("__")[0] == l_temp_link_ids[1].split("__")[1] && l_temp_link_ids[0].split("__")[1] == l_temp_link_ids[1].split("__")[0]) {
+				if (c_start_node_ids.length === 2 && c_end_node_ids.length === 2) {
+					if ((c_start_node_ids[0] === c_end_node_ids[0] && c_start_node_ids[1] === c_end_node_ids[1]) || (c_start_node_ids[0] === c_end_node_ids[1] && c_start_node_ids[1] === c_end_node_ids[0])) {
+						const c_lon_1_rad = c_lon_1 * Math.PI / 180;
+						const c_lat_1_rad = c_lat_1 * Math.PI / 180;
+						const c_lon_2_rad = c_lon_2 * Math.PI / 180;
+						const c_lat_2_rad = c_lat_2 * Math.PI / 180;
+						const c_lat_21 = Number(l_temp_link_ids[0].split("__")[0].split("_")[1]);
+						const c_lon_21 = Number(l_temp_link_ids[0].split("__")[0].split("_")[0]);
+						const c_lat_22 = Number(l_temp_link_ids[0].split("__")[1].split("_")[1]);
+						const c_lon_22 = Number(l_temp_link_ids[0].split("__")[1].split("_")[0]);
+						const c_lon_21_rad = c_lon_21 * Math.PI / 180;
+						const c_lat_21_rad = c_lat_21 * Math.PI / 180;
+						const c_lon_22_rad = c_lon_22 * Math.PI / 180;
+						const c_lat_22_rad = c_lat_22 * Math.PI / 180;
+						const c_distance_1 = 6378137 * Math.acos(Math.sin(c_lat_1_rad) * Math.sin(c_lat_21_rad) + Math.cos(c_lat_1_rad) * Math.cos(c_lat_21_rad) * Math.cos(c_lon_1_rad - c_lon_21_rad)) + 6378137 * Math.acos(Math.sin(c_lat_2_rad) * Math.sin(c_lat_22_rad) + Math.cos(c_lat_2_rad) * Math.cos(c_lat_22_rad) * Math.cos(c_lon_2_rad - c_lon_22_rad));
+						const c_distance_2 = 6378137 * Math.acos(Math.sin(c_lat_1_rad) * Math.sin(c_lat_22_rad) + Math.cos(c_lat_1_rad) * Math.cos(c_lat_22_rad) * Math.cos(c_lon_1_rad - c_lon_22_rad)) + 6378137 * Math.acos(Math.sin(c_lat_2_rad) * Math.sin(c_lat_21_rad) + Math.cos(c_lat_2_rad) * Math.cos(c_lat_21_rad) * Math.cos(c_lon_2_rad - c_lon_21_rad));
+						if (c_distance_1 < c_distance_2) {
+							l_temp_link_ids = [l_temp_link_ids[0]];
+						} else {
+							l_temp_link_ids = [l_temp_link_ids[1]];
+						}
+					}
+				}
+			}
+			c_segment_index[c_link_id] = {"link_ids": l_temp_link_ids};
 		}
 		for (let i2 = 0; i2 < c_segment_index[c_link_id]["link_ids"].length; i2++) {
 			if (l_link_ids.length !== 0) {
@@ -875,18 +910,99 @@ function f_output_gtfs() {
 			l_link_ids.push(c_segment_index[c_link_id]["link_ids"][i2]);
 		}
 		if (i1 === l_gtfs["shapes"].length - 1 || l_gtfs["shapes"][i1]["shape_id"] !== l_gtfs["shapes"][i1 + 1]["shape_id"]) {
-			console.log(l_link_ids);
+			// 横道へ1リンクだけ入り込む場合を除去する
+			/*
+			const c_new_link_ids = [];
+			for (let i2 = 0; i2 < l_link_ids.length; i2++) {
+				if (c_new_link_ids.length === 0) {
+					c_new_link_ids.push(l_link_ids[i2]);
+					continue;
+				}
+				const c_link_id_1 = c_new_link_ids[c_new_link_ids.length - 1];
+				const c_link_id_2 = l_link_ids[i2];
+				if (c_link_id_1.split("__")[0] === c_link_id_2.split("__")[1]) { // 向きだけ逆の同じリンクの場合
+					if (c_new_link_ids.length === 1 || i2 === l_link_ids.length - 1) { // 最初か、最後か
+						c_new_link_ids.pop(); // 最後を削除
+						continue; // 追加しない
+					}
+					const c_link_id_0 = c_new_link_ids[c_new_link_ids.length - 2];
+					const c_link_id_3 = l_link_ids[i2 + 1];
+					if (c_link_id_0.split("__")[0] !== c_link_id_3.split("__")[1]) { // 前後のリンクが異なる
+						c_new_link_ids.pop(); // 最後を削除
+						continue; // 追加しない
+					}
+					// 前後のリンクが同じ（向きだけ逆）ならそのままにする
+				}
+				c_new_link_ids.push(l_link_ids[i2]);
+			}
+			*/
+			
+			
+			const c_new_link_ids = [];
+			let l_skip = 0;
+			for (let i2 = 0; i2 < l_link_ids.length; i2++) {
+				if (0 < l_skip) {
+					c_new_link_ids.pop(); // 最後を削除
+					l_skip -= 1;
+					continue;
+				}
+				if (c_new_link_ids.length === 0) {
+					c_new_link_ids.push(l_link_ids[i2]);
+					continue;
+				}
+				if (c_new_link_ids[c_new_link_ids.length - 1].split("__")[0] === l_link_ids[i2].split("__")[1]) { // 向きだけ逆の同じリンクの場合
+					while (true) {
+						l_skip += 1;
+						if (c_new_link_ids.length === l_skip || i2 + l_skip === l_link_ids.length) { // 最初か、最後か
+							break;
+						}
+						if (c_new_link_ids[c_new_link_ids.length - 1 - l_skip].split("__")[0] !== l_link_ids[i2 + l_skip].split("__")[1]) { // 前後のリンクが異なる
+							break;
+						}
+						// 前後のリンクが同じ（向きだけ逆）なら積み上げていく
+					}
+					// 消すか残すか判断
+					let l_distance = 0;
+					for (let i3 = 0; i3 < l_skip; i3++) {
+						const c_lat_31 = Number(l_link_ids[i2 + i3].split("__")[0].split("_")[1]);
+						const c_lon_31 = Number(l_link_ids[i2 + i3].split("__")[0].split("_")[0]);
+						const c_lat_32 = Number(l_link_ids[i2 + i3].split("__")[1].split("_")[1]);
+						const c_lon_32 = Number(l_link_ids[i2 + i3].split("__")[1].split("_")[0]);
+						const c_lon_31_rad = c_lon_31 * Math.PI / 180;
+						const c_lat_31_rad = c_lat_31 * Math.PI / 180;
+						const c_lon_32_rad = c_lon_32 * Math.PI / 180;
+						const c_lat_32_rad = c_lat_32 * Math.PI / 180;
+						l_distance += 6378137 * Math.acos(Math.sin(c_lat_31_rad) * Math.sin(c_lat_32_rad) + Math.cos(c_lat_31_rad) * Math.cos(c_lat_32_rad) * Math.cos(c_lon_31_rad - c_lon_32_rad));
+					}
+					if (c_delete_length === "") { // 空欄なら残す
+						l_skip = 0;
+					} else if (isNaN(c_delete_length_number) === true) { // 数でなければ残す
+						l_skip = 0;
+					} else if (c_delete_length_number < l_distance) { // この距離超なら残す
+						l_skip = 0;
+					}
+				}
+				if (0 < l_skip) {
+					c_new_link_ids.pop(); // 最後を削除
+					l_skip -= 1;
+					continue;
+				}
+				c_new_link_ids.push(l_link_ids[i2]);
+			}
+			
+			
+			// console.log(l_link_ids);
 			c_new_shapes.push({
 				"shape_id":l_gtfs["shapes"][i1]["shape_id"],
-				"shape_pt_lat": Number(l_link_ids[0].split("__")[0].split("_")[1]),
-				"shape_pt_lon": Number(l_link_ids[0].split("__")[0].split("_")[0]),
+				"shape_pt_lat": Number(c_new_link_ids[0].split("__")[0].split("_")[1]),
+				"shape_pt_lon": Number(c_new_link_ids[0].split("__")[0].split("_")[0]),
 				"shape_pt_sequence": 1
 			});
-			for (let i2 = 0; i2 < l_link_ids.length; i2++) {
+			for (let i2 = 0; i2 < c_new_link_ids.length; i2++) {
 				c_new_shapes.push({
 					"shape_id":l_gtfs["shapes"][i1]["shape_id"],
-					"shape_pt_lat": Number(l_link_ids[i2].split("__")[1].split("_")[1]),
-					"shape_pt_lon": Number(l_link_ids[i2].split("__")[1].split("_")[0]),
+					"shape_pt_lat": Number(c_new_link_ids[i2].split("__")[1].split("_")[1]),
+					"shape_pt_lon": Number(c_new_link_ids[i2].split("__")[1].split("_")[0]),
 					"shape_pt_sequence": i2 + 2
 				});
 			}
