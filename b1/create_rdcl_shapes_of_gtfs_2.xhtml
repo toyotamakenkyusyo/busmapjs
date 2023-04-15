@@ -20,6 +20,7 @@
 		<p>GitHub busmapjs <a href="https://github.com/toyotamakenkyusyo/busmapjs">https://github.com/toyotamakenkyusyo/busmapjs</a></p>
 		<h2>更新履歴</h2>
 		<p>2023年2月23日　横道に入ってUターンするのを、100m以下の場合に除去するように修正</p>
+		<p>2023年4月15日　隣のstopが離れている場合に、間の道路中心線もダウンロードするように変更</p>
 		<h2>概要</h2>
 		<p>GTFSのshapes.txtを道路中心線に沿って作成するツールです。元となるGTFSはshapes.txtがなくても、あっても対応しています。道路中心線は日本国内のバス向けに国土地理院ベクトルタイル道路中心線のダウンロード機能をつけていますが、これと同じようなGeoJSON形式で任意のファイルを読み込めます。また、道路中心線の追加・編集機能もあります。入力したGTFSを元に半自動的に通る道路中心線を指定する機能があります。</p>
 		<h2>作者連絡先</h2>
@@ -63,7 +64,7 @@
 				<tr>
 					<td rowspan="4">道路中心線</td>
 					<td rowspan="4"><div id="rdcl_status"></div></td>
-					<td><button type="button" id="download_rdcl">入力GTFSを元にダウンロード・読み込み（初回）</button>（地理院地図ベクトルタイル道路中心線を使用）</td>
+					<td><button type="button" id="download_rdcl">入力GTFSを元にダウンロード・読み込み（初回）</button>（地理院地図ベクトルタイル道路中心線を使用）<br/>周辺に余分に取得するタイル：<input type="text" id="mergin" value="1" />マス分</td>
 				</tr>
 				<tr>
 					<td>GeoJSONファイルを読み込み：<input type="file" id="input_rdcl" accept="application/geo+json" /></td>
@@ -221,6 +222,13 @@ async function f_download_rdcl() {
 	}
 	f_lock();
 	document.getElementById("div_status").innerHTML = "道路中心線ダウンロード・読み込み開始（時間がかかることがあります）";
+	
+	const c_mergin = document.getElementById("mergin").value;
+	let l_mergin_number = 1;
+	if (c_mergin !== "" && isNaN(c_mergin) === false) {
+		l_mergin_number = Number(c_mergin);
+	}
+	
 	const c_url = "https://cyberjapandata.gsi.go.jp/xyz/experimental_rdcl/{z}/{x}/{y}.geojson";
 	const c_zoom_level = 16;
 	const c_tiles = {};
@@ -232,6 +240,15 @@ async function f_download_rdcl() {
 		for (let i1 = 0; i1 < l_gtfs["shapes"].length; i1++) {
 			f_add_tile(c_tiles, l_gtfs["shapes"][i1]["shape_pt_lon"], l_gtfs["shapes"][i1]["shape_pt_lat"], c_zoom_level);
 		}
+		
+		// shapesの隣接2点間を埋める
+		// 上で整列済の前提で作成
+		for (let i1 = 1; i1 < l_gtfs["shapes"].length; i1++) { // 最初の1行は外す
+			if (l_gtfs["shapes"][i1 - 1]["shape_id"] !== l_gtfs["shapes"][i1]["shape_id"]) {
+				continue;
+			}
+			f_add_tiles(c_tiles, l_gtfs["shapes"][i1 - 1]["shape_pt_lon"], l_gtfs["shapes"][i1 - 1]["shape_pt_lat"], l_gtfs["shapes"][i1]["shape_pt_lon"], l_gtfs["shapes"][i1]["shape_pt_lat"], c_zoom_level);
+		}
 	}
 	function f_add_tile(a_tiles, a_lon, a_lat, a_zoom_level) {
 		const c_x = Math.floor(busmapjs.convert_lon_to_x(a_lon, a_zoom_level));
@@ -242,6 +259,19 @@ async function f_download_rdcl() {
 			}
 		}
 	}
+	
+	function f_add_tiles(a_tiles, a_lon_1, a_lat_1, a_lon_2, a_lat_2, a_zoom_level) {
+		const c_min_x = Math.floor(busmapjs.convert_lon_to_x(Math.min(a_lon_1, a_lon_2), a_zoom_level));
+		const c_max_y = Math.floor(busmapjs.convert_lat_to_y(Math.min(a_lat_1, a_lat_2), a_zoom_level)); // 向きが逆なのに注意
+		const c_max_x = Math.floor(busmapjs.convert_lon_to_x(Math.max(a_lon_1, a_lon_2), a_zoom_level));
+		const c_min_y = Math.floor(busmapjs.convert_lat_to_y(Math.max(a_lat_1, a_lat_2), a_zoom_level)); // 向きが逆なのに注意
+		for (let i2 = c_min_x - l_mergin_number; i2 <= c_max_x + l_mergin_number; i2++) {
+			for (let i3 = c_min_y - l_mergin_number; i3 <= c_max_y + l_mergin_number; i3++) {
+				a_tiles[String(i2) + "_" + String(i3)] = true;
+			}
+		}
+	}
+	
 	let l_total = 0;
 	for (const c_xy in c_tiles) {
 		l_total += 1;
