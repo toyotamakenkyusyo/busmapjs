@@ -1,0 +1,266 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<meta charset="UTF-8" />
+		<script src="https://toyotamakenkyusyo.github.io/busmapjs/b1/busmap.js"></script>
+		<title>豐多摩研究所 GeoJSONのLineStringオフセットツール</title>
+	</head>
+	<body>
+		<h1>豐多摩研究所 GeoJSONのLineStringオフセットツール</h1>
+		<p>豐多摩研究所 トップページ <a href="https://ss1.xrea.com/toyotama.g1.xrea.com/index.xhtml">https://ss1.xrea.com/toyotama.g1.xrea.com/index.xhtml</a></p>
+		<p>GitHub busmapjs <a href="https://github.com/toyotamakenkyusyo/busmapjs">https://github.com/toyotamakenkyusyo/busmapjs</a></p>
+		<div>線を束ねるプロパティ（空欄可）：<input type="text" id="input_offset_id" value="route_id" /></div>
+		<div>線の並び順のプロパティ（空欄可）：<input type="text" id="input_offset_order" value="route_sort_order" /></div>
+		<div>元にするGeoJSON（LineStirngのみのFeatureCollection）を読み込み：<input type="file" id="input_geojson" accept="application/geo+json" /></div>
+		<script>
+		//<![CDATA[
+
+
+//Fileオブジェクトをtextに変換
+//Promiseを使用しているため、使用時はasync/awaitをつける
+busmapjs.convert_file_to_text = function (a_file) {
+	const c_text = new Promise(f_promise);
+	function f_promise(a_resolve, a_reject) {
+		const c_reader = new FileReader();
+		c_reader.addEventListener("load", f_load, false);
+		function f_load() {
+			a_resolve(c_reader.result);
+		}
+		c_reader.readAsText(a_file);
+	}
+	return c_text;
+}
+
+
+
+document.getElementById("input_geojson").onchange = f_read_geojson;
+async function f_read_geojson(a) {
+	const c_text = await busmapjs.convert_file_to_text(a.target.files[0]);
+	const c_geojson = JSON.parse(c_text);
+	
+	
+	const c_geometries = [];
+	// 点をidに変換
+	const c_points = {};
+	for (let i1 = 0; i1 < c_geojson["features"].length; i1++) {
+		const c_array = [];
+		for (let i2 = 0; i2 < c_geojson["features"][i1]["geometry"]["coordinates"].length; i2++) {
+			const c_lon = c_geojson["features"][i1]["geometry"]["coordinates"][i2][0];
+			const c_lat = c_geojson["features"][i1]["geometry"]["coordinates"][i2][1];
+			const c_point_id = String(c_lon) + "_" + String(c_lat);
+			if (c_points[c_point_id] === undefined) {
+				c_points[c_point_id] = {"lon": c_lon, "lat": c_lat, "next": {}, "end": null};
+			}
+			c_array.push(c_point_id);
+		}
+		c_geometries.push({"point_ids": c_array, "segment_ids": [], "segment_directions": []});
+	}
+	for (let i1 = 0; i1 < c_geometries.length; i1++) {
+		c_points[c_geometries[i1]["point_ids"][0]]["next"]["end"] = true;
+		c_points[c_geometries[i1]["point_ids"][c_geometries[i1]["point_ids"].length - 1]]["next"]["end"] = true;
+		for (let i2 = 1; i2 < c_geometries[i1]["point_ids"].length; i2++) {
+			c_points[c_geometries[i1]["point_ids"][i2 - 1]]["next"][c_geometries[i1]["point_ids"][i2]] = true;
+			c_points[c_geometries[i1]["point_ids"][i2]]["next"][c_geometries[i1]["point_ids"][i2 - 1]] = true;
+		}
+	}
+	for (const c_point_id in c_points) {
+		if (c_points[c_point_id]["next"]["end"] === true || 3 <= Object.keys(c_points[c_point_id]["next"]).length) {
+			c_points[c_point_id]["end"] = true;
+		} else {
+			c_points[c_point_id]["end"] = false;
+		}
+	}
+	
+	
+	// 分割した線の収集
+	const c_segments = {};
+	for (let i1 = 0; i1 < c_geometries.length; i1++) {
+		let l_start = 0;
+		for (let i2 = 1; i2 < c_geometries[i1]["point_ids"].length; i2++) {
+			if (c_points[c_geometries[i1]["point_ids"][i2]]["end"] === true) { // 分割位置
+				const c_key_1 = c_geometries[i1]["point_ids"].slice(l_start, i2 + 1).join("__");
+				const c_key_2 = c_geometries[i1]["point_ids"].slice(l_start, i2 + 1).reverse().join("__");
+				if (c_segments[c_key_2] !== undefined) {
+					c_geometries[i1]["segment_ids"].push(c_key_2);
+					c_geometries[i1]["segment_directions"].push(-1);
+				} else {
+					c_geometries[i1]["segment_ids"].push(c_key_1);
+					c_geometries[i1]["segment_directions"].push(1);
+					if (c_segments[c_key_1] === undefined) {
+						c_segments[c_key_1] = {"point_ids": c_geometries[i1]["point_ids"].slice(l_start, i2 + 1)};
+					}
+				}
+				l_start = i2;
+			}
+		}
+	}
+	
+	// 集約方法の決定
+	// 集約対象のidをつけて、route_sort_orderでソート？
+	
+	const c_offset_id_key = document.getElementById("input_offset_id").value;
+	const c_offset_order_key = document.getElementById("input_offset_order").value;
+	const c_offset_index = {};
+	const c_offsets = [];
+	for (let i1 = 0; i1 < c_geojson["features"].length; i1++) {
+		let l_offset_id;
+		let l_offset_order;
+		if (c_offset_id_key === "") {
+			l_offset_id = "";
+		} else if (c_geojson["features"][i1]["properties"][c_offset_id_key] !== undefined) {
+			l_offset_id = c_geojson["features"][i1]["properties"][c_offset_id_key];
+		} else {
+			l_offset_id = i1;
+		}
+		c_geojson["features"][i1]["properties"]["offset_id"] = l_offset_id;
+		if (c_geojson["features"][i1]["properties"][c_offset_order_key] !== undefined) {
+			l_offset_order = Number(c_geojson["features"][i1]["properties"][c_offset_order_key]);
+			if (isNaN(l_offset_order) === true) {
+				l_offset_order = i1;
+			}
+		} else {
+			l_offset_order = i1;
+		}
+		if (c_offset_index[l_offset_id] === undefined) {
+			c_offset_index[l_offset_id] = {
+				"offset_id": l_offset_id,
+				"offset_order": l_offset_order,
+				"segment_ids": {}
+			};
+		}
+		
+		const c_day_of_week = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+		for (let i2 = 0; i2 < c_geometries[i1]["segment_ids"].length; i2++) {
+			const c_segment_id = c_geometries[i1]["segment_ids"][i2];
+			if (c_offset_index[l_offset_id]["segment_ids"][c_segment_id] === undefined) {
+				c_offset_index[l_offset_id]["segment_ids"][c_segment_id] = {
+					"offset": null,
+					"services": {},
+					"trip_ids": [],
+					"monday": 0,
+					"tuesday": 0,
+					"wednesday": 0,
+					"thursday": 0,
+					"friday": 0,
+					"saturday": 0,
+					"sunday": 0
+				}
+			}
+			
+			
+			for (let i3 = 0; i3 < c_day_of_week.length; i3++) {
+				if (c_geojson["features"][i1]["properties"][c_day_of_week[i3]] !== undefined) {
+					const c_number = Number(c_geojson["features"][i1]["properties"][c_day_of_week[i3]]);
+					if (isNaN(c_number) === false) {
+						c_offset_index[l_offset_id]["segment_ids"][c_segment_id][c_day_of_week[i3]] += c_number;
+					}
+				}
+			}
+			if (c_geojson["features"][i1]["properties"]["trip_ids"] !== undefined) {
+				for (let i3 = 0; i3 < c_geojson["features"][i1]["properties"]["trip_ids"].length; i3++) {
+					c_offset_index[l_offset_id]["segment_ids"][c_segment_id]["trip_ids"].push(c_geojson["features"][i1]["properties"]["trip_ids"][i3]);
+				}
+			}
+			if (c_geojson["features"][i1]["properties"]["services"] !== undefined) {
+				for (const c_service_id in c_geojson["features"][i1]["properties"]["services"]) {
+					if (c_offset_index[l_offset_id]["segment_ids"][c_segment_id]["services"][c_service_id] === undefined) {
+						c_offset_index[l_offset_id]["segment_ids"][c_segment_id]["services"][c_service_id] = 0;
+					}
+					c_offset_index[l_offset_id]["segment_ids"][c_segment_id]["services"][c_service_id] += c_geojson["features"][i1]["properties"]["services"][c_service_id];
+				}
+			}
+			
+		}
+		
+	}
+	
+	
+	
+	
+	for (const c_offset_id in c_offset_index) {
+		c_offsets.push(c_offset_index[c_offset_id]);
+	}
+	c_offsets.sort(f_sort_offsets);
+	function f_sort_offsets(a1, a2) {
+		return (a1["offset_order"] - a2["offset_order"]);
+	}
+	
+	// オフセット幅の決定
+	for (const c_segment_id in c_segments) {
+		c_segments[c_segment_id]["offset_ids"] = [];
+	}
+	for (let i1 = 0; i1 < c_offsets.length; i1++) {
+		for (c_segment_id in c_offsets[i1]["segment_ids"]) {
+			c_segments[c_segment_id]["offset_ids"].push(c_offsets[i1]["offset_id"]);
+			c_offsets[i1]["segment_ids"][c_segment_id]["offset"] = c_segments[c_segment_id]["offset_ids"].length;
+		}
+	}
+	
+	
+	
+	
+	
+	// 出力
+	
+	const c_out_geojson = {"type": "FeatureCollection", "features": []};
+	for (let i1 = 0; i1 < c_geojson["features"].length; i1++) {
+		for (let i2 = 0; i2 < c_geometries[i1]["segment_ids"].length; i2++) {
+			const c_segment_id = c_geometries[i1]["segment_ids"][i2];
+			const c_segment_direction = c_geometries[i1]["segment_directions"][i2];
+			const c_coordinates = [];
+			
+			const c_offset_id = c_geojson["features"][i1]["properties"]["offset_id"];
+			let l_offset = c_offset_index[c_offset_id]["segment_ids"][c_segment_id]["offset"];
+			
+			for (let i3 = 0; i3 < c_segments[c_segment_id]["point_ids"].length; i3++) {
+				const c_point_id = c_segments[c_segment_id]["point_ids"][i3];
+				c_coordinates.push([c_points[c_point_id]["lon"], c_points[c_point_id]["lat"]]);
+			}
+			if (c_segment_direction === -1) {
+				c_coordinates.reverse();
+				l_offset = -1 * l_offset;
+			}
+			
+			
+			const c_feature = {
+				"type": "Feature",
+				"geometry": {
+					"type": "LineString",
+					"coordinates": c_coordinates
+				},
+				"properties": {}
+			};
+			for (const c_key in c_geojson["features"][i1]["properties"]) {
+				c_feature["properties"][c_key] = c_geojson["features"][i1]["properties"][c_key];
+			}
+			c_feature["properties"]["line_string_id"] = i1;
+			c_feature["properties"]["segment_sequence"] = i2;
+			c_feature["properties"]["offset"] = l_offset;
+			
+			const c_day_of_week = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+			for (let i3 = 0; i3 < c_day_of_week.length; i3++) {
+				c_feature["properties"][c_day_of_week[i3]] = c_offset_index[c_offset_id]["segment_ids"][c_segment_id][c_day_of_week[i3]];
+			}
+			c_feature["properties"]["trip_ids"] = c_offset_index[c_offset_id]["segment_ids"][c_segment_id]["trip_ids"];
+			c_feature["properties"]["services"] = c_offset_index[c_offset_id]["segment_ids"][c_segment_id]["services"];
+			
+			c_out_geojson["features"].push(c_feature);
+		}
+	}
+	
+	
+	const c_out_text = JSON.stringify(c_out_geojson);
+	const c_blob = new Blob([c_out_text],{type:"text/plain"});
+	const c_a = document.createElement("a");
+	c_a.href = URL.createObjectURL(c_blob);
+	c_a.download = "segments.geojson";
+	c_a.click();
+	
+}
+
+
+		//]]>
+		</script>
+	</body>
+</html>
