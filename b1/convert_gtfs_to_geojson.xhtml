@@ -11,7 +11,7 @@
 		<h1>豐多摩研究所 GTFSのGeoJSON変換ツール</h1>
 		<p>豐多摩研究所 トップページ <a href="https://ss1.xrea.com/toyotama.g1.xrea.com/index.xhtml">https://ss1.xrea.com/toyotama.g1.xrea.com/index.xhtml</a></p>
 		<p>GitHub busmapjs <a href="https://github.com/toyotamakenkyusyo/busmapjs">https://github.com/toyotamakenkyusyo/busmapjs</a></p>
-		<div>GTFSを読み込むと、経路の線をGeoJSONにして出力します。</div>
+		<div>GTFSを読み込むと、経路の線と停留所の点をGeoJSONにして出力します。</div>
 		<div><input type="radio" name="radio_shapes" value="shapes" checked="checked" />：shapes.txtがあれば使う<br /><input type="radio" name="radio_shapes" value="parent_station" />：shapes.txtを使わない（stops.txtにparent_stationがあれば使う）<br /><input type="radio" name="radio_shapes" value="stops" />：shapes.txtを使わない（stops.txtのparent_stationを使わない、stop_idを<input type="text" id="separate" value="" />で区切って最初の部分で束ねる（区切らない場合は空欄））</div>
 		<div>元にするGTFSを読み込み：<input type="file" id="input_gtfs" accept="application/zip" /></div>
 		<script>
@@ -134,6 +134,13 @@ async function f_read_gtfs(a) {
 		return (a1["stop_sequence"] - a2["stop_sequence"]);
 	}
 	
+	// stopの整理
+	const c_stop_index = {};
+	for (let i1 = 0; i1 < c_gtfs["stops"].length; i1++) {
+		c_stop_index[c_gtfs["stops"][i1]["stop_id"]] = c_gtfs["stops"][i1];
+	}
+	
+	
 	// ur_routeで集計
 	const c_ur_route_index = {};
 	for (const c_trip_id in c_trip_index) {
@@ -184,7 +191,9 @@ async function f_read_gtfs(a) {
 	
 	// GeoJSON出力
 	const c_geojson = {"type": "FeatureCollection", "features": []};
+	let l_string_id = 0;
 	for (const c_ur_route_id in c_ur_route_index) {
+		l_string_id += 1;
 		const c_coordinates = [];
 		const c_shape_id = c_ur_route_index[c_ur_route_id]["shape_id"];
 		const c_route_id = c_ur_route_index[c_ur_route_id]["route_id"];
@@ -208,8 +217,43 @@ async function f_read_gtfs(a) {
 		for (let i2 = 0; i2 < c_day_of_week.length; i2++) {
 			c_feature["properties"][c_day_of_week[i2]] = c_ur_route_index[c_ur_route_id][c_day_of_week[i2]];
 		}
+		c_feature["properties"]["string_id"] = l_string_id;
 		
 		c_geojson["features"].push(c_feature);
+		
+		
+		// stopsも追加
+		const c_trip_id = c_feature["properties"]["trip_ids"][0];
+		for (let i2 = 0; i2 < c_trip_index[c_trip_id]["stop_times"].length; i2++) {
+			const c_stop_id = c_trip_index[c_trip_id]["stop_times"][i2]["stop_id"];
+			c_stop_index[c_stop_id]["stop_name"];
+			
+			c_geojson["features"].push({
+				"type": "Feature",
+				"geometry": {
+					"type": "Point",
+					"coordinates": [c_stop_index[c_stop_id]["stop_lon"], c_stop_index[c_stop_id]["stop_lat"]]
+				},
+				"properties": {
+					"string_id": l_string_id,
+					"stop_id": c_stop_id,
+					"stop_sequence": c_trip_index[c_trip_id]["stop_times"][i2]["stop_sequence"],
+					"pickup_type": c_trip_index[c_trip_id]["stop_times"][i2]["pickup_type"],
+					"drop_off_type": c_trip_index[c_trip_id]["stop_times"][i2]["drop_off_type"],
+					"stop_code": c_stop_index[c_stop_id]["stop_code"],
+					"stop_name": c_stop_index[c_stop_id]["stop_name"],
+					"stop_desc": c_stop_index[c_stop_id]["stop_desc"],
+					"zone_id": c_stop_index[c_stop_id]["zone_id"],
+					"stop_url": c_stop_index[c_stop_id]["stop_url"],
+					"location_type": c_stop_index[c_stop_id]["location_type"],
+					"parent_station": c_stop_index[c_stop_id]["parent_station"],
+					"stop_timezone": c_stop_index[c_stop_id]["stop_timezone"],
+					"wheelchair_boarding": c_stop_index[c_stop_id]["wheelchair_boarding"],
+					"platform_code": c_stop_index[c_stop_id]["platform_code"]
+				}
+			});
+		}
+		
 	}
 	
 	

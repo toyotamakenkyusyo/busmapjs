@@ -10,9 +10,10 @@
 		<h1>豐多摩研究所 GeoJSONのLineStringオフセットツール</h1>
 		<p>豐多摩研究所 トップページ <a href="https://ss1.xrea.com/toyotama.g1.xrea.com/index.xhtml">https://ss1.xrea.com/toyotama.g1.xrea.com/index.xhtml</a></p>
 		<p>GitHub busmapjs <a href="https://github.com/toyotamakenkyusyo/busmapjs">https://github.com/toyotamakenkyusyo/busmapjs</a></p>
+		<div>LineStirngのGeoJSONを読み込むと、一致する部分にオフセット幅をつけて出力します。</div>
 		<div>線を束ねるプロパティ（空欄可）：<input type="text" id="input_offset_id" value="route_id" /></div>
 		<div>線の並び順のプロパティ（空欄可）：<input type="text" id="input_offset_order" value="route_sort_order" /></div>
-		<div>元にするGeoJSON（LineStirngのみのFeatureCollection）を読み込み：<input type="file" id="input_geojson" accept="application/geo+json" /></div>
+		<div>元にするGeoJSON（LineStirngのFeatureCollection）を読み込み：<input type="file" id="input_geojson" accept="application/geo+json" /></div>
 		<script>
 		//<![CDATA[
 
@@ -44,6 +45,10 @@ async function f_read_geojson(a) {
 	// 点をidに変換
 	const c_points = {};
 	for (let i1 = 0; i1 < c_geojson["features"].length; i1++) {
+		if (c_geojson["features"][i1]["geometry"]["type"] !== "LineString") {
+			c_geometries.push(null);
+			continue;
+		}
 		const c_array = [];
 		for (let i2 = 0; i2 < c_geojson["features"][i1]["geometry"]["coordinates"].length; i2++) {
 			const c_lon = c_geojson["features"][i1]["geometry"]["coordinates"][i2][0];
@@ -57,6 +62,9 @@ async function f_read_geojson(a) {
 		c_geometries.push({"point_ids": c_array, "segment_ids": [], "segment_directions": []});
 	}
 	for (let i1 = 0; i1 < c_geometries.length; i1++) {
+		if (c_geojson["features"][i1]["geometry"]["type"] !== "LineString") {
+			continue;
+		}
 		c_points[c_geometries[i1]["point_ids"][0]]["next"]["end"] = true;
 		c_points[c_geometries[i1]["point_ids"][c_geometries[i1]["point_ids"].length - 1]]["next"]["end"] = true;
 		for (let i2 = 1; i2 < c_geometries[i1]["point_ids"].length; i2++) {
@@ -76,6 +84,9 @@ async function f_read_geojson(a) {
 	// 分割した線の収集
 	const c_segments = {};
 	for (let i1 = 0; i1 < c_geometries.length; i1++) {
+		if (c_geojson["features"][i1]["geometry"]["type"] !== "LineString") {
+			continue;
+		}
 		let l_start = 0;
 		for (let i2 = 1; i2 < c_geometries[i1]["point_ids"].length; i2++) {
 			if (c_points[c_geometries[i1]["point_ids"][i2]]["end"] === true) { // 分割位置
@@ -104,6 +115,9 @@ async function f_read_geojson(a) {
 	const c_offset_index = {};
 	const c_offsets = [];
 	for (let i1 = 0; i1 < c_geojson["features"].length; i1++) {
+		if (c_geojson["features"][i1]["geometry"]["type"] !== "LineString") {
+			continue;
+		}
 		let l_offset_id;
 		let l_offset_order;
 		if (c_offset_id_key === "") {
@@ -198,13 +212,35 @@ async function f_read_geojson(a) {
 	}
 	
 	
+	// string_idの重複確認
+	let l_change_string_id = false;
+	const c_check_string_id = {};
+	for (let i1 = 0; i1 < c_geojson["features"].length; i1++) {
+		if (c_geojson["features"][i1]["geometry"]["type"] !== "LineString") {
+			continue;
+		}
+		if (c_geojson["features"][i1]["properties"]["string_id"] === undefined) {
+			l_change_string_id = true;
+		}
+		if (c_check_string_id[c_geojson["features"][i1]["properties"]["string_id"]] === undefined) {
+			c_check_string_id[c_geojson["features"][i1]["properties"]["string_id"]] = true;
+		} else {
+			l_change_string_id = true;
+		}
+		
+	}
 	
 	
 	
 	// 出力
 	
 	const c_out_geojson = {"type": "FeatureCollection", "features": []};
+	let l_string_id = 0;
 	for (let i1 = 0; i1 < c_geojson["features"].length; i1++) {
+		if (c_geojson["features"][i1]["geometry"]["type"] !== "LineString") {
+			continue;
+		}
+		l_string_id += 1;
 		for (let i2 = 0; i2 < c_geometries[i1]["segment_ids"].length; i2++) {
 			const c_segment_id = c_geometries[i1]["segment_ids"][i2];
 			const c_segment_direction = c_geometries[i1]["segment_directions"][i2];
@@ -234,7 +270,9 @@ async function f_read_geojson(a) {
 			for (const c_key in c_geojson["features"][i1]["properties"]) {
 				c_feature["properties"][c_key] = c_geojson["features"][i1]["properties"][c_key];
 			}
-			c_feature["properties"]["line_string_id"] = i1;
+			if (l_change_string_id === true) {
+				c_feature["properties"]["string_id"] = l_string_id;
+			}
 			c_feature["properties"]["segment_sequence"] = i2;
 			c_feature["properties"]["offset"] = l_offset;
 			
