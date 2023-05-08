@@ -11,7 +11,8 @@
 		<h1>豐多摩研究所 GTFSのGeoJSON変換ツール</h1>
 		<p>豐多摩研究所 トップページ <a href="https://ss1.xrea.com/toyotama.g1.xrea.com/index.xhtml">https://ss1.xrea.com/toyotama.g1.xrea.com/index.xhtml</a></p>
 		<p>GitHub busmapjs <a href="https://github.com/toyotamakenkyusyo/busmapjs">https://github.com/toyotamakenkyusyo/busmapjs</a></p>
-		<div><input type="radio" name="radio_shapes" value="shapes" checked="checked" />：shapes.txtがあれば使う<br /><input type="radio" name="radio_shapes" value="parent_station" />：shapes.txtを使わない（stops.txtにparent_stationがあれば使う）<br /><input type="radio" name="radio_shapes" value="stops" />：shapes.txtを使わない（parent_stationを使わない、<input type="text" id="separate" value="" />で区切る（区切らない場合は空欄））</div>
+		<div>GTFSを読み込むと、経路の線をGeoJSONにして出力します。</div>
+		<div><input type="radio" name="radio_shapes" value="shapes" checked="checked" />：shapes.txtがあれば使う<br /><input type="radio" name="radio_shapes" value="parent_station" />：shapes.txtを使わない（stops.txtにparent_stationがあれば使う）<br /><input type="radio" name="radio_shapes" value="stops" />：shapes.txtを使わない（stops.txtのparent_stationを使わない、stop_idを<input type="text" id="separate" value="" />で区切って最初の部分で束ねる（区切らない場合は空欄））</div>
 		<div>元にするGTFSを読み込み：<input type="file" id="input_gtfs" accept="application/zip" /></div>
 		<script>
 		//<![CDATA[
