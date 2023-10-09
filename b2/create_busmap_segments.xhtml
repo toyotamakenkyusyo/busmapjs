@@ -1,0 +1,194 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<meta charset="UTF-8" />
+		<script src="busmap.js"></script>
+		<title>豐多摩研究所 GeoJSONのLineStringオフセットツール</title>
+	</head>
+	<body>
+		<h1>豐多摩研究所 GeoJSONのLineStringオフセットツール</h1>
+		<p>豐多摩研究所 トップページ <a href="https://ss1.xrea.com/toyotama.g1.xrea.com/index.xhtml">https://ss1.xrea.com/toyotama.g1.xrea.com/index.xhtml</a></p>
+		<p>GitHub busmapjs <a href="https://github.com/toyotamakenkyusyo/busmapjs">https://github.com/toyotamakenkyusyo/busmapjs</a></p>
+		<div>LineStirngのGeoJSONを読み込むと、一致する部分にオフセット幅をつけて出力します。</div>
+		<div>線を束ねるプロパティ（空欄可）：<input type="text" id="input_offset_id" value="route_id" /></div>
+		<div>線の並び順のプロパティ（空欄可）：<input type="text" id="input_offset_order" value="route_sort_order" /></div>
+		<div>ジオメトリを簡素化する距離（空欄可）：<input type="text" id="input_simplify_distance" value="0" />（m）</div>
+		<div>元にするGeoJSON（LineStirngのFeatureCollection）を読み込み：<input type="file" id="input_geojson" accept="application/geo+json" /></div>
+		<script>
+		//<![CDATA[
+
+
+
+
+document.getElementById("input_geojson").onchange = f_read_geojson;
+async function f_read_geojson(a) {
+	const c_text = await busmapjs.convert_file_to_text(a.target.files[0]);
+	const c_geojson = JSON.parse(c_text);
+	
+	
+	// string_idの重複確認・修正
+	let l_change_string_id = false;
+	const c_check_string_id = {};
+	for (let i1 = 0; i1 < c_geojson["features"].length; i1++) {
+		if (c_geojson["features"][i1]["geometry"]["type"] !== "LineString") {
+			continue;
+		}
+		if (c_geojson["features"][i1]["properties"]["string_id"] === undefined) {
+			l_change_string_id = true;
+		}
+		if (c_check_string_id[c_geojson["features"][i1]["properties"]["string_id"]] === undefined) {
+			c_check_string_id[c_geojson["features"][i1]["properties"]["string_id"]] = true;
+		} else {
+			l_change_string_id = true;
+		}
+	}
+	if (l_change_string_id === true) {
+		for (let i1 = 0; i1 < c_geojson["features"].length; i1++) {
+			if (c_geojson["features"][i1]["geometry"]["type"] !== "LineString") {
+				continue;
+			}
+			c_geojson["features"][i1]["properties"]["string_id"] = i1;
+		}
+	}
+	
+	// offset_idとoffset_orderの設定
+	const c_offset_id_property = document.getElementById("input_offset_id").value;
+	const c_offset_order_property = document.getElementById("input_offset_order").value;
+	busmapjs.set_geojson_offset_id_offset_order(c_geojson, c_offset_id_property, c_offset_order_property);
+	
+	// グラフへ変換
+	const c_walk_array = [];
+	for (const c_feature of c_geojson["features"]) {
+		if (c_feature["geometry"]["type"] !== "LineString") {
+			continue;
+		}
+		const c_walk = {
+			"node_id_array": [],
+			"offset_id": c_feature["properties"]["offset_id"],
+			"offset_order": c_feature["properties"]["offset_order"],
+			"aggregation": {},
+			"properties": c_feature["properties"]
+		};
+		for (const c_key in c_feature["properties"]) {
+			if (c_key === "monday" || c_key === "tuesday" || c_key === "wednesday" || c_key === "thursday" || c_key === "friday" || c_key === "saturday" || c_key === "sunday" || c_key.substr(0, 11) === "service_id_") {
+				c_walk["aggregation"][c_key] = c_feature["properties"][c_key];
+			}
+		}
+		
+		for (const c_coordinate of c_feature["geometry"]["coordinates"]) {
+			const c_node_id = String(c_coordinate[0]) + "_" + String(c_coordinate[1]);
+			c_walk["node_id_array"].push(c_node_id);
+		}
+		c_walk_array.push(c_walk);
+	}
+	busmapjs.sort_object_array(c_walk_array, "offset_order");
+	
+	// (1) graphを作成、pathの列へ分解
+	const c_temp_path_ids = {};
+	busmapjs.create_paths_from_walks(c_walk_array, c_temp_path_ids);
+	
+	const c_path_ids = {};
+	// ジオメトリ簡素化
+	const c_simplify_distance = Number(document.getElementById("input_simplify_distance").value);
+	if (isNaN(c_simplify_distance) === false) {
+		const c_convert_path_id = {};
+		for (const c_path_id in c_temp_path_ids) {
+			const c_coordinates = [];
+			const c_node_id_array = c_path_id.split("__");
+			for (const c_node_id of c_node_id_array) {
+				c_coordinates.push([c_node_id.split("_")[0], c_node_id.split("_")[1]]);
+			}
+			const c_new_coordinates = busmapjs.simplify_line_string_lat_lon(c_coordinates, c_simplify_distance);
+			const c_new_node_id_array = [];
+			for (const c_coordinate of c_new_coordinates) {
+				c_new_node_id_array.push(c_coordinate[0] + "_" + c_coordinate[1]);
+			}
+			c_convert_path_id[c_path_id] = c_new_node_id_array.join("__");;
+		}
+		// 置き換え
+		for (const c_walk of c_walk_array) {
+			for (let i2 = 0; i2 < c_walk["path_id_array"].length; i2++) {
+				c_walk["path_id_array"][i2] = c_convert_path_id[c_walk["path_id_array"][i2]];
+			}
+		}
+		for (const c_path_id in c_temp_path_ids) {
+			c_path_ids[c_convert_path_id[c_path_id]] = c_temp_path_ids[c_path_id];
+		}
+	} else {
+		for (const c_path_id in c_temp_path_ids) {
+			c_path_ids[c_path_id] = c_temp_path_ids[c_path_id];
+		}
+	}
+	
+	// (2) pathの列へ向きをつける
+	busmapjs.add_path_direction(c_walk_array, c_path_ids);
+	
+	// (3) オフセット幅をつける
+	busmapjs.add_path_offset_order(c_walk_array, c_path_ids);
+	
+	// (4) 運行本数を合計する
+	busmapjs.aggregate_properties(c_walk_array, c_path_ids);
+	
+	
+	// GeoJSONへ変換
+	const c_out_geojson = {"type": "FeatureCollection", "features": []};
+	for (const c_walk of c_walk_array) {
+		for (let i2 = 0; i2 < c_walk["path_id_array"].length; i2++) {
+			const c_feature = {
+				"type": "Feature",
+				"geometry": {
+					"type": "LineString",
+					"coordinates": []
+				},
+				"properties": {}
+			};
+			
+			// propertiesを出力
+			for (const c_key in c_walk["properties"]) {
+				if (c_key === "shape_ids" || c_key === "trip_ids") {
+					continue; // ひとまず非対応（trip_idsは量が膨大になる）
+				}
+				c_feature["properties"][c_key] = c_walk["properties"][c_key];
+			}
+			c_feature["properties"]["segment_sequence"] = i2;
+			c_feature["properties"]["segment_count"] = c_walk["path_id_array"].length;
+			
+			// c_feature["properties"]["offset"] = c_walk["path_offset_orders"][i2];
+			// c_feature["properties"]["offset_direction"] = c_path_ids[c_walk["path_id_array"][i2]]["direction"] * c_walk["path_direction_array"][i2];
+			
+			c_feature["properties"]["offset"] = c_walk["path_offset_orders"][i2] - 1 - (c_path_ids[c_walk["path_id_array"][i2]]["offset_id_array"].length - 1) / 2;
+			c_feature["properties"]["offset"] *= c_path_ids[c_walk["path_id_array"][i2]]["direction"] * c_walk["path_direction_array"][i2];
+			
+			// 集計結果を出力
+			for (const c_key in c_path_ids[c_walk["path_id_array"][i2]]["aggregation"][c_walk["offset_id"]]) {
+				c_feature["properties"][c_key] = c_path_ids[c_walk["path_id_array"][i2]]["aggregation"][c_walk["offset_id"]][c_key];
+			}
+			
+			// geometryを出力
+			const c_node_id_array = c_walk["path_id_array"][i2].split("__");
+			if (c_walk["path_direction_array"][i2] === -1) {
+				c_node_id_array.reverse();
+			}
+			for (const c_node_id of c_node_id_array) {
+				c_feature["geometry"]["coordinates"].push([Number(c_node_id.split("_")[0]), Number(c_node_id.split("_")[1])]);
+			}
+			c_out_geojson["features"].push(c_feature);
+		}
+	}
+	
+	
+	// ファイル出力
+	const c_out_text = JSON.stringify(c_out_geojson);
+	const c_blob = new Blob([c_out_text],{type:"text/plain"});
+	const c_a = document.createElement("a");
+	c_a.href = URL.createObjectURL(c_blob);
+	c_a.download = "segments.geojson";
+	c_a.click();
+}
+
+
+		//]]>
+		</script>
+	</body>
+</html>
