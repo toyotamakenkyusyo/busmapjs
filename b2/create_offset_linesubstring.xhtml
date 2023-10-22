@@ -183,7 +183,7 @@ async function f_read_geojson(a) {
 	const c_blob = new Blob([c_out_text],{type:"text/plain"});
 	const c_a = document.createElement("a");
 	c_a.href = URL.createObjectURL(c_blob);
-	c_a.download = "segments.geojson";
+	c_a.download = "linesubstrings.geojson";
 	c_a.click();
 }
 
