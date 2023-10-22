@@ -602,14 +602,14 @@ busmapjs.add_undefined_shapes = function(a_gtfs) {
 }
 
 
-busmapjs.set_geojson_offset_id_offset_order = function(a_geojson, a_offset_id_property, a_offset_order_property) {
-	// GeoJSONのLineString型featureのpropertiesにoffset_idとoffset_orderを設定する
+busmapjs.set_geojson_offset_id_offset_seq = function(a_geojson, a_offset_id_property, a_offset_order_property) {
+	// GeoJSONのLineString型featureのpropertiesにoffset_idとoffset_seqを設定する
 	// 入力：a_geojson["features"][]["properties"][a_offset_id_property]
 	// 入力：a_geojson["features"][]["properties"][a_offset_order_property]
 	// 出力：a_geojson["features"][]["properties"]["offset_id"]
-	// 出力：a_geojson["features"][]["properties"]["offset_order"]
+	// 出力：a_geojson["features"][]["properties"]["offset_seq"]
 	// offset_idは、a_offset_id_propertyが""の場合は全て""にし、ない場合は補完する
-	// offset_orderは連続した正整数を出力する
+	// offset_seqは連続した正整数を出力する
 	
 	// offset_idの確認・設定
 	let l_count = 0;
@@ -677,7 +677,7 @@ busmapjs.set_geojson_offset_id_offset_order = function(a_geojson, a_offset_id_pr
 	busmapjs.sort_object_array(c_offset_id_order_array, "offset_order");
 	for (let i1 = 0; i1 < c_offset_id_order_array.length; i1++) {
 		c_offset_ids[c_offset_id_order_array[i1]["offset_id"]] = i1 + 1;
-		c_offset_id_order_array[i1]["offset_order"] = i1 + 1;
+		// c_offset_id_order_array[i1]["offset_seq"] = i1 + 1;
 	}
 	
 	for (const c_feature of a_geojson["features"]) {
@@ -685,7 +685,7 @@ busmapjs.set_geojson_offset_id_offset_order = function(a_geojson, a_offset_id_pr
 			continue;
 		}
 		const c_offset_id = c_feature["properties"]["offset_id"];
-		c_feature["properties"]["offset_order"] = c_offset_ids[c_offset_id];
+		c_feature["properties"]["offset_seq"] = c_offset_ids[c_offset_id];
 	}
 }
 
@@ -869,19 +869,19 @@ busmapjs.add_path_direction = function(a_walk_array, a_path_ids) {
 }
 
 
-busmapjs.add_path_offset_order = function(a_walk_array, a_path_ids) {
+busmapjs.add_path_offset_seq = function(a_walk_array, a_path_ids) {
 	// pathごとにwalkのオフセット順をつける
 	// a_walk_arrayの入力順でオフセットする
 	// offset_idが同じものは同じオフセット順とする
 	// 同じpathを2回以上通る場合は、同じオフセット順とする
 	
 	// 入力：a_walk_array: [{"path_id_array": [path_id], "offset_id": offset_id}];
-	// 出力：a_walk_array: [{"path_id_array": [path_id], "offset_id": offset_id, "path_offset_orders": [number]}];
+	// 出力：a_walk_array: [{"path_id_array": [path_id], "offset_id": offset_id, "path_offset_seqs": [number]}];
 	// 入力：a_path_ids: {path_id: {}};
 	// 出力：a_path_ids: {path_id: {"offset_id_array": [offset_id]}};
 	
 	for (const c_walk of a_walk_array) {
-		c_walk["path_offset_orders"] = [];
+		c_walk["path_offset_seqs"] = [];
 	}
 	for (const c_path_id in a_path_ids) {
 		a_path_ids[c_path_id]["offset_id_array"] = [];
@@ -893,8 +893,8 @@ busmapjs.add_path_offset_order = function(a_walk_array, a_path_ids) {
 			if (a_path_ids[c_path_id]["offset_id_array"][a_path_ids[c_path_id]["offset_id_array"].length - 1] !== c_offset_id) {
 				a_path_ids[c_path_id]["offset_id_array"].push(c_offset_id);
 			}
-			const c_offset_order = a_path_ids[c_path_id]["offset_id_array"].length;
-			c_walk["path_offset_orders"].push(c_offset_order);
+			const c_offset_seq = a_path_ids[c_path_id]["offset_id_array"].length;
+			c_walk["path_offset_seqs"].push(c_offset_seq);
 		}
 	}
 }

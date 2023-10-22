@@ -55,7 +55,7 @@ async function f_read_geojson(a) {
 	// offset_idとoffset_orderの設定
 	const c_offset_id_property = document.getElementById("input_offset_id").value;
 	const c_offset_order_property = document.getElementById("input_offset_order").value;
-	busmapjs.set_geojson_offset_id_offset_order(c_geojson, c_offset_id_property, c_offset_order_property);
+	busmapjs.set_geojson_offset_id_offset_seq(c_geojson, c_offset_id_property, c_offset_order_property);
 	
 	// グラフへ変換
 	const c_walk_array = [];
@@ -66,7 +66,7 @@ async function f_read_geojson(a) {
 		const c_walk = {
 			"node_id_array": [],
 			"offset_id": c_feature["properties"]["offset_id"],
-			"offset_order": c_feature["properties"]["offset_order"],
+			"offset_seq": c_feature["properties"]["offset_seq"],
 			"aggregation": {},
 			"properties": c_feature["properties"]
 		};
@@ -82,7 +82,7 @@ async function f_read_geojson(a) {
 		}
 		c_walk_array.push(c_walk);
 	}
-	busmapjs.sort_object_array(c_walk_array, "offset_order");
+	busmapjs.sort_object_array(c_walk_array, "offset_seq");
 	
 	// (1) graphを作成、pathの列へ分解
 	const c_temp_path_ids = {};
@@ -125,7 +125,7 @@ async function f_read_geojson(a) {
 	busmapjs.add_path_direction(c_walk_array, c_path_ids);
 	
 	// (3) オフセット幅をつける
-	busmapjs.add_path_offset_order(c_walk_array, c_path_ids);
+	busmapjs.add_path_offset_seq(c_walk_array, c_path_ids);
 	
 	// (4) 運行本数を合計する
 	busmapjs.aggregate_properties(c_walk_array, c_path_ids);
@@ -151,13 +151,13 @@ async function f_read_geojson(a) {
 				}
 				c_feature["properties"][c_key] = c_walk["properties"][c_key];
 			}
-			c_feature["properties"]["segment_sequence"] = i2;
-			c_feature["properties"]["segment_count"] = c_walk["path_id_array"].length;
+			c_feature["properties"]["substr_seq"] = i2;
+			c_feature["properties"]["substr_cnt"] = c_walk["path_id_array"].length;
 			
-			// c_feature["properties"]["offset"] = c_walk["path_offset_orders"][i2];
+			// c_feature["properties"]["offset"] = c_walk["path_offset_seqs"][i2];
 			// c_feature["properties"]["offset_direction"] = c_path_ids[c_walk["path_id_array"][i2]]["direction"] * c_walk["path_direction_array"][i2];
 			
-			c_feature["properties"]["offset"] = c_walk["path_offset_orders"][i2] - 1 - (c_path_ids[c_walk["path_id_array"][i2]]["offset_id_array"].length - 1) / 2;
+			c_feature["properties"]["offset"] = c_walk["path_offset_seqs"][i2] - 1 - (c_path_ids[c_walk["path_id_array"][i2]]["offset_id_array"].length - 1) / 2;
 			c_feature["properties"]["offset"] *= c_path_ids[c_walk["path_id_array"][i2]]["direction"] * c_walk["path_direction_array"][i2];
 			
 			// 集計結果を出力
