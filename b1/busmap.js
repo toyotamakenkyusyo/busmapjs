@@ -144,7 +144,7 @@ busmapjs.create_stop_order_table = async function(a_settings) { //GTFSのFileオ
 	const c_walk_array = [];
 	for (const c_ur_route of c_bmd["ur_routes"]) {
 		if (c_ur_route["route_id"] !== "ネオポリス線_A") {
-			continue;
+			// continue;
 		}
 		const c_node_array = [];
 		for (const c_stop of c_ur_route["stop_array"]) {

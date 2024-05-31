@@ -21,7 +21,7 @@
 document.getElementById("gtfs_input").addEventListener("change", f_start, false);
 
 async function f_start(a) {
-	busmapjs.make_route_timetable(a.target.files[0]);
+	busmapjs.create_stop_order_table({"file": a.target.files[0]});
 }
 
 		//]]>
