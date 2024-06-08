@@ -1,0 +1,72 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<meta charset="UTF-8" />
+		<script src="https://cdn.jsdelivr.net/npm/zlibjs@0.3.1/bin/zip.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/zlibjs@0.3.1/bin/unzip.min.js"></script>
+		<script src="busmap.js"></script>
+		<title>豐多摩研究所 GTFSのshape_dist_traveled付与ツール</title>
+	</head>
+	<body>
+		<h1>豐多摩研究所 GTFSのshape_dist_traveled付与ツール</h1>
+		<p>豐多摩研究所 トップページ <a href="https://ss1.xrea.com/toyotama.g1.xrea.com/index.xhtml">https://ss1.xrea.com/toyotama.g1.xrea.com/index.xhtml</a></p>
+		<p>GitHub busmapjs <a href="https://github.com/toyotamakenkyusyo/busmapjs">https://github.com/toyotamakenkyusyo/busmapjs</a></p>
+		<div>GTFSを読み込むと、shape_dist_traveledを付与して出力します。数十秒以上時間がかかる場合があります。</div>
+		<div><input type="radio" name="radio_shapes" value="shapes" checked="checked" />：shapes.txtがあれば使う<br /><input type="radio" name="radio_shapes" value="parent_station" />：shapes.txtを使わない（stops.txtにparent_stationがあれば使う）<br /><input type="radio" name="radio_shapes" value="stops" />：shapes.txtを使わない（stops.txtのparent_stationを使わない、stop_idを<input type="text" id="separate" value="" />で区切って最初の部分で束ねる（区切らない場合は空欄））</div>
+		<div>元にするGTFSを読み込み：<input type="file" id="input_gtfs" accept="application/zip" /></div>
+		<script>
+		//<![CDATA[
+
+document.getElementById("input_gtfs").onchange = f_read_gtfs;
+async function f_read_gtfs(a) {
+	const c_array_buffer = await busmapjs.convert_file_to_array_buffer(a.target.files[0]);
+	const c_Uint8Array = new Uint8Array(c_array_buffer);
+	const c_text_files = busmapjs.convert_zip_to_text_files(c_Uint8Array);
+	const c_gtfs = {};
+	for (const c_filename in c_text_files) {
+		try {
+			c_gtfs[c_filename.replace(".txt", "")] = busmapjs.convert_csv_to_json(c_text_files[c_filename]);
+		} catch (e) {
+			console.log(e);
+			c_gtfs[c_filename.replace(".txt", "")] = [];
+		}
+	}
+	
+	// stop_lat, stop_lonの統合処理
+	if (document.getElementsByName("radio_shapes").item(1).checked) {
+		c_gtfs["shapes"] = [];
+		busmapjs.convert_stop_lat_lon_to_parent_station(c_gtfs);
+	} else if (document.getElementsByName("radio_shapes").item(2).checked) {
+		c_gtfs["shapes"] = [];
+		const c_separator = document.getElementById("separate").value;
+		if (c_separator !== "") {
+			busmapjs.convert_stop_lat_lon_to_splitted_stop_id(c_gtfs, c_separator);
+		}
+	}
+	
+	busmapjs.create_gtfs_index(c_gtfs);
+	busmapjs.add_undefined_shapes(c_gtfs); // shapesがない場合に作る
+	busmapjs.create_ur_routes(c_gtfs);
+	
+	busmapjs.add_shape_dist_traveled(c_gtfs); // shape_dist_traveled付与
+	
+	//CSV出力
+	c_text_files["shapes.txt"] = busmapjs.convert_json_to_csv(c_gtfs["shapes"]);
+	c_text_files["stop_times.txt"] = busmapjs.convert_json_to_csv(c_gtfs["stop_times"]);
+	//ZIP出力
+	const c_Uint8Array_out = busmapjs.convert_text_files_to_zip(c_text_files);
+	const c_ArrayBuffer = c_Uint8Array_out.buffer; 
+	const c_blob = new Blob([c_ArrayBuffer], {"type": "application/zip"});
+	const c_a = document.createElement("a");
+	c_a.href = URL.createObjectURL(c_blob);
+	c_a.download = "gtfs_shape_dist_traveled.zip";
+	c_a.click();
+	
+}
+
+
+		//]]>
+		</script>
+	</body>
+</html>
