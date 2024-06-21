@@ -1184,18 +1184,35 @@ busmapjs.add_shape_dist_traveled = function(a_gtfs) {
 			c_distance_array[0][i3]["total_distance"] = c_distance_array[0][i3]["distance"];
 		}
 		for (let i2 = 0; i2 < c_distance_array.length - 1; i2++) { // 最後以外
+			// 各段階でのtotal_distanceの最小値を求めておく
+			const c_pre_array = [];
 			for (let i3 = 0; i3 < c_distance_array[i2].length; i3++) {
 				if (i2 !== 0 && c_distance_array[i2][i3]["pre_sequence"] === null) {
 					continue;
 				}
-				for (let i4 = 0; i4 < c_distance_array[i2 + 1].length; i4++) {
-					if (c_distance_array[i2][i3]["shape_dist_traveled"] > c_distance_array[i2 + 1][i4]["shape_dist_traveled"]) {
-						continue;
+				if (c_pre_array.length === 0 || c_distance_array[i2][i3]["total_distance"] < c_pre_array[c_pre_array.length - 1]["total_distance"]) {
+					c_pre_array.push({
+						"sequence": i3,
+						"shape_dist_traveled": c_distance_array[i2][i3]["shape_dist_traveled"],
+						"total_distance": c_distance_array[i2][i3]["total_distance"]
+					});
+				}
+			}
+			// 次の計算
+			let i3_pre = 0;
+			for (let i3 = 0; i3 < c_distance_array[i2 + 1].length; i3++) {
+				for (let i4 = i3_pre; i4 < c_pre_array.length; i4++) {
+					if (c_pre_array[i4]["shape_dist_traveled"] > c_distance_array[i2 + 1][i3]["shape_dist_traveled"]) {
+						break;
 					}
-					if ((c_distance_array[i2][i3]["total_distance"] + c_distance_array[i2 + 1][i4]["distance"]) < c_distance_array[i2 + 1][i4]["total_distance"]) {
-						c_distance_array[i2 + 1][i4]["total_distance"] = c_distance_array[i2][i3]["total_distance"] + c_distance_array[i2 + 1][i4]["distance"];
-						c_distance_array[i2 + 1][i4]["pre_sequence"] = i3;
-					}
+					i3_pre = i4;
+				}
+				if (c_pre_array[i3_pre]["shape_dist_traveled"] > c_distance_array[i2 + 1][i3]["shape_dist_traveled"]) {
+					continue;
+				}
+				if ((c_pre_array[i3_pre]["total_distance"] + c_distance_array[i2 + 1][i3]["distance"]) < c_distance_array[i2 + 1][i3]["total_distance"]) {
+					c_distance_array[i2 + 1][i3]["total_distance"] = c_pre_array[i3_pre]["total_distance"] + c_distance_array[i2 + 1][i3]["distance"];
+					c_distance_array[i2 + 1][i3]["pre_sequence"] = c_pre_array[i3_pre]["sequence"];
 				}
 			}
 		}
