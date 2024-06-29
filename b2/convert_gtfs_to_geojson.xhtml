@@ -13,7 +13,6 @@
 		<p>GitHub busmapjs <a href="https://github.com/toyotamakenkyusyo/busmapjs">https://github.com/toyotamakenkyusyo/busmapjs</a></p>
 		<div>GTFSを読み込むと、経路の線と停留所の点をGeoJSONにして出力します。</div>
 		<div><input type="radio" name="radio_shapes" value="shapes" checked="checked" />：shapes.txtがあれば使う<br /><input type="radio" name="radio_shapes" value="parent_station" />：shapes.txtを使わない（stops.txtにparent_stationがあれば使う）<br /><input type="radio" name="radio_shapes" value="stops" />：shapes.txtを使わない（stops.txtのparent_stationを使わない、stop_idを<input type="text" id="separate" value="" />で区切って最初の部分で束ねる（区切らない場合は空欄））</div>
-		<div><input type="checkbox" id="chackbox_m" />：shape_dist_traveledをm値として4番目に出力する</div>
 		<div>元にするGTFSを読み込み：<input type="file" id="input_gtfs" accept="application/zip" /></div>
 		<script>
 		//<![CDATA[
@@ -50,11 +49,7 @@ async function f_read_gtfs(a) {
 	busmapjs.add_undefined_shapes(c_gtfs); // shapesがない場合に作る
 	busmapjs.create_ur_routes(c_gtfs);
 	
-	let l_output_m_value = false;
-	if (document.getElementById("chackbox_m").checked) {
-		l_output_m_value = true;
-	}
-	const c_geojson = busmapjs.convert_ur_route_to_geojson(c_gtfs, l_output_m_value);
+	const c_geojson = busmapjs.convert_ur_route_to_geojson(c_gtfs);
 	const c_text = JSON.stringify(c_geojson);
 	const c_blob = new Blob([c_text],{type:"text/plain"});
 	const c_a = document.createElement("a");

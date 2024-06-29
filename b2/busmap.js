@@ -407,7 +407,7 @@ busmapjs.convert_stop_lat_lon_to_splitted_stop_id = function(a_gtfs, a_separator
 }
 
 
-busmapjs.convert_ur_route_to_geojson = function(a_gtfs, a_output_m_value) {
+busmapjs.convert_ur_route_to_geojson = function(a_gtfs) {
 	// ur_routeをGeoJSON出力
 	const c_route_field_names = ["route_id", "agency_id", "route_short_name", "route_long_name", "route_desc", "route_type", "route_url", "route_color", "route_text_color", "route_sort_order", "continuous_pickup", "continuous_drop_off", "jp_parent_route_id"];
 	const c_day_of_week = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
@@ -438,14 +438,7 @@ busmapjs.convert_ur_route_to_geojson = function(a_gtfs, a_output_m_value) {
 		
 		const c_shape_id = c_feature["properties"]["shape_ids"][0];
 		for (let i2 = 0; i2 < a_gtfs["index"]["shape"][c_shape_id].length; i2++) {
-			const c_lon = Number(a_gtfs["index"]["shape"][c_shape_id][i2]["shape_pt_lon"]);
-			const c_lat = Number(a_gtfs["index"]["shape"][c_shape_id][i2]["shape_pt_lat"]);
-			if (a_output_m_value === true) {
-				const c_m = Number(a_gtfs["index"]["shape"][c_shape_id][i2]["shape_dist_traveled"]);
-				c_feature["geometry"]["coordinates"].push([c_lon, c_lat, , c_m]);
-			} else {
-				c_feature["geometry"]["coordinates"].push([c_lon, c_lat]);
-			}
+			c_feature["geometry"]["coordinates"].push([Number(a_gtfs["index"]["shape"][c_shape_id][i2]["shape_pt_lon"]), Number(a_gtfs["index"]["shape"][c_shape_id][i2]["shape_pt_lat"])]);
 		}
 		
 		const c_route_id = a_gtfs["index"]["ur_route"][c_ur_route_id]["route_id"];
@@ -473,20 +466,12 @@ busmapjs.convert_ur_route_to_geojson = function(a_gtfs, a_output_m_value) {
 		const c_trip_id = c_feature["properties"]["trip_ids"][0];
 		for (let i2 = 0; i2 < a_gtfs["index"]["trip"][c_trip_id]["stop_times"].length; i2++) {
 			const c_stop_id = a_gtfs["index"]["trip"][c_trip_id]["stop_times"][i2]["stop_id"];
-			const c_lon = Number(a_gtfs["index"]["stop"][c_stop_id]["stop_lon"]);
-			const c_lat = Number(a_gtfs["index"]["stop"][c_stop_id]["stop_lat"]);
-			let l_coordinates;
-			if (a_output_m_value === true) {
-				const c_m = Number(a_gtfs["index"]["trip"][c_trip_id]["stop_times"][i2]["shape_dist_traveled"]);
-				l_coordinates = [c_lon, c_lat, , c_m];
-			} else {
-				l_coordinates = [c_lon, c_lat];
-			}
+			
 			c_geojson["features"].push({
 				"type": "Feature",
 				"geometry": {
 					"type": "Point",
-					"coordinates": l_coordinates
+					"coordinates": [Number(a_gtfs["index"]["stop"][c_stop_id]["stop_lon"]), Number(a_gtfs["index"]["stop"][c_stop_id]["stop_lat"])]
 				},
 				"properties": {
 					"string_id": l_string_id,
