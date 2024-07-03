@@ -14,6 +14,7 @@
 		<div>線を束ねるプロパティ（空欄可）：<input type="text" id="input_offset_id" value="route_id" /></div>
 		<div>線の並び順のプロパティ（空欄可）：<input type="text" id="input_offset_order" value="route_sort_order" /></div>
 		<div>ジオメトリを簡素化する距離（空欄可）：<input type="text" id="input_simplify_distance" value="0" />（m）</div>
+		<div><input type="checkbox" id="checkbox_split" />：停留所間別に出力</div>
 		<div>元にするGeoJSON（LineStirngのFeatureCollection）を読み込み：<input type="file" id="input_geojson" accept="application/geo+json" /></div>
 		<script>
 		//<![CDATA[
@@ -88,6 +89,20 @@ async function f_read_geojson(a) {
 	const c_temp_path_ids = {};
 	busmapjs.create_paths_from_walks(c_walk_array, c_temp_path_ids);
 	
+	// shape_dist_traveledの付与
+	for (const c_walk of c_walk_array) {
+		if (c_walk["properties"]["shape_dist_traveled"] === null) {
+			c_walk["split_shape_dist_traveled"] = null;
+			continue;
+		}
+		c_walk["split_shape_dist_traveled"] = [c_walk["properties"]["shape_dist_traveled"][0]];
+		let l_shape_pt_sequence = 0;
+		for (let i2 = 0; i2 < c_walk["path_id_array"].length; i2++) {
+			l_shape_pt_sequence += c_walk["path_id_array"][i2].split("__").length - 1;
+			c_walk["split_shape_dist_traveled"].push(c_walk["properties"]["shape_dist_traveled"][l_shape_pt_sequence]);
+		}
+	}
+	
 	const c_path_ids = {};
 	// ジオメトリ簡素化
 	const c_simplify_distance = Number(document.getElementById("input_simplify_distance").value);
@@ -104,7 +119,7 @@ async function f_read_geojson(a) {
 			for (const c_coordinate of c_new_coordinates) {
 				c_new_node_id_array.push(c_coordinate[0] + "_" + c_coordinate[1]);
 			}
-			c_convert_path_id[c_path_id] = c_new_node_id_array.join("__");;
+			c_convert_path_id[c_path_id] = c_new_node_id_array.join("__");
 		}
 		// 置き換え
 		for (const c_walk of c_walk_array) {
@@ -131,15 +146,133 @@ async function f_read_geojson(a) {
 	busmapjs.aggregate_properties(c_walk_array, c_path_ids);
 	
 	
+	// 停留所間分割用の停留所のソート
+	const c_stop_arrays = {};
+	for (let i1 = 0; i1 < c_geojson["features"].length; i1++) {
+		if (c_geojson["features"][i1]["geometry"]["type"] !== "Point") {
+			continue;
+		}
+		c_geojson["features"][i1]["properties"]["first_stop"] = false;
+		c_geojson["features"][i1]["properties"]["last_stop"] = false;
+		if (c_stop_arrays[c_geojson["features"][i1]["properties"]["string_id"]] === undefined) {
+			c_stop_arrays[c_geojson["features"][i1]["properties"]["string_id"]] = [];
+		}
+		c_stop_arrays[c_geojson["features"][i1]["properties"]["string_id"]].push(c_geojson["features"][i1]["properties"]);
+	}
+	for (const c_string_id in c_stop_arrays) {
+		busmapjs.sort_object_array(c_stop_arrays[c_string_id], "stop_sequence");
+		c_stop_arrays[c_string_id][0]["first_stop"] = true;
+		c_stop_arrays[c_string_id][c_stop_arrays[c_string_id].length - 1]["last_stop"] = true;
+	}
+	
 	// GeoJSONへ変換
 	const c_out_geojson = {"type": "FeatureCollection", "features": []};
 	for (const c_walk of c_walk_array) {
-		for (let i2 = 0; i2 < c_walk["path_id_array"].length; i2++) {
+		const c_linestring_array = [];
+		if (c_stop_arrays[c_walk["properties"]["string_id"]] !== undefined && c_stop_arrays[c_walk["properties"]["string_id"]][0]["shape_dist_traveled"] !== null && c_walk["split_shape_dist_traveled"] !== null && document.getElementById("checkbox_split").checked) { // 停留所間で分割する場合
+			const c_stop_array = c_stop_arrays[c_walk["properties"]["string_id"]];
+			let l_stop_count = 0;
+			
+			for (let i2 = 0; i2 < c_walk["path_id_array"].length; i2++) {
+				const c_node_id_array = c_walk["path_id_array"][i2].split("__");
+				if (c_walk["path_direction_array"][i2] === -1) {
+					c_node_id_array.reverse();
+				}
+				const c_path_coordinates = [];
+				for (const c_node_id of c_node_id_array) {
+					const c_lon = Number(c_node_id.split("_")[0]);
+					const c_lat = Number(c_node_id.split("_")[1]);
+					c_path_coordinates.push([c_lon, c_lat]);
+				}
+				const c_distance_array = [0];
+				for (let i3 = 1; i3 < c_path_coordinates.length; i3++) {
+					const c_lat_0 = Number(c_path_coordinates[i3 - 1][1]) * Math.PI / 180;
+					const c_lon_0 = Number(c_path_coordinates[i3 - 1][0]) * Math.PI / 180;
+					const c_lat_1 = Number(c_path_coordinates[i3][1]) * Math.PI / 180;
+					const c_lon_1 = Number(c_path_coordinates[i3][0]) * Math.PI / 180;
+					const c_distance = 6378137 * Math.acos(Math.sin(c_lat_0) * Math.sin(c_lat_1) + Math.cos(c_lat_0) * Math.cos(c_lat_1) * Math.cos(c_lon_0 - c_lon_1));
+					c_distance_array.push(c_distance_array[c_distance_array.length - 1] + c_distance);
+				}
+				const c_shape_dist_traveled_array = [];
+				for (let i3 = 0; i3 < c_path_coordinates.length; i3++) {
+					c_shape_dist_traveled_array.push(c_walk["split_shape_dist_traveled"][i2] + c_distance_array[i3] / c_distance_array[c_distance_array.length - 1] * (c_walk["split_shape_dist_traveled"][i2 + 1] - c_walk["split_shape_dist_traveled"][i2]));
+				}
+				// 途中に停留所を追加する
+				const c_point_array = [];
+				let l_point_count = 0;
+				while (l_point_count < c_path_coordinates.length && l_stop_count < c_stop_array.length) {
+					if (l_stop_count === 0 && c_shape_dist_traveled_array[l_point_count] < c_stop_array[l_stop_count]["shape_dist_traveled"]) {
+						l_point_count += 1;
+					} else if (c_shape_dist_traveled_array[l_point_count] === c_stop_array[l_stop_count]["shape_dist_traveled"] ) {
+						c_point_array.push({
+							"coordinates": c_path_coordinates[l_point_count],
+							"stop": c_stop_array[l_stop_count]
+						});
+						l_stop_count += 1;
+						l_point_count += 1;
+					} else if (c_stop_array[l_stop_count]["shape_dist_traveled"] < c_shape_dist_traveled_array[l_point_count]) {
+						const c_ratio = (c_stop_array[l_stop_count]["shape_dist_traveled"] - c_shape_dist_traveled_array[l_point_count - 1]) / (c_shape_dist_traveled_array[l_point_count] - c_shape_dist_traveled_array[l_point_count - 1]);
+						const c_lon = c_path_coordinates[l_point_count - 1][0] * (1 - c_ratio) + c_path_coordinates[l_point_count][0] * c_ratio;
+						const c_lat = c_path_coordinates[l_point_count - 1][1] * (1 - c_ratio) + c_path_coordinates[l_point_count][1] * c_ratio;
+						
+						c_point_array.push({
+							"coordinates": [c_lon, c_lat],
+							"stop": c_stop_array[l_stop_count]
+						});
+						l_stop_count += 1;
+					} else { // c_shape_dist_traveled_array[l_point_count] < c_stop_array[l_stop_count]["shape_dist_traveled"]
+						c_point_array.push({
+							"coordinates": c_path_coordinates[l_point_count],
+							"stop": null
+						});
+						l_point_count += 1;
+					}
+				}
+				
+				// 停留所で分割する
+				let l_temp_coordinates = [];
+				let l_temp_stop = null;
+				for (let i3 = 0; i3 < c_point_array.length; i3++) {
+					if ((i3 !== 0 && c_point_array[i3]["stop"] !== null) || i3 === c_point_array.length - 1) {
+						l_temp_coordinates.push(c_point_array[i3]["coordinates"]);
+						c_linestring_array.push({
+							"path_index": i2,
+							"from_stop": l_temp_stop,
+							"to_stop": c_point_array[i3]["stop"],
+							"coordinates": l_temp_coordinates
+						});
+						l_temp_coordinates = [];
+						l_temp_stop = c_point_array[i3]["stop"];
+					}
+					l_temp_coordinates.push(c_point_array[i3]["coordinates"]);
+				}
+			}
+		} else { // 停留所間で分割しない場合
+			for (let i2 = 0; i2 < c_walk["path_id_array"].length; i2++) {
+				const c_node_id_array = c_walk["path_id_array"][i2].split("__");
+				if (c_walk["path_direction_array"][i2] === -1) {
+					c_node_id_array.reverse();
+				}
+				const c_temp_coordinates = [];
+				for (const c_node_id of c_node_id_array) {
+					c_temp_coordinates.push([Number(c_node_id.split("_")[0]), Number(c_node_id.split("_")[1])]);
+				}
+				c_linestring_array.push({
+					"path_index": i2,
+					"from_stop": null,
+					"to_stop": null,
+					"coordinates": c_temp_coordinates
+				});
+			}
+		}
+		// 出力
+		for (let i3 = 0; i3 < c_linestring_array.length; i3++) {
+			let i2 = c_linestring_array[i3]["path_index"];
 			const c_feature = {
 				"type": "Feature",
 				"geometry": {
 					"type": "LineString",
-					"coordinates": []
+					"coordinates": c_linestring_array[i3]["coordinates"]
 				},
 				"properties": {}
 			};
@@ -151,8 +284,8 @@ async function f_read_geojson(a) {
 				}
 				c_feature["properties"][c_key] = c_walk["properties"][c_key];
 			}
-			c_feature["properties"]["substr_seq"] = i2;
-			c_feature["properties"]["substr_cnt"] = c_walk["path_id_array"].length;
+			c_feature["properties"]["substr_seq"] = i3;
+			c_feature["properties"]["substr_cnt"] = c_linestring_array.length;
 			
 			// c_feature["properties"]["offset"] = c_walk["path_offset_seqs"][i2];
 			// c_feature["properties"]["offset_direction"] = c_path_ids[c_walk["path_id_array"][i2]]["direction"] * c_walk["path_direction_array"][i2];
@@ -165,13 +298,31 @@ async function f_read_geojson(a) {
 				c_feature["properties"][c_key] = c_path_ids[c_walk["path_id_array"][i2]]["aggregation"][c_walk["offset_id"]][c_key];
 			}
 			
-			// geometryを出力
-			const c_node_id_array = c_walk["path_id_array"][i2].split("__");
-			if (c_walk["path_direction_array"][i2] === -1) {
-				c_node_id_array.reverse();
+			c_feature["properties"]["shape_dist_traveled"] = null;
+			
+			c_feature["properties"]["from_stop_id"] = null;
+			c_feature["properties"]["from_stop_sequence"] = null;
+			c_feature["properties"]["from_pickup_type"] = null;
+			c_feature["properties"]["from_drop_off_type"] = null;
+			c_feature["properties"]["first_stop"] = null;
+			c_feature["properties"]["to_stop_id"] = null;
+			c_feature["properties"]["to_stop_sequence"] = null;
+			c_feature["properties"]["to_pickup_type"] = null;
+			c_feature["properties"]["to_drop_off_type"] = null;
+			c_feature["properties"]["last_stop"] = null;
+			if (c_linestring_array[i3]["from_stop"] !== null) {
+				c_feature["properties"]["from_stop_id"] = c_linestring_array[i3]["from_stop"]["stop_id"];
+				c_feature["properties"]["from_stop_sequence"] = c_linestring_array[i3]["from_stop"]["stop_sequence"];
+				c_feature["properties"]["from_pickup_type"] = c_linestring_array[i3]["from_stop"]["pickup_type"];
+				c_feature["properties"]["from_drop_off_type"] = c_linestring_array[i3]["from_stop"]["drop_off_type"];
+				c_feature["properties"]["first_stop"] = c_linestring_array[i3]["from_stop"]["first_stop"];
 			}
-			for (const c_node_id of c_node_id_array) {
-				c_feature["geometry"]["coordinates"].push([Number(c_node_id.split("_")[0]), Number(c_node_id.split("_")[1])]);
+			if (c_linestring_array[i3]["to_stop"] !== null) {
+				c_feature["properties"]["to_stop_id"] = c_linestring_array[i3]["to_stop"]["stop_id"];
+				c_feature["properties"]["to_stop_sequence"] = c_linestring_array[i3]["to_stop"]["stop_sequence"];
+				c_feature["properties"]["to_pickup_type"] = c_linestring_array[i3]["to_stop"]["pickup_type"];
+				c_feature["properties"]["to_drop_off_type"] = c_linestring_array[i3]["to_stop"]["drop_off_type"];
+				c_feature["properties"]["last_stop"] = c_linestring_array[i3]["to_stop"]["last_stop"];
 			}
 			c_out_geojson["features"].push(c_feature);
 		}
