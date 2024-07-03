@@ -437,8 +437,17 @@ busmapjs.convert_ur_route_to_geojson = function(a_gtfs) {
 		}
 		
 		const c_shape_id = c_feature["properties"]["shape_ids"][0];
+		const c_shape_dist_traveled_array = [];
 		for (let i2 = 0; i2 < a_gtfs["index"]["shape"][c_shape_id].length; i2++) {
 			c_feature["geometry"]["coordinates"].push([Number(a_gtfs["index"]["shape"][c_shape_id][i2]["shape_pt_lon"]), Number(a_gtfs["index"]["shape"][c_shape_id][i2]["shape_pt_lat"])]);
+			if (a_gtfs["index"]["shape"][c_shape_id][i2]["shape_dist_traveled"] !== undefined && a_gtfs["index"]["shape"][c_shape_id][i2]["shape_dist_traveled"] !== null && a_gtfs["index"]["shape"][c_shape_id][i2]["shape_dist_traveled"] !== "") {
+				c_shape_dist_traveled_array.push(Number(a_gtfs["index"]["shape"][c_shape_id][i2]["shape_dist_traveled"]));
+			}
+		}
+		if (c_shape_dist_traveled_array.length === c_feature["geometry"]["coordinates"].length) {
+			c_feature["properties"]["shape_dist_traveled"] = c_shape_dist_traveled_array;
+		} else {
+			c_feature["properties"]["shape_dist_traveled"] = null;
 		}
 		
 		const c_route_id = a_gtfs["index"]["ur_route"][c_ur_route_id]["route_id"];
@@ -467,6 +476,12 @@ busmapjs.convert_ur_route_to_geojson = function(a_gtfs) {
 		for (let i2 = 0; i2 < a_gtfs["index"]["trip"][c_trip_id]["stop_times"].length; i2++) {
 			const c_stop_id = a_gtfs["index"]["trip"][c_trip_id]["stop_times"][i2]["stop_id"];
 			
+			let l_shape_dist_traveled = a_gtfs["index"]["trip"][c_trip_id]["stop_times"][i2]["shape_dist_traveled"];
+			if (l_shape_dist_traveled === undefined || l_shape_dist_traveled === null || l_shape_dist_traveled === "") {
+				l_shape_dist_traveled = null;
+			} else {
+				l_shape_dist_traveled = Number(l_shape_dist_traveled);
+			}
 			c_geojson["features"].push({
 				"type": "Feature",
 				"geometry": {
@@ -488,7 +503,8 @@ busmapjs.convert_ur_route_to_geojson = function(a_gtfs) {
 					"parent_station": a_gtfs["index"]["stop"][c_stop_id]["parent_station"],
 					"stop_timezone": a_gtfs["index"]["stop"][c_stop_id]["stop_timezone"],
 					"wheelchair_boarding": a_gtfs["index"]["stop"][c_stop_id]["wheelchair_boarding"],
-					"platform_code": a_gtfs["index"]["stop"][c_stop_id]["platform_code"]
+					"platform_code": a_gtfs["index"]["stop"][c_stop_id]["platform_code"],
+					"shape_dist_traveled": l_shape_dist_traveled
 				}
 			});
 		}
