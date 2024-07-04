@@ -200,8 +200,18 @@ async function f_read_geojson(a) {
 				// 途中に停留所を追加する
 				const c_point_array = [];
 				let l_point_count = 0;
-				while (l_point_count < c_path_coordinates.length && l_stop_count < c_stop_array.length) {
-					if (l_stop_count === 0 && c_shape_dist_traveled_array[l_point_count] < c_stop_array[l_stop_count]["shape_dist_traveled"]) {
+				while (l_point_count < c_path_coordinates.length) {
+					if (l_stop_count === 0 && c_shape_dist_traveled_array[l_point_count] < c_stop_array[l_stop_count]["shape_dist_traveled"]) { // 最初の停留所の前
+						c_point_array.push({
+							"coordinates": c_path_coordinates[l_point_count],
+							"stop": null
+						});
+						l_point_count += 1;
+					} else if (l_stop_count === c_stop_array.length) { // 最後の停留所の後
+						c_point_array.push({
+							"coordinates": c_path_coordinates[l_point_count],
+							"stop": null
+						});
 						l_point_count += 1;
 					} else if (c_shape_dist_traveled_array[l_point_count] === c_stop_array[l_stop_count]["shape_dist_traveled"] ) {
 						c_point_array.push({
@@ -235,12 +245,18 @@ async function f_read_geojson(a) {
 				for (let i3 = 0; i3 < c_point_array.length; i3++) {
 					if ((i3 !== 0 && c_point_array[i3]["stop"] !== null) || i3 === c_point_array.length - 1) {
 						l_temp_coordinates.push(c_point_array[i3]["coordinates"]);
-						c_linestring_array.push({
-							"path_index": i2,
-							"from_stop": l_temp_stop,
-							"to_stop": c_point_array[i3]["stop"],
-							"coordinates": l_temp_coordinates
-						});
+						if (i2 === 0 && l_temp_stop === null) {
+							// 最初の停留所の前は非出力
+						} else if (i2 === c_walk["path_id_array"].length - 1 && i3 === c_point_array.length - 1 && c_point_array[i3]["stop"] === null) {
+							// 最後の停留所の後は非出力
+						} else {
+							c_linestring_array.push({
+								"path_index": i2,
+								"from_stop": l_temp_stop,
+								"to_stop": c_point_array[i3]["stop"],
+								"coordinates": l_temp_coordinates
+							});
+						}
 						l_temp_coordinates = [];
 						l_temp_stop = c_point_array[i3]["stop"];
 					}
