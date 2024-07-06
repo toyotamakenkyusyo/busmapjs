@@ -243,9 +243,11 @@ async function f_read_geojson(a) {
 				let l_temp_coordinates = [];
 				let l_temp_stop = null;
 				for (let i3 = 0; i3 < c_point_array.length; i3++) {
-					if ((i3 !== 0 && c_point_array[i3]["stop"] !== null) || i3 === c_point_array.length - 1) {
+					if (c_point_array[i3]["stop"] !== null || i3 === c_point_array.length - 1) {
 						l_temp_coordinates.push(c_point_array[i3]["coordinates"]);
-						if (i2 === 0 && l_temp_stop === null) {
+						if (i3 === 0) {
+							// 最初は非出力（l_temp_stopは設定）
+						} else if (i2 === 0 && l_temp_stop === null) {
 							// 最初の停留所の前は非出力
 						} else if (i2 === c_walk["path_id_array"].length - 1 && i3 === c_point_array.length - 1 && c_point_array[i3]["stop"] === null) {
 							// 最後の停留所の後は非出力
