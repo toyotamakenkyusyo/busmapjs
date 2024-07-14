@@ -1,0 +1,38 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<meta charset="UTF-8" />
+		<script src="busmap.js"></script>
+		<title>豐多摩研究所 GeoJSONのshape_dist_traveled付与ツール</title>
+	</head>
+	<body>
+		<h1>豐多摩研究所 GeoJSONのshape_dist_traveled付与ツール</h1>
+		<p>豐多摩研究所 トップページ <a href="https://ss1.xrea.com/toyotama.g1.xrea.com/index.xhtml">https://ss1.xrea.com/toyotama.g1.xrea.com/index.xhtml</a></p>
+		<p>GitHub busmapjs <a href="https://github.com/toyotamakenkyusyo/busmapjs">https://github.com/toyotamakenkyusyo/busmapjs</a></p>
+		<div>GeoJSONを読み込むと、shape_dist_traveledを付与して出力します。数十秒以上時間がかかる場合があります。</div>
+		<div>元にするGeoJSONを読み込み：<input type="file" id="input_geojson" accept="application/geo+json" /></div>
+		<script>
+		//<![CDATA[
+
+document.getElementById("input_geojson").onchange = f_read_geojson;
+async function f_read_geojson(a) {
+	const c_text = await busmapjs.convert_file_to_text(a.target.files[0]);
+	const c_geojson = JSON.parse(c_text);
+	
+	busmapjs.add_geojson_shape_dist_traveled(c_geojson); // shape_dist_traveled付与
+	
+	// ファイル出力
+	const c_out_text = JSON.stringify(c_geojson);
+	const c_blob = new Blob([c_out_text],{type:"text/plain"});
+	const c_a = document.createElement("a");
+	c_a.href = URL.createObjectURL(c_blob);
+	c_a.download = "shape_dist_traveled.geojson";
+	c_a.click();
+}
+
+
+		//]]>
+		</script>
+	</body>
+</html>

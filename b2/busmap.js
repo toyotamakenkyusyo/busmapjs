@@ -1262,3 +1262,140 @@ busmapjs.add_shape_dist_traveled = function(a_gtfs) {
 		}
 	}
 }
+
+busmapjs.add_geojson_shape_dist_traveled = function(a_geojson) {
+	// LineStringへshape_dist_traveledを付与
+	for (const c_feature of a_geojson["features"]) {
+		if (c_feature["type"] !== "Feature" || c_feature["geometry"]["type"] !== "LineString") {
+			continue;
+		}
+		c_feature["properties"]["shape_dist_traveled"] = [0];
+		let l_distance = 0;
+		for (let i2 = 1; i2 < c_feature["geometry"]["coordinates"].length; i2++) {
+			const c_lat_0 = c_feature["geometry"]["coordinates"][i2 - 1][1] * Math.PI / 180;
+			const c_lon_0 = c_feature["geometry"]["coordinates"][i2 - 1][0] * Math.PI / 180;
+			const c_lat_1 = c_feature["geometry"]["coordinates"][i2][1] * Math.PI / 180;
+			const c_lon_1 = c_feature["geometry"]["coordinates"][i2][0] * Math.PI / 180;
+			l_distance += 6378137 * Math.acos(Math.sin(c_lat_0) * Math.sin(c_lat_1) + Math.cos(c_lat_0) * Math.cos(c_lat_1) * Math.cos(c_lon_0 - c_lon_1));
+			c_feature["properties"]["shape_dist_traveled"].push(l_distance);
+		}
+	}
+	
+	// Pointへshape_dist_traveledを付与
+	const c_string_index = {};
+	for (const c_feature of a_geojson["features"]) {
+		if (c_feature["type"] === "Feature" && c_feature["geometry"]["type"] === "LineString") {
+			if (c_string_index[c_feature["properties"]["string_id"]] === undefined) {
+				c_string_index[c_feature["properties"]["string_id"]] = {"LineString": null, "Point_array": []};
+			}
+			c_string_index[c_feature["properties"]["string_id"]]["LineString"] = c_feature;
+		}
+		if (c_feature["type"] === "Feature" && c_feature["geometry"]["type"] === "Point") {
+			if (c_string_index[c_feature["properties"]["string_id"]] === undefined) {
+				c_string_index[c_feature["properties"]["string_id"]] = {"LineString": null, "Point_array": []};
+			}
+			c_string_index[c_feature["properties"]["string_id"]]["Point_array"].push(c_feature);
+		}
+	}
+	for (const c_string_id in c_string_index) {
+		busmapjs.sort_object_array(c_string_index[c_string_id]["Point_array"], "stop_sequence");
+	}
+	
+	for (const c_string_id in c_string_index) {
+		// 各stopからshapeの各線分への距離を計算
+		const c_distance_array = [];
+		for (let i2 = 0; i2 < c_string_index[c_string_id]["Point_array"].length; i2++) {
+			const c_p_lat = c_string_index[c_string_id]["Point_array"][i2]["geometry"]["coordinates"][1];
+			const c_p_lon = c_string_index[c_string_id]["Point_array"][i2]["geometry"]["coordinates"][0];
+			c_distance_array.push([]);
+			for (let i3 = 1; i3 < c_string_index[c_string_id]["LineString"]["geometry"]["coordinates"].length; i3++) {
+				const c_s_lat = c_string_index[c_string_id]["LineString"]["geometry"]["coordinates"][i3 - 1][1];
+				const c_s_lon = c_string_index[c_string_id]["LineString"]["geometry"]["coordinates"][i3 - 1][0];
+				const c_e_lat = c_string_index[c_string_id]["LineString"]["geometry"]["coordinates"][i3][1];
+				const c_e_lon = c_string_index[c_string_id]["LineString"]["geometry"]["coordinates"][i3][0];
+				const c_distance_foot = busmapjs.distance_between_point_and_line_segment_lat_lon_foot(c_p_lat, c_p_lon, c_s_lat, c_s_lon, c_e_lat, c_e_lon);
+				if (0 < c_distance_array[i2].length && c_distance_array[i2][c_distance_array[i2].length - 1]["end_point"] === true && c_distance_foot["start_point"] === true) {
+					continue; // 境界部分で前と重複する場合を除く
+				}
+				if (c_distance_foot["end_point"] === true && c_distance_foot["foot"] === 0 && i3===1) {
+					console.log(c_distance_foot);
+					console.log(c_p_lat);
+					console.log(c_p_lon);
+					console.log(c_s_lat);
+					console.log(c_s_lon);
+					console.log(c_e_lat);
+					console.log(c_e_lon);
+				}
+				c_distance_foot["sequence"] = i3 - 1;
+				c_distance_foot["shape_dist_traveled"] = c_string_index[c_string_id]["LineString"]["properties"]["shape_dist_traveled"][i3 - 1] + c_distance_foot["foot"];
+				c_distance_foot["total_distance"] = Number.MAX_SAFE_INTEGER; // 適当に大きい数
+				c_distance_foot["pre_sequence"] = null;
+				c_distance_array[i2].push(c_distance_foot);
+			}
+		}
+		
+		// 距離の合計が最短になるものを探す
+		// 最初の距離を設定
+		for (let i3 = 0; i3 < c_distance_array[0].length; i3++) {
+			c_distance_array[0][i3]["total_distance"] = c_distance_array[0][i3]["distance"];
+		}
+		for (let i2 = 0; i2 < c_distance_array.length - 1; i2++) { // 最後以外
+			// 各段階でのtotal_distanceの最小値を求めておく
+			const c_pre_array = [];
+			for (let i3 = 0; i3 < c_distance_array[i2].length; i3++) {
+				if (i2 !== 0 && c_distance_array[i2][i3]["pre_sequence"] === null) {
+					continue;
+				}
+				if (c_pre_array.length === 0 || c_distance_array[i2][i3]["total_distance"] < c_pre_array[c_pre_array.length - 1]["total_distance"]) {
+					c_pre_array.push({
+						"sequence": i3,
+						"shape_dist_traveled": c_distance_array[i2][i3]["shape_dist_traveled"],
+						"total_distance": c_distance_array[i2][i3]["total_distance"]
+					});
+				}
+			}
+			// 次の計算
+			let i3_pre = 0;
+			for (let i3 = 0; i3 < c_distance_array[i2 + 1].length; i3++) {
+				for (let i4 = i3_pre; i4 < c_pre_array.length; i4++) {
+					if (c_pre_array[i4]["shape_dist_traveled"] > c_distance_array[i2 + 1][i3]["shape_dist_traveled"]) {
+						break;
+					}
+					i3_pre = i4;
+				}
+				if (c_pre_array[i3_pre]["shape_dist_traveled"] > c_distance_array[i2 + 1][i3]["shape_dist_traveled"]) {
+					continue;
+				}
+				if ((c_pre_array[i3_pre]["total_distance"] + c_distance_array[i2 + 1][i3]["distance"]) < c_distance_array[i2 + 1][i3]["total_distance"]) {
+					c_distance_array[i2 + 1][i3]["total_distance"] = c_pre_array[i3_pre]["total_distance"] + c_distance_array[i2 + 1][i3]["distance"];
+					c_distance_array[i2 + 1][i3]["pre_sequence"] = c_pre_array[i3_pre]["sequence"];
+				}
+			}
+		}
+		// 最短のものを探す
+		let l_min = Number.MAX_SAFE_INTEGER; // 適当に大きい数
+		let l_sequence = null;
+		for (let i3 = 0; i3 < c_distance_array[c_distance_array.length - 1].length; i3++) {
+			if (c_distance_array[c_distance_array.length - 1][i3]["total_distance"] < l_min) {
+				l_min = c_distance_array[c_distance_array.length - 1][i3]["total_distance"];
+				l_sequence = i3;
+			}
+		}
+		if (l_sequence === null) {
+			console.log("順序通りのものなし");
+			continue;
+		}
+		// 最後から辿る
+		const c_shape_dist_traveled_array = [];
+		for (let i2 = c_distance_array.length - 1; i2 >= 0; i2--) {
+			c_shape_dist_traveled_array.push(c_distance_array[i2][l_sequence]["shape_dist_traveled"]);
+			l_sequence = c_distance_array[i2][l_sequence]["pre_sequence"];
+		}
+		c_shape_dist_traveled_array.reverse();
+		
+		// Pointへ反映
+		for (let i2 = 0; i2 < c_string_index[c_string_id]["Point_array"].length; i2++) {
+			c_string_index[c_string_id]["Point_array"][i2]["properties"]["shape_dist_traveled"] = c_shape_dist_traveled_array[i2];
+		}
+	}
+}
