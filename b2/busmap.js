@@ -1017,7 +1017,7 @@ busmapjs.distance_between_point_and_line_segment_lat_lon_foot = function(a_p_lat
 		l_start_point = true;
 	} else if (a_p_lat === a_e_lat && a_p_lon === a_e_lon) {
 		l_distance = 0;
-		l_foot = 0;
+		l_foot = 6378137 * Math.acos(Math.sin(a_s_lat * Math.PI / 180) * Math.sin(a_e_lat * Math.PI / 180) + Math.cos(a_s_lat * Math.PI / 180) * Math.cos(a_e_lat * Math.PI / 180) * Math.cos(a_s_lon * Math.PI / 180 - a_e_lon * Math.PI / 180));
 		l_end_point = true;
 	} else if (a_s_lat === a_e_lat && a_s_lon === a_e_lon) {
 		const c_cos = Math.sin(a_p_lat * Math.PI / 180) * Math.sin(a_s_lat * Math.PI / 180) + Math.cos(a_p_lat * Math.PI / 180) * Math.cos(a_s_lat * Math.PI / 180) * Math.cos(a_p_lon * Math.PI / 180 - a_s_lon * Math.PI / 180);
@@ -1183,7 +1183,7 @@ busmapjs.add_shape_dist_traveled = function(a_gtfs) {
 				const c_e_lat = Number(c_shapes[i3]["shape_pt_lat"]);
 				const c_e_lon = Number(c_shapes[i3]["shape_pt_lon"]);
 				const c_distance_foot = busmapjs.distance_between_point_and_line_segment_lat_lon_foot(c_p_lat, c_p_lon, c_s_lat, c_s_lon, c_e_lat, c_e_lon);
-				if (1 < c_distance_array[i2].length && c_distance_array[i2][c_distance_array[i2].length - 2]["end_point"] === true && c_distance_foot["start_point"] === true) {
+				if (0 < c_distance_array[i2].length && c_distance_array[i2][c_distance_array[i2].length - 1]["end_point"] === true && c_distance_foot["start_point"] === true) {
 					continue; // 境界部分で前と重複する場合を除く
 				}
 				c_distance_foot["sequence"] = i3 - 1;
