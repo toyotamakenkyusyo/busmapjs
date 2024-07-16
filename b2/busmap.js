@@ -1317,15 +1317,6 @@ busmapjs.add_geojson_shape_dist_traveled = function(a_geojson) {
 				if (0 < c_distance_array[i2].length && c_distance_array[i2][c_distance_array[i2].length - 1]["end_point"] === true && c_distance_foot["start_point"] === true) {
 					continue; // 境界部分で前と重複する場合を除く
 				}
-				if (c_distance_foot["end_point"] === true && c_distance_foot["foot"] === 0 && i3===1) {
-					console.log(c_distance_foot);
-					console.log(c_p_lat);
-					console.log(c_p_lon);
-					console.log(c_s_lat);
-					console.log(c_s_lon);
-					console.log(c_e_lat);
-					console.log(c_e_lon);
-				}
 				c_distance_foot["sequence"] = i3 - 1;
 				c_distance_foot["shape_dist_traveled"] = c_string_index[c_string_id]["LineString"]["properties"]["shape_dist_traveled"][i3 - 1] + c_distance_foot["foot"];
 				c_distance_foot["total_distance"] = Number.MAX_SAFE_INTEGER; // 適当に大きい数
