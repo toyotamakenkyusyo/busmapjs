@@ -190,7 +190,7 @@ async function f_read_geojson(a) {
 					const c_lon_0 = Number(c_path_coordinates[i3 - 1][0]) * Math.PI / 180;
 					const c_lat_1 = Number(c_path_coordinates[i3][1]) * Math.PI / 180;
 					const c_lon_1 = Number(c_path_coordinates[i3][0]) * Math.PI / 180;
-					const c_distance = 6378137 * Math.acos(Math.sin(c_lat_0) * Math.sin(c_lat_1) + Math.cos(c_lat_0) * Math.cos(c_lat_1) * Math.cos(c_lon_0 - c_lon_1));
+					const c_distance = Math.acos(Math.sin(c_lat_0) * Math.sin(c_lat_1) + Math.cos(c_lat_0) * Math.cos(c_lat_1) * Math.cos(c_lon_0 - c_lon_1)); // 相対的な位置だけに使うので単位は気にしない
 					c_distance_array.push(c_distance_array[c_distance_array.length - 1] + c_distance);
 				}
 				const c_shape_dist_traveled_array = [];
